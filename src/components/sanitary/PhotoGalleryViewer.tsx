@@ -5,14 +5,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Photo {
   id: string;
   photo_url: string;
   caption?: string | null;
+  created_at?: string;
 }
 
 interface PhotoGalleryViewerProps {
@@ -228,10 +231,18 @@ export function PhotoGalleryViewer({
             }}
             draggable={false}
           />
-          {/* Caption overlay */}
-          {currentPhoto.caption && zoomLevel === 1 && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-md bg-black/70 text-white px-4 py-2 rounded-lg text-sm text-center">
-              {currentPhoto.caption}
+          {/* Caption and date overlay */}
+          {zoomLevel === 1 && (currentPhoto.caption || currentPhoto.created_at) && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-md bg-black/70 text-white px-4 py-2 rounded-lg text-sm text-center space-y-1">
+              {currentPhoto.caption && (
+                <p>{currentPhoto.caption}</p>
+              )}
+              {currentPhoto.created_at && (
+                <p className="flex items-center justify-center gap-1 text-xs text-white/80">
+                  <Clock className="w-3 h-3" />
+                  {format(new Date(currentPhoto.created_at), "d MMM yyyy, HH:mm", { locale: es })}
+                </p>
+              )}
             </div>
           )}
         </div>

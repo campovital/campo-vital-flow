@@ -23,6 +23,8 @@ type PestReportStatus = "pendiente" | "en_tratamiento" | "resuelto";
 interface PestReportPhoto {
   id: string;
   photo_url: string;
+  caption?: string | null;
+  created_at?: string;
 }
 
 interface PestReport {
