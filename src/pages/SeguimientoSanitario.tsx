@@ -7,11 +7,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePagination } from "@/hooks/use-pagination";
 import { PestReportCard } from "@/components/sanitary/PestReportCard";
 import { SanitaryFilters, SortOption, SortDirection } from "@/components/sanitary/SanitaryFilters";
 import { ExportButton } from "@/components/sanitary/ExportButton";
 import { SanitaryDashboard } from "@/components/sanitary/SanitaryDashboard";
 import { BatchActionsBar } from "@/components/sanitary/BatchActionsBar";
+import { PaginationControls } from "@/components/sanitary/PaginationControls";
 import {
   Bug,
   Clock,
@@ -272,13 +274,19 @@ export default function SeguimientoSanitario() {
   };
 
   const getCurrentTabReports = () => {
+    if (activeTab === "pendiente") return pendientesPagination.paginatedItems;
+    if (activeTab === "en_tratamiento") return enTratamientoPagination.paginatedItems;
+    return resueltosPagination.paginatedItems;
+  };
+
+  const getAllCurrentTabReports = () => {
     if (activeTab === "pendiente") return pendientes;
     if (activeTab === "en_tratamiento") return enTratamiento;
     return resueltos;
   };
 
   const handleSelectAll = () => {
-    const currentReports = getCurrentTabReports();
+    const currentReports = getAllCurrentTabReports();
     const currentIds = currentReports.map(r => r.id);
     const allSelected = currentIds.every(id => selectedReports.has(id));
     
@@ -300,7 +308,7 @@ export default function SeguimientoSanitario() {
   };
 
   const getCurrentTabSelectionState = () => {
-    const currentReports = getCurrentTabReports();
+    const currentReports = getAllCurrentTabReports();
     if (currentReports.length === 0) return "none";
     const currentIds = currentReports.map(r => r.id);
     const selectedInTab = currentIds.filter(id => selectedReports.has(id)).length;
@@ -315,6 +323,18 @@ export default function SeguimientoSanitario() {
   const pendientes = filterReportsByStatus("pendiente");
   const enTratamiento = filterReportsByStatus("en_tratamiento");
   const resueltos = filterReportsByStatus("resuelto");
+
+  // Pagination for each tab
+  const pendientesPagination = usePagination({ items: pendientes, itemsPerPage: 10 });
+  const enTratamientoPagination = usePagination({ items: enTratamiento, itemsPerPage: 10 });
+  const resueltosPagination = usePagination({ items: resueltos, itemsPerPage: 10 });
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    pendientesPagination.resetPage();
+    enTratamientoPagination.resetPage();
+    resueltosPagination.resetPage();
+  }, [selectedLot, selectedPestType, selectedSeverity, debouncedSearch, dateFrom, dateTo]);
 
   const overdueCount = reports.filter(
     (r) =>
@@ -475,7 +495,7 @@ export default function SeguimientoSanitario() {
               </TabsTrigger>
             </TabsList>
             
-            {selectionMode && getCurrentTabReports().length > 0 && (
+            {selectionMode && getAllCurrentTabReports().length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -497,18 +517,34 @@ export default function SeguimientoSanitario() {
             {pendientes.length === 0 ? (
               <EmptyState message="No hay reportes pendientes" />
             ) : (
-              pendientes.map((report) => (
-                <PestReportCard
-                  key={report.id}
-                  report={report}
-                  onStatusChange={handleStatusChange}
-                  onPhotosAdded={fetchReports}
-                  isUpdating={updating === report.id}
-                  selectable={selectionMode}
-                  isSelected={selectedReports.has(report.id)}
-                  onSelectionChange={handleSelectionChange}
+              <>
+                {pendientesPagination.paginatedItems.map((report) => (
+                  <PestReportCard
+                    key={report.id}
+                    report={report}
+                    onStatusChange={handleStatusChange}
+                    onPhotosAdded={fetchReports}
+                    isUpdating={updating === report.id}
+                    selectable={selectionMode}
+                    isSelected={selectedReports.has(report.id)}
+                    onSelectionChange={handleSelectionChange}
+                  />
+                ))}
+                <PaginationControls
+                  currentPage={pendientesPagination.currentPage}
+                  totalPages={pendientesPagination.totalPages}
+                  totalItems={pendientes.length}
+                  startIndex={pendientesPagination.startIndex}
+                  endIndex={pendientesPagination.endIndex}
+                  itemsPerPage={pendientesPagination.itemsPerPage}
+                  onPageChange={pendientesPagination.setCurrentPage}
+                  onNextPage={pendientesPagination.nextPage}
+                  onPrevPage={pendientesPagination.prevPage}
+                  onFirstPage={pendientesPagination.goToFirstPage}
+                  onLastPage={pendientesPagination.goToLastPage}
+                  onItemsPerPageChange={pendientesPagination.setItemsPerPage}
                 />
-              ))
+              </>
             )}
           </TabsContent>
 
@@ -516,18 +552,34 @@ export default function SeguimientoSanitario() {
             {enTratamiento.length === 0 ? (
               <EmptyState message="No hay reportes en tratamiento" />
             ) : (
-              enTratamiento.map((report) => (
-                <PestReportCard
-                  key={report.id}
-                  report={report}
-                  onStatusChange={handleStatusChange}
-                  onPhotosAdded={fetchReports}
-                  isUpdating={updating === report.id}
-                  selectable={selectionMode}
-                  isSelected={selectedReports.has(report.id)}
-                  onSelectionChange={handleSelectionChange}
+              <>
+                {enTratamientoPagination.paginatedItems.map((report) => (
+                  <PestReportCard
+                    key={report.id}
+                    report={report}
+                    onStatusChange={handleStatusChange}
+                    onPhotosAdded={fetchReports}
+                    isUpdating={updating === report.id}
+                    selectable={selectionMode}
+                    isSelected={selectedReports.has(report.id)}
+                    onSelectionChange={handleSelectionChange}
+                  />
+                ))}
+                <PaginationControls
+                  currentPage={enTratamientoPagination.currentPage}
+                  totalPages={enTratamientoPagination.totalPages}
+                  totalItems={enTratamiento.length}
+                  startIndex={enTratamientoPagination.startIndex}
+                  endIndex={enTratamientoPagination.endIndex}
+                  itemsPerPage={enTratamientoPagination.itemsPerPage}
+                  onPageChange={enTratamientoPagination.setCurrentPage}
+                  onNextPage={enTratamientoPagination.nextPage}
+                  onPrevPage={enTratamientoPagination.prevPage}
+                  onFirstPage={enTratamientoPagination.goToFirstPage}
+                  onLastPage={enTratamientoPagination.goToLastPage}
+                  onItemsPerPageChange={enTratamientoPagination.setItemsPerPage}
                 />
-              ))
+              </>
             )}
           </TabsContent>
 
@@ -535,17 +587,33 @@ export default function SeguimientoSanitario() {
             {resueltos.length === 0 ? (
               <EmptyState message="No hay reportes resueltos" />
             ) : (
-              resueltos.map((report) => (
-                <PestReportCard
-                  key={report.id}
-                  report={report}
-                  onStatusChange={handleStatusChange}
-                  isUpdating={updating === report.id}
-                  selectable={selectionMode}
-                  isSelected={selectedReports.has(report.id)}
-                  onSelectionChange={handleSelectionChange}
+              <>
+                {resueltosPagination.paginatedItems.map((report) => (
+                  <PestReportCard
+                    key={report.id}
+                    report={report}
+                    onStatusChange={handleStatusChange}
+                    isUpdating={updating === report.id}
+                    selectable={selectionMode}
+                    isSelected={selectedReports.has(report.id)}
+                    onSelectionChange={handleSelectionChange}
+                  />
+                ))}
+                <PaginationControls
+                  currentPage={resueltosPagination.currentPage}
+                  totalPages={resueltosPagination.totalPages}
+                  totalItems={resueltos.length}
+                  startIndex={resueltosPagination.startIndex}
+                  endIndex={resueltosPagination.endIndex}
+                  itemsPerPage={resueltosPagination.itemsPerPage}
+                  onPageChange={resueltosPagination.setCurrentPage}
+                  onNextPage={resueltosPagination.nextPage}
+                  onPrevPage={resueltosPagination.prevPage}
+                  onFirstPage={resueltosPagination.goToFirstPage}
+                  onLastPage={resueltosPagination.goToLastPage}
+                  onItemsPerPageChange={resueltosPagination.setItemsPerPage}
                 />
-              ))
+              </>
             )}
           </TabsContent>
         </Tabs>
