@@ -29,7 +29,9 @@ import {
 } from "recharts";
 import { format, subDays, subMonths, startOfDay, endOfDay, differenceInDays, differenceInHours, startOfMonth, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw, Timer, Target, BarChart3 } from "lucide-react";
+import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw, Timer, Target, BarChart3, GitCompare } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { DashboardPdfExport } from "./DashboardPdfExport";
 import { cn } from "@/lib/utils";
 
@@ -78,6 +80,12 @@ interface MonthlyTrendData {
   resuelto: number;
 }
 
+interface ComparisonData {
+  label: string;
+  current: number;
+  previous: number;
+}
+
 type DatePreset = "7days" | "30days" | "90days" | "custom";
 
 interface DatePresetOption {
@@ -117,9 +125,22 @@ export function SanitaryDashboard() {
   const [dateTo, setDateTo] = useState<Date>(new Date());
   const [activePreset, setActivePreset] = useState<DatePreset>("30days");
 
+  // Comparison mode state
+  const [comparisonEnabled, setComparisonEnabled] = useState(false);
+  const [comparisonDateFrom, setComparisonDateFrom] = useState<Date>(subDays(new Date(), 60));
+  const [comparisonDateTo, setComparisonDateTo] = useState<Date>(subDays(new Date(), 31));
+  const [comparisonReports, setComparisonReports] = useState<PestReport[]>([]);
+  const [comparisonData, setComparisonData] = useState<ComparisonData[]>([]);
+
   useEffect(() => {
     fetchData();
   }, [dateFrom, dateTo]);
+
+  useEffect(() => {
+    if (comparisonEnabled) {
+      fetchComparisonData();
+    }
+  }, [comparisonEnabled, comparisonDateFrom, comparisonDateTo, reports]);
 
   const handlePresetClick = (preset: DatePresetOption) => {
     const today = new Date();
@@ -158,6 +179,68 @@ export function SanitaryDashboard() {
       console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchComparisonData = async () => {
+    if (!comparisonEnabled) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("pest_reports")
+        .select("id, pest_type, severity, status, created_at, resolved_at, lot_id, lots(name)")
+        .gte("created_at", startOfDay(comparisonDateFrom).toISOString())
+        .lte("created_at", endOfDay(comparisonDateTo).toISOString())
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      const typedData = (data || []) as PestReport[];
+      setComparisonReports(typedData);
+      
+      // Build comparison data
+      buildComparisonData(reports, typedData);
+    } catch (error) {
+      console.error("Error fetching comparison data:", error);
+    }
+  };
+
+  const buildComparisonData = (currentData: PestReport[], previousData: PestReport[]) => {
+    const currentTotal = currentData.length;
+    const previousTotal = previousData.length;
+    
+    const currentPending = currentData.filter(r => r.status === "pendiente").length;
+    const previousPending = previousData.filter(r => r.status === "pendiente").length;
+    
+    const currentTreatment = currentData.filter(r => r.status === "en_tratamiento").length;
+    const previousTreatment = previousData.filter(r => r.status === "en_tratamiento").length;
+    
+    const currentResolved = currentData.filter(r => r.status === "resuelto").length;
+    const previousResolved = previousData.filter(r => r.status === "resuelto").length;
+    
+    const currentEffectiveness = currentTotal > 0 ? Math.round((currentResolved / currentTotal) * 100) : 0;
+    const previousEffectiveness = previousTotal > 0 ? Math.round((previousResolved / previousTotal) * 100) : 0;
+    
+    setComparisonData([
+      { label: "Total", current: currentTotal, previous: previousTotal },
+      { label: "Pendientes", current: currentPending, previous: previousPending },
+      { label: "En Tratamiento", current: currentTreatment, previous: previousTreatment },
+      { label: "Resueltos", current: currentResolved, previous: previousResolved },
+      { label: "Efectividad %", current: currentEffectiveness, previous: previousEffectiveness },
+    ]);
+  };
+
+  const handleComparisonPreset = (preset: "previous" | "lastYear") => {
+    const daysDiff = differenceInDays(dateTo, dateFrom);
+    
+    if (preset === "previous") {
+      // Set comparison to the previous period of the same length
+      setComparisonDateTo(subDays(dateFrom, 1));
+      setComparisonDateFrom(subDays(dateFrom, daysDiff + 1));
+    } else {
+      // Set comparison to same period last year
+      setComparisonDateFrom(subDays(dateFrom, 365));
+      setComparisonDateTo(subDays(dateTo, 365));
     }
   };
 
@@ -426,6 +509,19 @@ export function SanitaryDashboard() {
                   <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
                 </Button>
               </div>
+
+              {/* Comparison toggle */}
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="comparison-mode"
+                  checked={comparisonEnabled}
+                  onCheckedChange={setComparisonEnabled}
+                />
+                <Label htmlFor="comparison-mode" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+                  <GitCompare className="w-3.5 h-3.5" />
+                  Comparar
+                </Label>
+              </div>
             </div>
             
             <DashboardPdfExport
@@ -441,6 +537,86 @@ export function SanitaryDashboard() {
               dateRangeLabel={getDateRangeLabel()}
             />
           </div>
+
+          {/* Comparison Period Selector */}
+          {comparisonEnabled && (
+            <div className="border-t pt-4 mt-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <GitCompare className="w-3.5 h-3.5" />
+                  Período de Comparación
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => handleComparisonPreset("previous")}
+                  >
+                    Período anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => handleComparisonPreset("lastYear")}
+                  >
+                    Mismo período año anterior
+                  </Button>
+                  
+                  <div className="flex items-center gap-1 ml-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                        >
+                          <CalendarIcon className="w-3 h-3" />
+                          {format(comparisonDateFrom, "d MMM", { locale: es })}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-background" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={comparisonDateFrom}
+                          onSelect={(date) => date && setComparisonDateFrom(date)}
+                          disabled={(date) => date > comparisonDateTo}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    
+                    <span className="text-xs text-muted-foreground">a</span>
+                    
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                        >
+                          <CalendarIcon className="w-3 h-3" />
+                          {format(comparisonDateTo, "d MMM", { locale: es })}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-background" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={comparisonDateTo}
+                          onSelect={(date) => date && setComparisonDateTo(date)}
+                          disabled={(date) => date < comparisonDateFrom || date > new Date()}
+                          initialFocus
+                          className="p-3 pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -537,6 +713,73 @@ export function SanitaryDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Comparison Chart */}
+      {comparisonEnabled && comparisonData.length > 0 && (
+        <Card className="border-0 shadow-soft">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <GitCompare className="w-4 h-4" />
+              Comparación de Períodos
+            </CardTitle>
+            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mt-1">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-primary" />
+                Actual: {format(dateFrom, "d MMM", { locale: es })} - {format(dateTo, "d MMM", { locale: es })}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-muted-foreground/50" />
+                Anterior: {format(comparisonDateFrom, "d MMM", { locale: es })} - {format(comparisonDateTo, "d MMM", { locale: es })}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[250px] w-full">
+              <BarChart data={comparisonData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} />
+                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <ChartTooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload as ComparisonData;
+                      const diff = data.current - data.previous;
+                      const percentChange = data.previous > 0 
+                        ? ((diff / data.previous) * 100).toFixed(1)
+                        : data.current > 0 ? "+100" : "0";
+                      
+                      return (
+                        <div className="bg-background border rounded-lg shadow-lg p-3 text-xs">
+                          <p className="font-medium mb-2">{label}</p>
+                          <div className="space-y-1">
+                            <p className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-primary" />
+                              Actual: <span className="font-medium">{data.current}</span>
+                            </p>
+                            <p className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                              Anterior: <span className="font-medium">{data.previous}</span>
+                            </p>
+                            <p className={cn(
+                              "border-t pt-1 mt-1 font-medium",
+                              diff > 0 ? "text-destructive" : diff < 0 ? "text-success" : ""
+                            )}>
+                              Cambio: {diff > 0 ? "+" : ""}{diff} ({percentChange}%)
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="current" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Período Actual" />
+                <Bar dataKey="previous" fill="hsl(var(--muted-foreground) / 0.4)" radius={[4, 4, 0, 0]} name="Período Anterior" />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
