@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,6 +25,7 @@ import {
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import { DashboardPdfExport } from "./DashboardPdfExport";
 
 interface PestReport {
   id: string;
@@ -69,6 +70,7 @@ const STATUS_COLORS = {
 };
 
 export function SanitaryDashboard() {
+  const dashboardRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<PestReport[]>([]);
   const [lotStats, setLotStats] = useState<LotStats[]>([]);
@@ -217,6 +219,18 @@ export function SanitaryDashboard() {
 
   return (
     <div className="space-y-4">
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <DashboardPdfExport
+          dashboardRef={dashboardRef}
+          totalReports={totalReports}
+          pendingReports={pendingReports}
+          inTreatmentReports={inTreatmentReports}
+          resolvedReports={resolvedReports}
+        />
+      </div>
+
+      <div ref={dashboardRef} className="space-y-4 bg-background">
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="border-0 shadow-soft">
@@ -410,6 +424,7 @@ export function SanitaryDashboard() {
             </CardContent>
           </Card>
         )}
+      </div>
       </div>
     </div>
   );
