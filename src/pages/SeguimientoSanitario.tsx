@@ -3,6 +3,7 @@ import { startOfDay, endOfDay } from "date-fns";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -270,6 +271,44 @@ export default function SeguimientoSanitario() {
     }
   };
 
+  const getCurrentTabReports = () => {
+    if (activeTab === "pendiente") return pendientes;
+    if (activeTab === "en_tratamiento") return enTratamiento;
+    return resueltos;
+  };
+
+  const handleSelectAll = () => {
+    const currentReports = getCurrentTabReports();
+    const currentIds = currentReports.map(r => r.id);
+    const allSelected = currentIds.every(id => selectedReports.has(id));
+    
+    if (allSelected) {
+      // Deselect all from current tab
+      setSelectedReports(prev => {
+        const newSet = new Set(prev);
+        currentIds.forEach(id => newSet.delete(id));
+        return newSet;
+      });
+    } else {
+      // Select all from current tab
+      setSelectedReports(prev => {
+        const newSet = new Set(prev);
+        currentIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+    }
+  };
+
+  const getCurrentTabSelectionState = () => {
+    const currentReports = getCurrentTabReports();
+    if (currentReports.length === 0) return "none";
+    const currentIds = currentReports.map(r => r.id);
+    const selectedInTab = currentIds.filter(id => selectedReports.has(id)).length;
+    if (selectedInTab === 0) return "none";
+    if (selectedInTab === currentIds.length) return "all";
+    return "partial";
+  };
+
   const filterReportsByStatus = (status: PestReportStatus) =>
     reports.filter((r) => r.status === status);
 
@@ -417,23 +456,42 @@ export default function SeguimientoSanitario() {
 
         {/* Tabs with reports */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="pendiente" className="gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Pendientes</span>
-              <span className="sm:hidden">{pendientes.length}</span>
-            </TabsTrigger>
-            <TabsTrigger value="en_tratamiento" className="gap-1">
-              <Wrench className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Tratamiento</span>
-              <span className="sm:hidden">{enTratamiento.length}</span>
-            </TabsTrigger>
-            <TabsTrigger value="resuelto" className="gap-1">
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Resueltos</span>
-              <span className="sm:hidden">{resueltos.length}</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between gap-2">
+            <TabsList className="flex-1 grid grid-cols-3">
+              <TabsTrigger value="pendiente" className="gap-1">
+                <Clock className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Pendientes</span>
+                <span className="sm:hidden">{pendientes.length}</span>
+              </TabsTrigger>
+              <TabsTrigger value="en_tratamiento" className="gap-1">
+                <Wrench className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tratamiento</span>
+                <span className="sm:hidden">{enTratamiento.length}</span>
+              </TabsTrigger>
+              <TabsTrigger value="resuelto" className="gap-1">
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Resueltos</span>
+                <span className="sm:hidden">{resueltos.length}</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            {selectionMode && getCurrentTabReports().length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 flex-shrink-0"
+                onClick={handleSelectAll}
+              >
+                <Checkbox
+                  checked={getCurrentTabSelectionState() === "all"}
+                  className={getCurrentTabSelectionState() === "partial" ? "data-[state=checked]:bg-primary/50" : ""}
+                />
+                <span className="text-xs">
+                  {getCurrentTabSelectionState() === "all" ? "Deseleccionar" : "Seleccionar"} todos
+                </span>
+              </Button>
+            )}
+          </div>
 
           <TabsContent value="pendiente" className="space-y-3 mt-4">
             {pendientes.length === 0 ? (
