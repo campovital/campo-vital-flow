@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, subDays, subWeeks, subMonths, startOfDay, startOfWeek, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Filter, CalendarIcon, X, ArrowUpDown, Search } from "lucide-react";
+import { Filter, CalendarIcon, X, ArrowUpDown, Search, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type DatePreset = "today" | "week" | "month" | "3months";
+
+interface DatePresetOption {
+  id: DatePreset;
+  label: string;
+  getRange: () => { from: Date; to: Date };
+}
 
 export type SortOption = "follow_up_date" | "severity" | "created_at";
 export type SortDirection = "asc" | "desc";
@@ -85,6 +93,66 @@ export function SanitaryFilters({
     { value: "severity", label: "Severidad" },
     { value: "created_at", label: "Fecha de creación" },
   ];
+
+  const today = new Date();
+  
+  const datePresets: DatePresetOption[] = [
+    {
+      id: "today",
+      label: "Hoy",
+      getRange: () => ({
+        from: startOfDay(today),
+        to: today,
+      }),
+    },
+    {
+      id: "week",
+      label: "Última semana",
+      getRange: () => ({
+        from: subWeeks(today, 1),
+        to: today,
+      }),
+    },
+    {
+      id: "month",
+      label: "Último mes",
+      getRange: () => ({
+        from: subMonths(today, 1),
+        to: today,
+      }),
+    },
+    {
+      id: "3months",
+      label: "Últimos 3 meses",
+      getRange: () => ({
+        from: subMonths(today, 3),
+        to: today,
+      }),
+    },
+  ];
+
+  const handlePresetClick = (preset: DatePresetOption) => {
+    const range = preset.getRange();
+    onDateFromChange(range.from);
+    onDateToChange(range.to);
+  };
+
+  const getActivePreset = (): DatePreset | null => {
+    if (!dateFrom || !dateTo) return null;
+    
+    for (const preset of datePresets) {
+      const range = preset.getRange();
+      if (
+        startOfDay(dateFrom).getTime() === startOfDay(range.from).getTime() &&
+        startOfDay(dateTo).getTime() === startOfDay(range.to).getTime()
+      ) {
+        return preset.id;
+      }
+    }
+    return null;
+  };
+
+  const activePreset = getActivePreset();
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -220,7 +288,31 @@ export function SanitaryFilters({
           </p>
         </div>
 
-        {/* Row 4: Date Range */}
+        {/* Row 4: Date Range Presets */}
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" />
+            Rango de fechas
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {datePresets.map((preset) => (
+              <Button
+                key={preset.id}
+                variant={activePreset === preset.id ? "secondary" : "outline"}
+                size="sm"
+                className={cn(
+                  "h-7 text-xs",
+                  activePreset === preset.id && "bg-primary/10 border-primary/50"
+                )}
+                onClick={() => handlePresetClick(preset)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 5: Custom Date Range */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
