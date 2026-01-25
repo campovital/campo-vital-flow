@@ -1,16 +1,17 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Clock, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Clock, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { EditPhotoCaptionDialog } from "./EditPhotoCaptionDialog";
+import { DeletePhotoDialog } from "./DeletePhotoDialog";
 
 interface Photo {
   id: string;
@@ -40,12 +41,17 @@ export function PhotoGalleryViewer({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [localPhotos, setLocalPhotos] = useState(photos);
 
   // Sync localPhotos when photos prop changes
-  useState(() => {
+  useEffect(() => {
     setLocalPhotos(photos);
-  });
+    // Adjust currentIndex if it's now out of bounds
+    if (currentIndex >= photos.length && photos.length > 0) {
+      setCurrentIndex(photos.length - 1);
+    }
+  }, [photos, currentIndex]);
 
   const currentPhoto = localPhotos[currentIndex];
 
@@ -143,17 +149,34 @@ export function PhotoGalleryViewer({
   );
 
   const handleCaptionUpdated = (newCaption: string) => {
-    // Update local state immediately for responsive UI
     setLocalPhotos((prev) =>
       prev.map((photo, idx) =>
         idx === currentIndex ? { ...photo, caption: newCaption } : photo
       )
     );
+    onPhotoUpdated?.();
+  };
+
+  const handlePhotoDeleted = () => {
+    // Remove photo from local state
+    const newPhotos = localPhotos.filter((_, idx) => idx !== currentIndex);
+    setLocalPhotos(newPhotos);
+    
+    // Adjust index if needed
+    if (currentIndex >= newPhotos.length && newPhotos.length > 0) {
+      setCurrentIndex(newPhotos.length - 1);
+    }
+    
+    // Close gallery if no photos left
+    if (newPhotos.length === 0) {
+      onOpenChange(false);
+    }
+    
     // Notify parent to refresh data
     onPhotoUpdated?.();
   };
 
-  const canEditCaption = currentPhoto?.id !== "single";
+  const canModifyPhoto = currentPhoto?.id !== "single";
 
   if (!currentPhoto) return null;
 
@@ -269,16 +292,27 @@ export function PhotoGalleryViewer({
                     {format(new Date(currentPhoto.created_at), "d MMM yyyy, HH:mm", { locale: es })}
                   </p>
                 )}
-                {canEditCaption && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white/80 hover:text-white hover:bg-white/20 h-7 mt-1"
-                    onClick={() => setEditDialogOpen(true)}
-                  >
-                    <Pencil className="w-3 h-3 mr-1" />
-                    Editar nota
-                  </Button>
+                {canModifyPhoto && (
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-white/80 hover:text-white hover:bg-white/20 h-7"
+                      onClick={() => setEditDialogOpen(true)}
+                    >
+                      <Pencil className="w-3 h-3 mr-1" />
+                      Editar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/20 h-7"
+                      onClick={() => setDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Eliminar
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
@@ -320,6 +354,15 @@ export function PhotoGalleryViewer({
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onCaptionUpdated={handleCaptionUpdated}
+      />
+
+      {/* Delete Photo Dialog */}
+      <DeletePhotoDialog
+        photoId={currentPhoto.id}
+        photoUrl={currentPhoto.photo_url}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onPhotoDeleted={handlePhotoDeleted}
       />
     </>
   );
