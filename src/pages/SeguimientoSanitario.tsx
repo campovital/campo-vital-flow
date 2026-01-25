@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { startOfDay, endOfDay } from "date-fns";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,12 +61,24 @@ export default function SeguimientoSanitario() {
   const [selectedLot, setSelectedLot] = useState<string>("all");
   const [selectedPestType, setSelectedPestType] = useState<string>("all");
   const [selectedSeverity, setSelectedSeverity] = useState<string>("all");
+  const [searchText, setSearchText] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [sortBy, setSortBy] = useState<SortOption>("follow_up_date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [activeTab, setActiveTab] = useState<string>("pendiente");
   const [viewMode, setViewMode] = useState<"list" | "dashboard">("list");
+  
+  // Debounced search for performance
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+  
+  // Debounce search text
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchText.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchText]);
 
   // Get unique pest types from all reports
   const [allPestTypes, setAllPestTypes] = useState<string[]>([]);
@@ -79,7 +91,7 @@ export default function SeguimientoSanitario() {
 
   useEffect(() => {
     fetchReports();
-  }, [selectedLot, selectedPestType, selectedSeverity, dateFrom, dateTo, sortBy, sortDirection]);
+  }, [selectedLot, selectedPestType, selectedSeverity, debouncedSearch, dateFrom, dateTo, sortBy, sortDirection]);
 
   const fetchLots = async () => {
     const { data } = await supabase
@@ -132,6 +144,11 @@ export default function SeguimientoSanitario() {
       query = query.eq("severity", parseInt(selectedSeverity));
     }
 
+    // Text search filter - search in pest_type and notes
+    if (debouncedSearch) {
+      query = query.or(`pest_type.ilike.%${debouncedSearch}%,notes.ilike.%${debouncedSearch}%`);
+    }
+
     if (dateFrom) {
       query = query.gte("created_at", startOfDay(dateFrom).toISOString());
     }
@@ -152,6 +169,7 @@ export default function SeguimientoSanitario() {
     selectedLot !== "all" || 
     selectedPestType !== "all" || 
     selectedSeverity !== "all" ||
+    searchText.trim() !== "" ||
     dateFrom !== undefined || 
     dateTo !== undefined;
 
@@ -159,6 +177,7 @@ export default function SeguimientoSanitario() {
     setSelectedLot("all");
     setSelectedPestType("all");
     setSelectedSeverity("all");
+    setSearchText("");
     setDateFrom(undefined);
     setDateTo(undefined);
   };
@@ -299,6 +318,7 @@ export default function SeguimientoSanitario() {
           selectedLot={selectedLot}
           selectedPestType={selectedPestType}
           selectedSeverity={selectedSeverity}
+          searchText={searchText}
           dateFrom={dateFrom}
           dateTo={dateTo}
           sortBy={sortBy}
@@ -306,6 +326,7 @@ export default function SeguimientoSanitario() {
           onLotChange={setSelectedLot}
           onPestTypeChange={setSelectedPestType}
           onSeverityChange={setSelectedSeverity}
+          onSearchTextChange={setSearchText}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
           onSortChange={setSortBy}
