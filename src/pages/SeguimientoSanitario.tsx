@@ -60,6 +60,7 @@ export default function SeguimientoSanitario() {
   // Filters
   const [selectedLot, setSelectedLot] = useState<string>("all");
   const [selectedPestType, setSelectedPestType] = useState<string>("all");
+  const [selectedSeverity, setSelectedSeverity] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>("pendiente");
@@ -76,7 +77,7 @@ export default function SeguimientoSanitario() {
 
   useEffect(() => {
     fetchReports();
-  }, [selectedLot, selectedPestType, dateFrom, dateTo]);
+  }, [selectedLot, selectedPestType, selectedSeverity, dateFrom, dateTo]);
 
   const fetchLots = async () => {
     const { data } = await supabase
@@ -124,6 +125,10 @@ export default function SeguimientoSanitario() {
       query = query.eq("pest_type", selectedPestType);
     }
 
+    if (selectedSeverity !== "all") {
+      query = query.eq("severity", parseInt(selectedSeverity));
+    }
+
     if (dateFrom) {
       query = query.gte("created_at", startOfDay(dateFrom).toISOString());
     }
@@ -143,12 +148,14 @@ export default function SeguimientoSanitario() {
   const hasActiveFilters = 
     selectedLot !== "all" || 
     selectedPestType !== "all" || 
+    selectedSeverity !== "all" ||
     dateFrom !== undefined || 
     dateTo !== undefined;
 
   const clearFilters = () => {
     setSelectedLot("all");
     setSelectedPestType("all");
+    setSelectedSeverity("all");
     setDateFrom(undefined);
     setDateTo(undefined);
   };
@@ -288,10 +295,12 @@ export default function SeguimientoSanitario() {
           pestTypes={allPestTypes}
           selectedLot={selectedLot}
           selectedPestType={selectedPestType}
+          selectedSeverity={selectedSeverity}
           dateFrom={dateFrom}
           dateTo={dateTo}
           onLotChange={setSelectedLot}
           onPestTypeChange={setSelectedPestType}
+          onSeverityChange={setSelectedSeverity}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
           onClearFilters={clearFilters}
