@@ -179,6 +179,7 @@ export function PestReportCard({ report, onStatusChange, onPhotosAdded, isUpdati
             initialIndex={galleryStartIndex}
             open={galleryOpen}
             onOpenChange={setGalleryOpen}
+            onPhotoUpdated={onPhotosAdded}
           />
         </>
       )}
