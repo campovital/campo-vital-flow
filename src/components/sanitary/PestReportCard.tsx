@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PestReportStatusBadge } from "./PestReportStatusBadge";
+import { StatusHistoryDialog } from "./StatusHistoryDialog";
 import {
   Bug,
   MapPin,
@@ -78,7 +79,10 @@ export function PestReportCard({ report, onStatusChange, isUpdating }: PestRepor
           <Bug className={cn("w-5 h-5", getSeverityColor(report.severity))} />
           <span className="font-semibold">{report.pest_type}</span>
         </div>
-        <PestReportStatusBadge status={report.status} />
+        <div className="flex items-center gap-1">
+          <StatusHistoryDialog reportId={report.id} pestType={report.pest_type} />
+          <PestReportStatusBadge status={report.status} />
+        </div>
       </div>
 
       {/* Info row */}
