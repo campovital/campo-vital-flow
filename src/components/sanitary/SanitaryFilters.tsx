@@ -28,10 +28,12 @@ interface SanitaryFiltersProps {
   pestTypes: string[];
   selectedLot: string;
   selectedPestType: string;
+  selectedSeverity: string;
   dateFrom: Date | undefined;
   dateTo: Date | undefined;
   onLotChange: (value: string) => void;
   onPestTypeChange: (value: string) => void;
+  onSeverityChange: (value: string) => void;
   onDateFromChange: (date: Date | undefined) => void;
   onDateToChange: (date: Date | undefined) => void;
   onClearFilters: () => void;
@@ -43,15 +45,24 @@ export function SanitaryFilters({
   pestTypes,
   selectedLot,
   selectedPestType,
+  selectedSeverity,
   dateFrom,
   dateTo,
   onLotChange,
   onPestTypeChange,
+  onSeverityChange,
   onDateFromChange,
   onDateToChange,
   onClearFilters,
   hasActiveFilters,
 }: SanitaryFiltersProps) {
+  const severityOptions = [
+    { value: "1", label: "1 - Muy bajo" },
+    { value: "2", label: "2 - Bajo" },
+    { value: "3", label: "3 - Moderado" },
+    { value: "4", label: "4 - Alto" },
+    { value: "5", label: "5 - Muy alto" },
+  ];
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -113,6 +124,26 @@ export function SanitaryFilters({
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Row 2: Severity filter */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">
+            Severidad
+          </label>
+          <Select value={selectedSeverity} onValueChange={onSeverityChange}>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las severidades</SelectItem>
+              {severityOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Row 2: Date Range */}
