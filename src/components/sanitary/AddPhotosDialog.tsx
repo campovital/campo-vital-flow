@@ -30,14 +30,14 @@ export function AddPhotosDialog({
 }: AddPhotosDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const { photos, uploadPhoto, removePhoto, clearAllPhotos, getUploadedUrls, isUploading } =
+  const { photos, uploadPhoto, removePhoto, updateCaption, clearAllPhotos, getUploadedPhotos, isUploading } =
     useMultiPhotoUpload({ bucket: "pest-photos", folder: "reports" });
 
   const remainingSlots = MAX_PHOTOS_PER_REPORT - currentPhotoCount;
 
   const handleSave = async () => {
-    const uploadedUrls = getUploadedUrls();
-    if (uploadedUrls.length === 0) {
+    const uploadedPhotos = getUploadedPhotos();
+    if (uploadedPhotos.length === 0) {
       toast.error("No hay fotos para agregar");
       return;
     }
@@ -46,9 +46,10 @@ export function AddPhotosDialog({
     try {
       const { data: userData } = await supabase.auth.getUser();
       
-      const photoRecords = uploadedUrls.map((url) => ({
+      const photoRecords = uploadedPhotos.map((photo) => ({
         pest_report_id: reportId,
-        photo_url: url,
+        photo_url: photo.url,
+        caption: photo.caption || null,
         uploaded_by: userData.user?.id || null,
       }));
 
@@ -58,7 +59,7 @@ export function AddPhotosDialog({
 
       if (error) throw error;
 
-      toast.success(`${uploadedUrls.length} foto(s) agregada(s) al reporte`);
+      toast.success(`${uploadedPhotos.length} foto(s) agregada(s) al reporte`);
       clearAllPhotos();
       setOpen(false);
       onPhotosAdded();
@@ -77,7 +78,7 @@ export function AddPhotosDialog({
     setOpen(newOpen);
   };
 
-  const uploadedCount = getUploadedUrls().length;
+  const uploadedCount = getUploadedPhotos().length;
   const canSave = uploadedCount > 0 && !isUploading && !isSaving;
 
   return (
@@ -101,7 +102,7 @@ export function AddPhotosDialog({
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Documenta la evolución del tratamiento agregando fotos adicionales.
-            Puedes agregar hasta {remainingSlots} foto(s) más.
+            Puedes agregar hasta {remainingSlots} foto(s) más. Toca el icono 💬 para agregar notas.
           </p>
 
           <MultiPhotoCapture
@@ -109,6 +110,7 @@ export function AddPhotosDialog({
             maxPhotos={remainingSlots}
             onCapture={uploadPhoto}
             onRemove={removePhoto}
+            onCaptionChange={updateCaption}
           />
 
           <div className="flex justify-end gap-2 pt-2">

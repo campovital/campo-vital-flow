@@ -8,6 +8,7 @@ interface PhotoItem {
   photoUrl: string | null;
   uploading: boolean;
   error: string | null;
+  caption: string;
 }
 
 interface UseMultiPhotoUploadOptions {
@@ -53,6 +54,7 @@ export function useMultiPhotoUpload(options: UseMultiPhotoUploadOptions) {
           photoUrl: null,
           uploading: true,
           error: null,
+          caption: "",
         },
       ]);
 
@@ -125,6 +127,12 @@ export function useMultiPhotoUpload(options: UseMultiPhotoUploadOptions) {
     });
   }, []);
 
+  const updateCaption = useCallback((id: string, caption: string) => {
+    setPhotos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, caption } : p))
+    );
+  }, []);
+
   const clearAllPhotos = useCallback(() => {
     photos.forEach((photo) => {
       if (photo.previewUrl) {
@@ -132,6 +140,12 @@ export function useMultiPhotoUpload(options: UseMultiPhotoUploadOptions) {
       }
     });
     setPhotos([]);
+  }, [photos]);
+
+  const getUploadedPhotos = useCallback(() => {
+    return photos
+      .filter((p) => p.photoUrl !== null && !p.uploading && !p.error)
+      .map((p) => ({ url: p.photoUrl as string, caption: p.caption }));
   }, [photos]);
 
   const getUploadedUrls = useCallback(() => {
@@ -146,7 +160,9 @@ export function useMultiPhotoUpload(options: UseMultiPhotoUploadOptions) {
     photos,
     uploadPhoto,
     removePhoto,
+    updateCaption,
     clearAllPhotos,
+    getUploadedPhotos,
     getUploadedUrls,
     isUploading,
   };

@@ -100,8 +100,8 @@ export default function ReporteSanitario() {
 
     setIsLoading(true);
 
-    const uploadedUrls = photos.getUploadedUrls();
-    const mainPhotoUrl = uploadedUrls.length > 0 ? uploadedUrls[0] : null;
+    const uploadedPhotos = photos.getUploadedPhotos();
+    const mainPhotoUrl = uploadedPhotos.length > 0 ? uploadedPhotos[0].url : null;
 
     // Create the pest report
     const { data: reportData, error: reportError } = await supabase
@@ -130,11 +130,12 @@ export default function ReporteSanitario() {
       return;
     }
 
-    // Insert all photos into pest_report_photos table
-    if (uploadedUrls.length > 0) {
-      const photosToInsert = uploadedUrls.map((url) => ({
+    // Insert all photos into pest_report_photos table with captions
+    if (uploadedPhotos.length > 0) {
+      const photosToInsert = uploadedPhotos.map((photo) => ({
         pest_report_id: reportData.id,
-        photo_url: url,
+        photo_url: photo.url,
+        caption: photo.caption || null,
         uploaded_by: user.id,
       }));
 
@@ -143,7 +144,7 @@ export default function ReporteSanitario() {
 
     toast({
       title: "¡Reporte enviado!",
-      description: `${pestType} reportado en ${selectedLot.name} con ${uploadedUrls.length} foto(s)`,
+      description: `${pestType} reportado en ${selectedLot.name} con ${uploadedPhotos.length} foto(s)`,
     });
     setCurrentStep("result");
     setIsLoading(false);
@@ -332,6 +333,7 @@ export default function ReporteSanitario() {
                     maxPhotos={5}
                     onCapture={photos.uploadPhoto}
                     onRemove={photos.removePhoto}
+                    onCaptionChange={photos.updateCaption}
                   />
                 </div>
               </CardContent>
