@@ -153,6 +153,14 @@ export function SanitaryFilters({
   };
 
   const activePreset = getActivePreset();
+  
+  const hasDateFilter = dateFrom !== undefined || dateTo !== undefined;
+  
+  const handleClearDateFilter = () => {
+    onDateFromChange(undefined);
+    onDateToChange(undefined);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -290,10 +298,23 @@ export function SanitaryFilters({
 
         {/* Row 4: Date Range Presets */}
         <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            Rango de fechas
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              Rango de fechas
+            </label>
+            {hasDateFilter && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearDateFilter}
+                className="h-5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground gap-1"
+              >
+                <X className="w-3 h-3" />
+                Limpiar fechas
+              </Button>
+            )}
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {datePresets.map((preset) => (
               <Button
