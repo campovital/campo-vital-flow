@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Clock,
+  Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -128,6 +129,12 @@ export function PestReportCard({ report, onStatusChange, onPhotosAdded, isUpdati
         {report.incidence_percent && (
           <span className="text-xs">
             {report.incidence_percent}% incidencia
+          </span>
+        )}
+        {galleryPhotos.length > 0 && (
+          <span className="flex items-center gap-1 text-xs">
+            <Camera className="w-3.5 h-3.5" />
+            {galleryPhotos.length} foto{galleryPhotos.length !== 1 ? "s" : ""}
           </span>
         )}
       </div>
