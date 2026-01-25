@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import AplicarMezcla from "./pages/AplicarMezcla";
 import Cosecha from "./pages/Cosecha";
 import ReporteSanitario from "./pages/ReporteSanitario";
+import MapaPlagas from "./pages/MapaPlagas";
 import Historial from "./pages/Historial";
 import NotFound from "./pages/NotFound";
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/aplicar" element={<AplicarMezcla />} />
             <Route path="/cosecha" element={<Cosecha />} />
             <Route path="/plagas" element={<ReporteSanitario />} />
+            <Route path="/mapa-plagas" element={<MapaPlagas />} />
             <Route path="/historial" element={<Historial />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
