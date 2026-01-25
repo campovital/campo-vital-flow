@@ -15,8 +15,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Filter, CalendarIcon, X } from "lucide-react";
+import { Filter, CalendarIcon, X, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+export type SortOption = "follow_up_date" | "severity" | "created_at";
+export type SortDirection = "asc" | "desc";
 
 interface Lot {
   id: string;
@@ -31,11 +34,15 @@ interface SanitaryFiltersProps {
   selectedSeverity: string;
   dateFrom: Date | undefined;
   dateTo: Date | undefined;
+  sortBy: SortOption;
+  sortDirection: SortDirection;
   onLotChange: (value: string) => void;
   onPestTypeChange: (value: string) => void;
   onSeverityChange: (value: string) => void;
   onDateFromChange: (date: Date | undefined) => void;
   onDateToChange: (date: Date | undefined) => void;
+  onSortChange: (sort: SortOption) => void;
+  onSortDirectionToggle: () => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
 }
@@ -48,11 +55,15 @@ export function SanitaryFilters({
   selectedSeverity,
   dateFrom,
   dateTo,
+  sortBy,
+  sortDirection,
   onLotChange,
   onPestTypeChange,
   onSeverityChange,
   onDateFromChange,
   onDateToChange,
+  onSortChange,
+  onSortDirectionToggle,
   onClearFilters,
   hasActiveFilters,
 }: SanitaryFiltersProps) {
@@ -62,6 +73,12 @@ export function SanitaryFilters({
     { value: "3", label: "3 - Moderado" },
     { value: "4", label: "4 - Alto" },
     { value: "5", label: "5 - Muy alto" },
+  ];
+
+  const sortOptions = [
+    { value: "follow_up_date", label: "Fecha de seguimiento" },
+    { value: "severity", label: "Severidad" },
+    { value: "created_at", label: "Fecha de creación" },
   ];
   return (
     <Card>
@@ -146,7 +163,42 @@ export function SanitaryFilters({
           </Select>
         </div>
 
-        {/* Row 2: Date Range */}
+        {/* Row 3: Sorting */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">
+            Ordenar por
+          </label>
+          <div className="flex gap-2">
+            <Select value={sortBy} onValueChange={(v) => onSortChange(v as SortOption)}>
+              <SelectTrigger className="h-9 flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {sortOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 flex-shrink-0"
+              onClick={onSortDirectionToggle}
+            >
+              <ArrowUpDown className={cn(
+                "w-4 h-4 transition-transform",
+                sortDirection === "desc" && "rotate-180"
+              )} />
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {sortDirection === "asc" ? "Ascendente" : "Descendente"}
+          </p>
+        </div>
+
+        {/* Row 4: Date Range */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">
