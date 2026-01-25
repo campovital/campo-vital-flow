@@ -12,6 +12,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 interface Photo {
   id: string;
   photo_url: string;
+  caption?: string | null;
 }
 
 interface PhotoGalleryViewerProps {
@@ -227,6 +228,12 @@ export function PhotoGalleryViewer({
             }}
             draggable={false}
           />
+          {/* Caption overlay */}
+          {currentPhoto.caption && zoomLevel === 1 && (
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-md bg-black/70 text-white px-4 py-2 rounded-lg text-sm text-center">
+              {currentPhoto.caption}
+            </div>
+          )}
         </div>
 
         {/* Thumbnail strip */}

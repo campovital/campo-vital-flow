@@ -1,7 +1,14 @@
-import { useRef } from "react";
-import { Camera, X, Loader2, Upload, Plus } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, X, Loader2, Upload, Plus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface PhotoItem {
   id: string;
@@ -9,6 +16,7 @@ interface PhotoItem {
   photoUrl: string | null;
   uploading: boolean;
   error: string | null;
+  caption: string;
 }
 
 interface MultiPhotoCaptureProps {
@@ -16,6 +24,7 @@ interface MultiPhotoCaptureProps {
   maxPhotos?: number;
   onCapture: (file: File) => void;
   onRemove: (id: string) => void;
+  onCaptionChange?: (id: string, caption: string) => void;
 }
 
 export function MultiPhotoCapture({
@@ -23,9 +32,12 @@ export function MultiPhotoCapture({
   maxPhotos = 5,
   onCapture,
   onRemove,
+  onCaptionChange,
 }: MultiPhotoCaptureProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [editingPhoto, setEditingPhoto] = useState<PhotoItem | null>(null);
+  const [tempCaption, setTempCaption] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -45,6 +57,19 @@ export function MultiPhotoCapture({
 
   const triggerGallery = () => {
     fileInputRef.current?.click();
+  };
+
+  const openCaptionEditor = (photo: PhotoItem) => {
+    setEditingPhoto(photo);
+    setTempCaption(photo.caption);
+  };
+
+  const saveCaption = () => {
+    if (editingPhoto && onCaptionChange) {
+      onCaptionChange(editingPhoto.id, tempCaption);
+    }
+    setEditingPhoto(null);
+    setTempCaption("");
   };
 
   const canAddMore = photos.length < maxPhotos;
@@ -76,7 +101,7 @@ export function MultiPhotoCapture({
           {photos.map((photo) => (
             <div
               key={photo.id}
-              className="relative aspect-square rounded-lg overflow-hidden border border-border"
+              className="relative aspect-square rounded-lg overflow-hidden border border-border group"
             >
               <img
                 src={photo.previewUrl}
@@ -91,19 +116,40 @@ export function MultiPhotoCapture({
                   <Loader2 className="w-6 h-6 text-white animate-spin" />
                 </div>
               ) : (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6"
-                  onClick={() => onRemove(photo.id)}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6"
+                    onClick={() => onRemove(photo.id)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                  {onCaptionChange && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className={cn(
+                        "absolute bottom-1 right-1 h-6 w-6",
+                        photo.caption && "bg-primary text-primary-foreground hover:bg-primary/90"
+                      )}
+                      onClick={() => openCaptionEditor(photo)}
+                    >
+                      <MessageSquare className="w-3 h-3" />
+                    </Button>
+                  )}
+                </>
               )}
               {photo.error && (
                 <div className="absolute bottom-0 left-0 right-0 bg-destructive/90 px-1 py-0.5">
                   <span className="text-[10px] text-white">{photo.error}</span>
+                </div>
+              )}
+              {photo.caption && !photo.uploading && !photo.error && (
+                <div className="absolute bottom-0 left-0 right-6 bg-black/60 px-1 py-0.5 truncate">
+                  <span className="text-[10px] text-white">{photo.caption}</span>
                 </div>
               )}
             </div>
@@ -155,6 +201,39 @@ export function MultiPhotoCapture({
         </span>
         <span>JPG, PNG o WebP • Máx 5MB c/u</span>
       </div>
+
+      {/* Caption editor dialog */}
+      <Dialog open={!!editingPhoto} onOpenChange={(open) => !open && setEditingPhoto(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Agregar nota a la foto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editingPhoto && (
+              <img
+                src={editingPhoto.previewUrl}
+                alt="Foto"
+                className="w-full h-40 object-cover rounded-lg"
+              />
+            )}
+            <Input
+              placeholder="Ej: Daño visible en hojas nuevas..."
+              value={tempCaption}
+              onChange={(e) => setTempCaption(e.target.value)}
+              maxLength={150}
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {tempCaption.length}/150 caracteres
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditingPhoto(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={saveCaption}>Guardar nota</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
