@@ -325,6 +325,7 @@ export default function SeguimientoSanitario() {
                   key={report.id}
                   report={report}
                   onStatusChange={handleStatusChange}
+                  onPhotosAdded={fetchReports}
                   isUpdating={updating === report.id}
                 />
               ))
@@ -340,6 +341,7 @@ export default function SeguimientoSanitario() {
                   key={report.id}
                   report={report}
                   onStatusChange={handleStatusChange}
+                  onPhotosAdded={fetchReports}
                   isUpdating={updating === report.id}
                 />
               ))

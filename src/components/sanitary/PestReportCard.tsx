@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { PestReportStatusBadge } from "./PestReportStatusBadge";
 import { StatusHistoryDialog } from "./StatusHistoryDialog";
 import { PhotoGalleryViewer } from "./PhotoGalleryViewer";
+import { AddPhotosDialog } from "./AddPhotosDialog";
 import {
   Bug,
   MapPin,
@@ -42,6 +43,7 @@ interface PestReport {
 interface PestReportCardProps {
   report: PestReport;
   onStatusChange: (id: string, newStatus: PestReportStatus) => void;
+  onPhotosAdded?: () => void;
   isUpdating?: boolean;
 }
 
@@ -56,7 +58,7 @@ const getSeverityLabel = (severity: number) => {
   return labels[severity - 1] || "Moderado";
 };
 
-export function PestReportCard({ report, onStatusChange, isUpdating }: PestReportCardProps) {
+export function PestReportCard({ report, onStatusChange, onPhotosAdded, isUpdating }: PestReportCardProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
 
@@ -84,6 +86,8 @@ export function PestReportCard({ report, onStatusChange, isUpdating }: PestRepor
     : report.photo_url
     ? [{ id: "single", photo_url: report.photo_url }]
     : [];
+
+  const currentPhotoCount = galleryPhotos.length;
 
   const openGallery = (index: number = 0) => {
     setGalleryStartIndex(index);
@@ -201,19 +205,32 @@ export function PestReportCard({ report, onStatusChange, isUpdating }: PestRepor
         )}
       </div>
 
-      {/* Action button */}
-      {nextStatus && (
-        <Button
-          variant={report.status === "en_tratamiento" ? "success" : "confirm-warning"}
-          size="sm"
-          className="w-full"
-          onClick={() => onStatusChange(report.id, nextStatus)}
-          disabled={isUpdating}
-        >
-          {getActionLabel(report.status)}
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      )}
+      {/* Actions row */}
+      <div className="flex gap-2">
+        {/* Add photos button - only for non-resolved reports */}
+        {report.status !== "resuelto" && onPhotosAdded && (
+          <AddPhotosDialog
+            reportId={report.id}
+            pestType={report.pest_type}
+            currentPhotoCount={currentPhotoCount}
+            onPhotosAdded={onPhotosAdded}
+          />
+        )}
+        
+        {/* Status change button */}
+        {nextStatus && (
+          <Button
+            variant={report.status === "en_tratamiento" ? "success" : "confirm-warning"}
+            size="sm"
+            className="flex-1"
+            onClick={() => onStatusChange(report.id, nextStatus)}
+            disabled={isUpdating}
+          >
+            {getActionLabel(report.status)}
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        )}
+      </div>
     </Card>
   );
 }
