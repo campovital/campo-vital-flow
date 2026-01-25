@@ -467,7 +467,11 @@ export type Database = {
           pest_type: string
           photo_url: string | null
           reported_by: string | null
+          resolved_at: string | null
+          resolved_by: string | null
           severity: number
+          status: Database["public"]["Enums"]["pest_report_status"]
+          treatment_started_at: string | null
         }
         Insert: {
           created_at?: string
@@ -483,7 +487,11 @@ export type Database = {
           pest_type: string
           photo_url?: string | null
           reported_by?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           severity: number
+          status?: Database["public"]["Enums"]["pest_report_status"]
+          treatment_started_at?: string | null
         }
         Update: {
           created_at?: string
@@ -499,7 +507,11 @@ export type Database = {
           pest_type?: string
           photo_url?: string | null
           reported_by?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           severity?: number
+          status?: Database["public"]["Enums"]["pest_report_status"]
+          treatment_started_at?: string | null
         }
         Relationships: [
           {
@@ -830,6 +842,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "agronoma" | "operario" | "consulta"
       application_status: "ejecutada" | "no_ejecutada" | "ejecutada_con_novedad"
+      pest_report_status: "pendiente" | "en_tratamiento" | "resuelto"
       protocol_category:
         | "fenologia"
         | "epoca"
@@ -977,6 +990,7 @@ export const Constants = {
         "no_ejecutada",
         "ejecutada_con_novedad",
       ],
+      pest_report_status: ["pendiente", "en_tratamiento", "resuelto"],
       protocol_category: [
         "fenologia",
         "epoca",
