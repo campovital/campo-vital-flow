@@ -16,6 +16,7 @@ import {
   FileText,
   Users,
   MapPin,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -86,6 +87,11 @@ export function Sidebar({ className }: SidebarProps) {
         <NavLink to="/mapa-plagas" className={navLinkClass}>
           <MapPin className="w-5 h-5" />
           Mapa de Plagas
+        </NavLink>
+
+        <NavLink to="/seguimiento-sanitario" className={navLinkClass}>
+          <ClipboardCheck className="w-5 h-5" />
+          Seguimiento Sanitario
         </NavLink>
 
         <NavLink to="/historial" className={navLinkClass}>
