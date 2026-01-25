@@ -27,9 +27,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { format, subDays, subMonths, startOfDay, endOfDay, differenceInDays } from "date-fns";
+import { format, subDays, subMonths, startOfDay, endOfDay, differenceInDays, differenceInHours } from "date-fns";
 import { es } from "date-fns/locale";
-import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw } from "lucide-react";
+import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw, Timer, Target } from "lucide-react";
 import { DashboardPdfExport } from "./DashboardPdfExport";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +39,7 @@ interface PestReport {
   severity: number;
   status: string;
   created_at: string;
+  resolved_at: string | null;
   lot_id: string;
   lots: { name: string } | null;
 }
@@ -49,6 +50,7 @@ interface LotStats {
   pendiente: number;
   en_tratamiento: number;
   resuelto: number;
+  effectivenessRate: number;
 }
 
 interface TimeSeriesData {
@@ -98,6 +100,8 @@ export function SanitaryDashboard() {
   const [severityData, setSeverityData] = useState<SeverityData[]>([]);
   const [statusData, setStatusData] = useState<StatusData[]>([]);
   const [pestTypeData, setPestTypeData] = useState<{ name: string; value: number }[]>([]);
+  const [avgResolutionHours, setAvgResolutionHours] = useState<number | null>(null);
+  const [overallEffectivenessRate, setOverallEffectivenessRate] = useState<number>(0);
   
   // Date range state
   const [dateFrom, setDateFrom] = useState<Date>(subDays(new Date(), 30));
@@ -131,7 +135,7 @@ export function SanitaryDashboard() {
     try {
       const { data, error } = await supabase
         .from("pest_reports")
-        .select("id, pest_type, severity, status, created_at, lot_id, lots(name)")
+        .select("id, pest_type, severity, status, created_at, resolved_at, lot_id, lots(name)")
         .gte("created_at", startOfDay(dateFrom).toISOString())
         .lte("created_at", endOfDay(dateTo).toISOString())
         .order("created_at", { ascending: true });
@@ -149,6 +153,23 @@ export function SanitaryDashboard() {
   };
 
   const processData = (data: PestReport[]) => {
+    // Calculate average resolution time
+    const resolvedReports = data.filter(r => r.status === "resuelto" && r.resolved_at);
+    if (resolvedReports.length > 0) {
+      const totalHours = resolvedReports.reduce((sum, report) => {
+        const hours = differenceInHours(new Date(report.resolved_at!), new Date(report.created_at));
+        return sum + hours;
+      }, 0);
+      setAvgResolutionHours(Math.round(totalHours / resolvedReports.length));
+    } else {
+      setAvgResolutionHours(null);
+    }
+
+    // Calculate overall effectiveness rate
+    const totalReports = data.length;
+    const resolvedCount = data.filter(r => r.status === "resuelto").length;
+    setOverallEffectivenessRate(totalReports > 0 ? Math.round((resolvedCount / totalReports) * 100) : 0);
+
     // Process lot statistics
     const lotMap = new Map<string, LotStats>();
     data.forEach((report) => {
@@ -160,6 +181,7 @@ export function SanitaryDashboard() {
           pendiente: 0,
           en_tratamiento: 0,
           resuelto: 0,
+          effectivenessRate: 0,
         });
       }
       const stats = lotMap.get(lotName)!;
@@ -168,6 +190,12 @@ export function SanitaryDashboard() {
       else if (report.status === "en_tratamiento") stats.en_tratamiento++;
       else if (report.status === "resuelto") stats.resuelto++;
     });
+    
+    // Calculate effectiveness rate per lot
+    lotMap.forEach((stats) => {
+      stats.effectivenessRate = stats.total > 0 ? Math.round((stats.resuelto / stats.total) * 100) : 0;
+    });
+    
     setLotStats(Array.from(lotMap.values()));
 
     // Process time series (daily counts for the selected range)
@@ -368,6 +396,8 @@ export function SanitaryDashboard() {
               pendingReports={pendingReports}
               inTreatmentReports={inTreatmentReports}
               resolvedReports={resolvedReports}
+              avgResolutionHours={avgResolutionHours}
+              overallEffectivenessRate={overallEffectivenessRate}
               dateFrom={dateFrom}
               dateTo={dateTo}
               dateRangeLabel={getDateRangeLabel()}
@@ -378,7 +408,7 @@ export function SanitaryDashboard() {
 
       <div ref={dashboardRef} className="space-y-4 bg-background">
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <Card className="border-0 shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -430,6 +460,40 @@ export function SanitaryDashboard() {
               <div>
                 <p className="text-2xl font-bold">{resolvedReports}</p>
                 <p className="text-xs text-muted-foreground">Resueltos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Timer className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {avgResolutionHours !== null 
+                    ? avgResolutionHours >= 24 
+                      ? `${Math.round(avgResolutionHours / 24)}d`
+                      : `${avgResolutionHours}h`
+                    : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">Tiempo Promedio</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Target className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{overallEffectivenessRate}%</p>
+                <p className="text-xs text-muted-foreground">Tasa Efectividad</p>
               </div>
             </div>
           </CardContent>
@@ -493,6 +557,56 @@ export function SanitaryDashboard() {
                 <Bar dataKey="pendiente" stackId="a" fill={STATUS_COLORS.pendiente} radius={[0, 0, 0, 0]} />
                 <Bar dataKey="en_tratamiento" stackId="a" fill={STATUS_COLORS.en_tratamiento} radius={[0, 0, 0, 0]} />
                 <Bar dataKey="resuelto" stackId="a" fill={STATUS_COLORS.resuelto} radius={[4, 4, 4, 4]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Effectiveness Rate by Lot */}
+        <Card className="border-0 shadow-soft lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Tasa de Efectividad por Lote
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <BarChart data={lotStats} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} />
+                <YAxis 
+                  tick={{ fontSize: 10 }} 
+                  tickLine={false} 
+                  axisLine={false}
+                  domain={[0, 100]}
+                  tickFormatter={(value) => `${value}%`}
+                />
+                <ChartTooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload as LotStats;
+                      return (
+                        <div className="bg-background border rounded-lg shadow-lg p-2 text-xs">
+                          <p className="font-medium">{data.name}</p>
+                          <p className="text-muted-foreground">
+                            Efectividad: <span className="font-medium text-foreground">{data.effectivenessRate}%</span>
+                          </p>
+                          <p className="text-muted-foreground">
+                            Resueltos: {data.resuelto} de {data.total}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar 
+                  dataKey="effectivenessRate" 
+                  fill="hsl(var(--success))" 
+                  radius={[4, 4, 0, 0]}
+                  name="Efectividad"
+                />
               </BarChart>
             </ChartContainer>
           </CardContent>
