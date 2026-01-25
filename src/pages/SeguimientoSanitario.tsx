@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PestReportCard } from "@/components/sanitary/PestReportCard";
-import { SanitaryFilters } from "@/components/sanitary/SanitaryFilters";
+import { SanitaryFilters, SortOption, SortDirection } from "@/components/sanitary/SanitaryFilters";
 import { ExportButton } from "@/components/sanitary/ExportButton";
 import { SanitaryDashboard } from "@/components/sanitary/SanitaryDashboard";
 import {
@@ -63,6 +63,8 @@ export default function SeguimientoSanitario() {
   const [selectedSeverity, setSelectedSeverity] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<SortOption>("follow_up_date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [activeTab, setActiveTab] = useState<string>("pendiente");
   const [viewMode, setViewMode] = useState<"list" | "dashboard">("list");
 
@@ -77,7 +79,7 @@ export default function SeguimientoSanitario() {
 
   useEffect(() => {
     fetchReports();
-  }, [selectedLot, selectedPestType, selectedSeverity, dateFrom, dateTo]);
+  }, [selectedLot, selectedPestType, selectedSeverity, dateFrom, dateTo, sortBy, sortDirection]);
 
   const fetchLots = async () => {
     const { data } = await supabase
@@ -100,6 +102,8 @@ export default function SeguimientoSanitario() {
   const fetchReports = async () => {
     setLoading(true);
 
+    const isAscending = sortDirection === "asc";
+
     let query = supabase
       .from("pest_reports")
       .select(`
@@ -114,8 +118,7 @@ export default function SeguimientoSanitario() {
         lot:lots(name),
         pest_report_photos(id, photo_url, caption, created_at)
       `)
-      .order("follow_up_date", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+      .order(sortBy, { ascending: isAscending, nullsFirst: false });
 
     if (selectedLot !== "all") {
       query = query.eq("lot_id", selectedLot);
@@ -298,11 +301,15 @@ export default function SeguimientoSanitario() {
           selectedSeverity={selectedSeverity}
           dateFrom={dateFrom}
           dateTo={dateTo}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
           onLotChange={setSelectedLot}
           onPestTypeChange={setSelectedPestType}
           onSeverityChange={setSelectedSeverity}
           onDateFromChange={setDateFrom}
           onDateToChange={setDateTo}
+          onSortChange={setSortBy}
+          onSortDirectionToggle={() => setSortDirection(d => d === "asc" ? "desc" : "asc")}
           onClearFilters={clearFilters}
           hasActiveFilters={hasActiveFilters}
         />
