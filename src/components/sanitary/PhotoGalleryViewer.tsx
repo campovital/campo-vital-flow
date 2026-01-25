@@ -5,13 +5,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Clock, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Clock, Pencil, Trash2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { EditPhotoCaptionDialog } from "./EditPhotoCaptionDialog";
 import { DeletePhotoDialog } from "./DeletePhotoDialog";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface Photo {
   id: string;
@@ -35,6 +37,8 @@ export function PhotoGalleryViewer({
   onOpenChange,
   onPhotoUpdated,
 }: PhotoGalleryViewerProps) {
+  const { canManage } = useAuth();
+  const { toast } = useToast();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -177,6 +181,19 @@ export function PhotoGalleryViewer({
   };
 
   const canModifyPhoto = currentPhoto?.id !== "single";
+  const canDeletePhoto = canModifyPhoto && canManage;
+
+  const handleDeleteClick = () => {
+    if (!canManage) {
+      toast({
+        title: "Permisos insuficientes",
+        description: "Solo administradores y agrónomos pueden eliminar fotos",
+        variant: "destructive",
+      });
+      return;
+    }
+    setDeleteDialogOpen(true);
+  };
 
   if (!currentPhoto) return null;
 
@@ -301,17 +318,30 @@ export function PhotoGalleryViewer({
                       onClick={() => setEditDialogOpen(true)}
                     >
                       <Pencil className="w-3 h-3 mr-1" />
-                      Editar
+                      Editar nota
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/20 h-7"
-                      onClick={() => setDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="w-3 h-3 mr-1" />
-                      Eliminar
-                    </Button>
+                    {canDeletePhoto ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/20 h-7"
+                        onClick={handleDeleteClick}
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Eliminar
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground/60 cursor-not-allowed h-7"
+                        onClick={handleDeleteClick}
+                        title="Solo administradores y agrónomos pueden eliminar fotos"
+                      >
+                        <ShieldAlert className="w-3 h-3 mr-1" />
+                        Eliminar
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
