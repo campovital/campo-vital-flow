@@ -53,6 +53,7 @@ interface Lot {
 export default function SeguimientoSanitario() {
   const { toast } = useToast();
   const [reports, setReports] = useState<PestReport[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [lots, setLots] = useState<Lot[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -87,6 +88,7 @@ export default function SeguimientoSanitario() {
     fetchLots();
     fetchPestTypes();
     fetchReports();
+    fetchTotalCount();
   }, []);
 
   useEffect(() => {
@@ -108,6 +110,15 @@ export default function SeguimientoSanitario() {
     if (data) {
       const uniqueTypes = [...new Set(data.map((r) => r.pest_type))].sort();
       setAllPestTypes(uniqueTypes);
+    }
+  };
+
+  const fetchTotalCount = async () => {
+    const { count } = await supabase
+      .from("pest_reports")
+      .select("*", { count: "exact", head: true });
+    if (count !== null) {
+      setTotalCount(count);
     }
   };
 
@@ -230,9 +241,14 @@ export default function SeguimientoSanitario() {
               <Bug className="w-6 h-6 text-warning flex-shrink-0" />
               <span className="truncate">Seguimiento Sanitario</span>
             </h1>
-            <p className="text-muted-foreground text-sm">
-              Gestiona el estado de los reportes de plagas
-            </p>
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <span>Gestiona el estado de los reportes de plagas</span>
+              {hasActiveFilters && (
+                <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                  {reports.length} de {totalCount} reportes
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="flex border rounded-lg overflow-hidden">
