@@ -10,6 +10,7 @@ import AplicarMezcla from "./pages/AplicarMezcla";
 import Cosecha from "./pages/Cosecha";
 import ReporteSanitario from "./pages/ReporteSanitario";
 import MapaPlagas from "./pages/MapaPlagas";
+import SeguimientoSanitario from "./pages/SeguimientoSanitario";
 import Historial from "./pages/Historial";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/cosecha" element={<Cosecha />} />
             <Route path="/plagas" element={<ReporteSanitario />} />
             <Route path="/mapa-plagas" element={<MapaPlagas />} />
+            <Route path="/seguimiento-sanitario" element={<SeguimientoSanitario />} />
             <Route path="/historial" element={<Historial />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
