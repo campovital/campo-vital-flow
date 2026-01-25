@@ -29,7 +29,7 @@ import {
 } from "recharts";
 import { format, subDays, subMonths, startOfDay, endOfDay, differenceInDays, differenceInHours, startOfMonth, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw, Timer, Target, BarChart3, GitCompare } from "lucide-react";
+import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown, CalendarIcon, RefreshCw, Timer, Target, BarChart3, GitCompare, Minus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { DashboardPdfExport } from "./DashboardPdfExport";
@@ -384,6 +384,58 @@ export function SanitaryDashboard() {
   const pendingReports = reports.filter((r) => r.status === "pendiente").length;
   const inTreatmentReports = reports.filter((r) => r.status === "en_tratamiento").length;
   const resolvedReports = reports.filter((r) => r.status === "resuelto").length;
+
+  // Comparison metrics from previous period
+  const prevTotal = comparisonReports.length;
+  const prevPending = comparisonReports.filter((r) => r.status === "pendiente").length;
+  const prevTreatment = comparisonReports.filter((r) => r.status === "en_tratamiento").length;
+  const prevResolved = comparisonReports.filter((r) => r.status === "resuelto").length;
+  const prevEffectiveness = prevTotal > 0 ? Math.round((prevResolved / prevTotal) * 100) : 0;
+
+  // Trend indicator component
+  const TrendIndicator = ({ 
+    current, 
+    previous, 
+    invertColors = false 
+  }: { 
+    current: number; 
+    previous: number; 
+    invertColors?: boolean;
+  }) => {
+    if (!comparisonEnabled || previous === 0 && current === 0) return null;
+    
+    const diff = current - previous;
+    const percentChange = previous > 0 
+      ? Math.round((diff / previous) * 100) 
+      : current > 0 ? 100 : 0;
+    
+    if (diff === 0) {
+      return (
+        <span className="flex items-center gap-0.5 text-xs text-muted-foreground ml-1">
+          <Minus className="w-3 h-3" />
+          <span>0%</span>
+        </span>
+      );
+    }
+    
+    const isPositive = diff > 0;
+    // For some metrics (like pending), increase is bad, so we invert the colors
+    const isGood = invertColors ? !isPositive : isPositive;
+    
+    return (
+      <span className={cn(
+        "flex items-center gap-0.5 text-xs font-medium ml-1 animate-fade-in",
+        isGood ? "text-success" : "text-destructive"
+      )}>
+        {isPositive ? (
+          <TrendingUp className="w-3 h-3" />
+        ) : (
+          <TrendingDown className="w-3 h-3" />
+        )}
+        <span>{isPositive ? "+" : ""}{percentChange}%</span>
+      </span>
+    );
+  };
   
   const getDateRangeLabel = () => {
     const preset = DATE_PRESETS.find(p => p.id === activePreset);
@@ -630,7 +682,10 @@ export function SanitaryDashboard() {
                 <Bug className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{totalReports}</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold">{totalReports}</p>
+                  <TrendIndicator current={totalReports} previous={prevTotal} />
+                </div>
                 <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
@@ -644,7 +699,10 @@ export function SanitaryDashboard() {
                 <AlertTriangle className="w-5 h-5 text-warning" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{pendingReports}</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold">{pendingReports}</p>
+                  <TrendIndicator current={pendingReports} previous={prevPending} invertColors />
+                </div>
                 <p className="text-xs text-muted-foreground">Pendientes</p>
               </div>
             </div>
@@ -658,7 +716,10 @@ export function SanitaryDashboard() {
                 <Clock className="w-5 h-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{inTreatmentReports}</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold">{inTreatmentReports}</p>
+                  <TrendIndicator current={inTreatmentReports} previous={prevTreatment} />
+                </div>
                 <p className="text-xs text-muted-foreground">En Tratamiento</p>
               </div>
             </div>
@@ -672,7 +733,10 @@ export function SanitaryDashboard() {
                 <CheckCircle className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{resolvedReports}</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold">{resolvedReports}</p>
+                  <TrendIndicator current={resolvedReports} previous={prevResolved} />
+                </div>
                 <p className="text-xs text-muted-foreground">Resueltos</p>
               </div>
             </div>
@@ -706,7 +770,10 @@ export function SanitaryDashboard() {
                 <Target className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{overallEffectivenessRate}%</p>
+                <div className="flex items-center">
+                  <p className="text-2xl font-bold">{overallEffectivenessRate}%</p>
+                  <TrendIndicator current={overallEffectivenessRate} previous={prevEffectiveness} />
+                </div>
                 <p className="text-xs text-muted-foreground">Tasa Efectividad</p>
               </div>
             </div>
