@@ -1,96 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* =============================================
+   CAMPOVITAL GULUPA - DESIGN SYSTEM
+   Aesthetic: Agricultural Professional
+   Colors: Forest greens, terracotta, harvest gold
+   ============================================= */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core brand colors */
+    --forest: 150 45% 23%;
+    --forest-light: 150 35% 35%;
+    --forest-dark: 150 55% 15%;
+    
+    --terracotta: 25 55% 55%;
+    --terracotta-light: 25 45% 70%;
+    --terracotta-dark: 25 65% 40%;
+    
+    --harvest: 45 85% 55%;
+    --harvest-light: 45 75% 75%;
+    
+    --earth: 30 25% 35%;
+    --earth-light: 30 15% 55%;
+    
+    --cream: 40 30% 96%;
+    --cream-dark: 40 20% 90%;
+
+    /* Semantic tokens */
+    --background: 40 30% 98%;
+    --foreground: 150 45% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 150 45% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 150 45% 10%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 150 45% 23%;
+    --primary-foreground: 40 30% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 25 55% 55%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 150 20% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 45 85% 55%;
+    --accent-foreground: 150 45% 10%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --success: 142 72% 29%;
+    --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --warning: 38 92% 50%;
+    --warning-foreground: 150 45% 10%;
 
-    --sidebar-background: 0 0% 98%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 150 45% 23%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --radius: 0.75rem;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Sidebar */
+    --sidebar-background: 150 45% 18%;
+    --sidebar-foreground: 40 30% 95%;
+    --sidebar-primary: 45 85% 55%;
+    --sidebar-primary-foreground: 150 45% 10%;
+    --sidebar-accent: 150 35% 25%;
+    --sidebar-accent-foreground: 40 30% 95%;
+    --sidebar-border: 150 30% 25%;
+    --sidebar-ring: 45 85% 55%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Custom gradients */
+    --gradient-forest: linear-gradient(135deg, hsl(150 45% 23%) 0%, hsl(150 55% 15%) 100%);
+    --gradient-sunrise: linear-gradient(135deg, hsl(25 55% 55%) 0%, hsl(45 85% 55%) 100%);
+    --gradient-earth: linear-gradient(180deg, hsl(40 30% 98%) 0%, hsl(40 20% 92%) 100%);
+    --gradient-field: linear-gradient(180deg, hsl(150 45% 23%) 0%, hsl(150 35% 35%) 50%, hsl(45 85% 55% / 0.2) 100%);
+    
+    /* Shadows */
+    --shadow-soft: 0 2px 8px -2px hsl(150 45% 10% / 0.08);
+    --shadow-medium: 0 4px 16px -4px hsl(150 45% 10% / 0.12);
+    --shadow-strong: 0 8px 32px -8px hsl(150 45% 10% / 0.16);
+    --shadow-glow: 0 0 20px hsl(45 85% 55% / 0.3);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 150 40% 8%;
+    --foreground: 40 30% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 150 35% 12%;
+    --card-foreground: 40 30% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 150 35% 12%;
+    --popover-foreground: 40 30% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 45 85% 55%;
+    --primary-foreground: 150 45% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 25 55% 45%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 150 30% 18%;
+    --muted-foreground: 40 20% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 150 35% 25%;
+    --accent-foreground: 40 30% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 150 25% 20%;
+    --input: 150 25% 20%;
+    --ring: 45 85% 55%;
+
+    --sidebar-background: 150 45% 8%;
+    --sidebar-foreground: 40 30% 90%;
+    --sidebar-primary: 45 85% 55%;
+    --sidebar-primary-foreground: 150 45% 10%;
+    --sidebar-accent: 150 30% 15%;
+    --sidebar-accent-foreground: 40 30% 90%;
+    --sidebar-border: 150 25% 15%;
+    --sidebar-ring: 45 85% 55%;
   }
 }
 
@@ -99,7 +138,235 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Work Sans', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted/50;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+}
+
+@layer components {
+  /* Card variants */
+  .card-elevated {
+    @apply bg-card rounded-xl shadow-[var(--shadow-medium)] border border-border/50;
+  }
+
+  .card-interactive {
+    @apply card-elevated transition-all duration-200 hover:shadow-[var(--shadow-strong)] hover:-translate-y-0.5 cursor-pointer;
+  }
+
+  /* Badge variants */
+  .badge-success {
+    @apply bg-success/10 text-success border border-success/20;
+  }
+
+  .badge-warning {
+    @apply bg-warning/10 text-warning border border-warning/20;
+  }
+
+  .badge-info {
+    @apply bg-info/10 text-info border border-info/20;
+  }
+
+  /* Status indicators */
+  .status-dot {
+    @apply w-2 h-2 rounded-full animate-pulse;
+  }
+
+  .status-active {
+    @apply bg-success;
+  }
+
+  .status-pending {
+    @apply bg-warning;
+  }
+
+  .status-inactive {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Field gradient background */
+  .bg-field-gradient {
+    background: var(--gradient-field);
+  }
+
+  /* Sunrise gradient */
+  .bg-sunrise-gradient {
+    background: var(--gradient-sunrise);
+  }
+
+  /* Forest gradient */
+  .bg-forest-gradient {
+    background: var(--gradient-forest);
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+
+  .glass-dark {
+    @apply bg-black/40 backdrop-blur-md border border-white/10;
+  }
+
+  /* Action button for field use */
+  .btn-field {
+    @apply h-14 px-6 text-lg font-semibold rounded-xl shadow-[var(--shadow-medium)] 
+           active:scale-[0.98] transition-transform;
+  }
+
+  /* Confirmation button (large touch target) */
+  .btn-confirm {
+    @apply h-16 w-full text-xl font-bold rounded-2xl shadow-[var(--shadow-strong)]
+           active:scale-[0.98] transition-transform;
+  }
+
+  /* Step indicator */
+  .step-indicator {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+           bg-primary text-primary-foreground;
+  }
+
+  .step-indicator-pending {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  .step-indicator-complete {
+    @apply bg-success text-success-foreground;
+  }
+
+  /* Protocol card */
+  .protocol-card {
+    @apply card-elevated p-4 space-y-3 border-l-4 border-l-primary;
+  }
+
+  /* Lot selector card */
+  .lot-card {
+    @apply card-interactive p-5 flex items-center gap-4;
+  }
+
+  .lot-card-selected {
+    @apply ring-2 ring-primary ring-offset-2 bg-primary/5;
+  }
+
+  /* Calendar day */
+  .calendar-day {
+    @apply w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium
+           hover:bg-muted transition-colors cursor-pointer;
+  }
+
+  .calendar-day-active {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+
+  .calendar-day-has-event {
+    @apply relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2
+           after:w-1 after:h-1 after:rounded-full after:bg-secondary;
+  }
+}
+
+@layer utilities {
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Semantic colors */
+  .text-forest {
+    color: hsl(var(--forest));
+  }
+
+  .bg-forest {
+    background-color: hsl(var(--forest));
+  }
+
+  .text-terracotta {
+    color: hsl(var(--terracotta));
+  }
+
+  .bg-terracotta {
+    background-color: hsl(var(--terracotta));
+  }
+
+  .text-harvest {
+    color: hsl(var(--harvest));
+  }
+
+  .bg-harvest {
+    background-color: hsl(var(--harvest));
+  }
+
+  .text-earth {
+    color: hsl(var(--earth));
+  }
+
+  .bg-earth {
+    background-color: hsl(var(--earth));
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Touch-friendly spacing */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
   }
 }
