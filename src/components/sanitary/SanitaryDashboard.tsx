@@ -27,9 +27,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { format, subDays, subMonths, startOfDay, endOfDay, differenceInDays, differenceInHours } from "date-fns";
+import { format, subDays, subMonths, startOfDay, endOfDay, differenceInDays, differenceInHours, startOfMonth, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw, Timer, Target } from "lucide-react";
+import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw, Timer, Target, BarChart3 } from "lucide-react";
 import { DashboardPdfExport } from "./DashboardPdfExport";
 import { cn } from "@/lib/utils";
 
@@ -70,6 +70,14 @@ interface StatusData {
   color: string;
 }
 
+interface MonthlyTrendData {
+  month: string;
+  total: number;
+  pendiente: number;
+  en_tratamiento: number;
+  resuelto: number;
+}
+
 type DatePreset = "7days" | "30days" | "90days" | "custom";
 
 interface DatePresetOption {
@@ -102,6 +110,7 @@ export function SanitaryDashboard() {
   const [pestTypeData, setPestTypeData] = useState<{ name: string; value: number }[]>([]);
   const [avgResolutionHours, setAvgResolutionHours] = useState<number | null>(null);
   const [overallEffectivenessRate, setOverallEffectivenessRate] = useState<number>(0);
+  const [monthlyTrendData, setMonthlyTrendData] = useState<MonthlyTrendData[]>([]);
   
   // Date range state
   const [dateFrom, setDateFrom] = useState<Date>(subDays(new Date(), 30));
@@ -257,6 +266,35 @@ export function SanitaryDashboard() {
         .sort((a, b) => b.value - a.value)
         .slice(0, 5)
     );
+
+    // Process monthly trend data
+    const monthlyMap = new Map<string, MonthlyTrendData>();
+    data.forEach((report) => {
+      const monthKey = format(new Date(report.created_at), "yyyy-MM");
+      const monthLabel = format(new Date(report.created_at), "MMM yyyy", { locale: es });
+      
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, {
+          month: monthLabel,
+          total: 0,
+          pendiente: 0,
+          en_tratamiento: 0,
+          resuelto: 0,
+        });
+      }
+      
+      const stats = monthlyMap.get(monthKey)!;
+      stats.total++;
+      if (report.status === "pendiente") stats.pendiente++;
+      else if (report.status === "en_tratamiento") stats.en_tratamiento++;
+      else if (report.status === "resuelto") stats.resuelto++;
+    });
+    
+    // Sort by month and set data
+    const sortedMonthly = Array.from(monthlyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, value]) => value);
+    setMonthlyTrendData(sortedMonthly);
   };
 
   const totalReports = reports.length;
@@ -679,6 +717,60 @@ export function SanitaryDashboard() {
                   <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Monthly Trend Chart */}
+        {monthlyTrendData.length > 1 && (
+          <Card className="border-0 shadow-soft lg:col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Tendencia Mensual
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <BarChart data={monthlyTrendData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <ChartTooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload as MonthlyTrendData;
+                        return (
+                          <div className="bg-background border rounded-lg shadow-lg p-3 text-xs">
+                            <p className="font-medium mb-2">{label}</p>
+                            <div className="space-y-1">
+                              <p className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS.pendiente }} />
+                                Pendientes: <span className="font-medium">{data.pendiente}</span>
+                              </p>
+                              <p className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS.en_tratamiento }} />
+                                En Tratamiento: <span className="font-medium">{data.en_tratamiento}</span>
+                              </p>
+                              <p className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: STATUS_COLORS.resuelto }} />
+                                Resueltos: <span className="font-medium">{data.resuelto}</span>
+                              </p>
+                              <p className="border-t pt-1 mt-1">
+                                Total: <span className="font-bold">{data.total}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="pendiente" stackId="monthly" fill={STATUS_COLORS.pendiente} radius={[0, 0, 0, 0]} name="Pendiente" />
+                  <Bar dataKey="en_tratamiento" stackId="monthly" fill={STATUS_COLORS.en_tratamiento} radius={[0, 0, 0, 0]} name="En Tratamiento" />
+                  <Bar dataKey="resuelto" stackId="monthly" fill={STATUS_COLORS.resuelto} radius={[4, 4, 0, 0]} name="Resuelto" />
                 </BarChart>
               </ChartContainer>
             </CardContent>
