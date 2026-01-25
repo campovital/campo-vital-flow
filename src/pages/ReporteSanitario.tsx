@@ -18,7 +18,9 @@ import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useGeolocation } from "@/hooks/use-geolocation";
+import { usePhotoUpload } from "@/hooks/use-photo-upload";
 import { GpsIndicator } from "@/components/sanitary/GpsIndicator";
+import { PhotoCapture } from "@/components/sanitary/PhotoCapture";
 import {
   Bug,
   MapPin,
@@ -65,6 +67,9 @@ export default function ReporteSanitario() {
   // GPS capture
   const gps = useGeolocation({ autoCapture: false });
   
+  // Photo upload
+  const photo = usePhotoUpload({ bucket: "pest-photos", folder: "reports" });
+  
   // Form fields
   const [pestType, setPestType] = useState("");
   const [severity, setSeverity] = useState([3]);
@@ -103,6 +108,7 @@ export default function ReporteSanitario() {
       incidence_percent: incidence ? parseFloat(incidence) : null,
       gps_lat: gps.latitude,
       gps_lng: gps.longitude,
+      photo_url: photo.photoUrl,
       notes,
     });
 
@@ -129,6 +135,7 @@ export default function ReporteSanitario() {
     setSeverity([3]);
     setIncidence("");
     setNotes("");
+    photo.clearPhoto();
   };
 
   const getSeverityColor = (value: number) => {
@@ -293,16 +300,19 @@ export default function ReporteSanitario() {
                   />
                 </div>
 
-                {/* Photo placeholder */}
+                {/* Photo capture */}
                 <div>
                   <Label className="flex items-center gap-2 mb-2">
                     <Camera className="w-4 h-4" />
                     Evidencia fotográfica
                   </Label>
-                  <div className="border-2 border-dashed border-border rounded-xl p-8 text-center text-muted-foreground">
-                    <Camera className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Función próximamente</p>
-                  </div>
+                  <PhotoCapture
+                    previewUrl={photo.previewUrl}
+                    uploading={photo.uploading}
+                    error={photo.error}
+                    onCapture={photo.uploadPhoto}
+                    onClear={photo.clearPhoto}
+                  />
                 </div>
               </CardContent>
             </Card>
