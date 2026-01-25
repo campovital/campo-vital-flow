@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { useState, useEffect } from "react";
+import { startOfDay, endOfDay } from "date-fns";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PestReportCard } from "@/components/sanitary/PestReportCard";
 import { SanitaryFilters } from "@/components/sanitary/SanitaryFilters";
 import { ExportButton } from "@/components/sanitary/ExportButton";
+import { SanitaryDashboard } from "@/components/sanitary/SanitaryDashboard";
 import {
   Bug,
   Clock,
@@ -16,6 +17,8 @@ import {
   CheckCircle,
   AlertTriangle,
   RefreshCw,
+  BarChart3,
+  List,
 } from "lucide-react";
 
 type PestReportStatus = "pendiente" | "en_tratamiento" | "resuelto";
@@ -52,6 +55,7 @@ export default function SeguimientoSanitario() {
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>("pendiente");
+  const [viewMode, setViewMode] = useState<"list" | "dashboard">("list");
 
   // Get unique pest types from all reports
   const [allPestTypes, setAllPestTypes] = useState<string[]>([]);
@@ -193,6 +197,24 @@ export default function SeguimientoSanitario() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex border rounded-lg overflow-hidden">
+              <Button
+                variant={viewMode === "list" ? "secondary" : "ghost"}
+                size="icon"
+                className="rounded-none h-9 w-9"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === "dashboard" ? "secondary" : "ghost"}
+                size="icon"
+                className="rounded-none h-9 w-9"
+                onClick={() => setViewMode("dashboard")}
+              >
+                <BarChart3 className="w-4 h-4" />
+              </Button>
+            </div>
             <ExportButton reports={reports} disabled={loading} />
             <Button variant="ghost" size="icon" onClick={fetchReports}>
               <RefreshCw className={loading ? "animate-spin" : ""} />
@@ -200,18 +222,22 @@ export default function SeguimientoSanitario() {
           </div>
         </div>
 
-        {/* Overdue alert */}
-        {overdueCount > 0 && (
-          <Card className="border-destructive/50 bg-destructive/10">
-            <CardContent className="py-3 flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-              <span className="text-sm font-medium">
-                {overdueCount} reporte{overdueCount > 1 ? "s" : ""} con
-                seguimiento vencido
-              </span>
-            </CardContent>
-          </Card>
-        )}
+        {viewMode === "dashboard" ? (
+          <SanitaryDashboard />
+        ) : (
+          <>
+            {/* Overdue alert */}
+            {overdueCount > 0 && (
+              <Card className="border-destructive/50 bg-destructive/10">
+                <CardContent className="py-3 flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  <span className="text-sm font-medium">
+                    {overdueCount} reporte{overdueCount > 1 ? "s" : ""} con
+                    seguimiento vencido
+                  </span>
+                </CardContent>
+              </Card>
+            )}
 
         {/* Summary cards */}
         <div className="grid grid-cols-3 gap-3">
@@ -328,6 +354,8 @@ export default function SeguimientoSanitario() {
             )}
           </TabsContent>
         </Tabs>
+          </>
+        )}
       </div>
     </AppLayout>
   );

@@ -1,0 +1,416 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { es } from "date-fns/locale";
+import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
+
+interface PestReport {
+  id: string;
+  pest_type: string;
+  severity: number;
+  status: string;
+  created_at: string;
+  lot_id: string;
+  lots: { name: string } | null;
+}
+
+interface LotStats {
+  name: string;
+  total: number;
+  pendiente: number;
+  en_tratamiento: number;
+  resuelto: number;
+}
+
+interface TimeSeriesData {
+  date: string;
+  reportes: number;
+}
+
+interface SeverityData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface StatusData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+const SEVERITY_COLORS = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
+const STATUS_COLORS = {
+  pendiente: "hsl(var(--warning))",
+  en_tratamiento: "hsl(var(--info))",
+  resuelto: "hsl(var(--success))",
+};
+
+export function SanitaryDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [reports, setReports] = useState<PestReport[]>([]);
+  const [lotStats, setLotStats] = useState<LotStats[]>([]);
+  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
+  const [severityData, setSeverityData] = useState<SeverityData[]>([]);
+  const [statusData, setStatusData] = useState<StatusData[]>([]);
+  const [pestTypeData, setPestTypeData] = useState<{ name: string; value: number }[]>([]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const thirtyDaysAgo = subDays(new Date(), 30);
+      
+      const { data, error } = await supabase
+        .from("pest_reports")
+        .select("id, pest_type, severity, status, created_at, lot_id, lots(name)")
+        .gte("created_at", startOfDay(thirtyDaysAgo).toISOString())
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      const typedData = (data || []) as PestReport[];
+      setReports(typedData);
+      processData(typedData);
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const processData = (data: PestReport[]) => {
+    // Process lot statistics
+    const lotMap = new Map<string, LotStats>();
+    data.forEach((report) => {
+      const lotName = report.lots?.name || "Sin lote";
+      if (!lotMap.has(lotName)) {
+        lotMap.set(lotName, {
+          name: lotName,
+          total: 0,
+          pendiente: 0,
+          en_tratamiento: 0,
+          resuelto: 0,
+        });
+      }
+      const stats = lotMap.get(lotName)!;
+      stats.total++;
+      if (report.status === "pendiente") stats.pendiente++;
+      else if (report.status === "en_tratamiento") stats.en_tratamiento++;
+      else if (report.status === "resuelto") stats.resuelto++;
+    });
+    setLotStats(Array.from(lotMap.values()));
+
+    // Process time series (daily counts for last 30 days)
+    const dateMap = new Map<string, number>();
+    for (let i = 29; i >= 0; i--) {
+      const date = format(subDays(new Date(), i), "yyyy-MM-dd");
+      dateMap.set(date, 0);
+    }
+    data.forEach((report) => {
+      const date = format(new Date(report.created_at), "yyyy-MM-dd");
+      if (dateMap.has(date)) {
+        dateMap.set(date, (dateMap.get(date) || 0) + 1);
+      }
+    });
+    setTimeSeriesData(
+      Array.from(dateMap.entries()).map(([date, count]) => ({
+        date: format(new Date(date), "dd MMM", { locale: es }),
+        reportes: count,
+      }))
+    );
+
+    // Process severity distribution
+    const severityCounts = [0, 0, 0, 0, 0];
+    data.forEach((report) => {
+      if (report.severity >= 1 && report.severity <= 5) {
+        severityCounts[report.severity - 1]++;
+      }
+    });
+    setSeverityData(
+      severityCounts.map((count, index) => ({
+        name: `Nivel ${index + 1}`,
+        value: count,
+        color: SEVERITY_COLORS[index],
+      }))
+    );
+
+    // Process status distribution
+    const statusCounts = { pendiente: 0, en_tratamiento: 0, resuelto: 0 };
+    data.forEach((report) => {
+      if (report.status in statusCounts) {
+        statusCounts[report.status as keyof typeof statusCounts]++;
+      }
+    });
+    setStatusData([
+      { name: "Pendiente", value: statusCounts.pendiente, color: STATUS_COLORS.pendiente },
+      { name: "En Tratamiento", value: statusCounts.en_tratamiento, color: STATUS_COLORS.en_tratamiento },
+      { name: "Resuelto", value: statusCounts.resuelto, color: STATUS_COLORS.resuelto },
+    ]);
+
+    // Process pest type distribution
+    const pestTypeMap = new Map<string, number>();
+    data.forEach((report) => {
+      pestTypeMap.set(report.pest_type, (pestTypeMap.get(report.pest_type) || 0) + 1);
+    });
+    setPestTypeData(
+      Array.from(pestTypeMap.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5)
+    );
+  };
+
+  const totalReports = reports.length;
+  const pendingReports = reports.filter((r) => r.status === "pendiente").length;
+  const inTreatmentReports = reports.filter((r) => r.status === "en_tratamiento").length;
+  const resolvedReports = reports.filter((r) => r.status === "resuelto").length;
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-64" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const chartConfig = {
+    reportes: { label: "Reportes", color: "hsl(var(--primary))" },
+    pendiente: { label: "Pendiente", color: STATUS_COLORS.pendiente },
+    en_tratamiento: { label: "En Tratamiento", color: STATUS_COLORS.en_tratamiento },
+    resuelto: { label: "Resuelto", color: STATUS_COLORS.resuelto },
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Card className="border-0 shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Bug className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{totalReports}</p>
+                <p className="text-xs text-muted-foreground">Total (30 días)</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{pendingReports}</p>
+                <p className="text-xs text-muted-foreground">Pendientes</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-info" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{inTreatmentReports}</p>
+                <p className="text-xs text-muted-foreground">En Tratamiento</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-soft">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{resolvedReports}</p>
+                <p className="text-xs text-muted-foreground">Resueltos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Time Series Chart */}
+        <Card className="border-0 shadow-soft">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Reportes por Día (últimos 30 días)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <LineChart data={timeSeriesData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis 
+                  dataKey="date" 
+                  tick={{ fontSize: 10 }} 
+                  interval="preserveStartEnd"
+                  tickLine={false}
+                />
+                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="reportes"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              </LineChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Reports by Lot */}
+        <Card className="border-0 shadow-soft">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Reportes por Lote</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <BarChart data={lotStats} layout="vertical" margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  tick={{ fontSize: 10 }} 
+                  tickLine={false} 
+                  axisLine={false}
+                  width={80}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="pendiente" stackId="a" fill={STATUS_COLORS.pendiente} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="en_tratamiento" stackId="a" fill={STATUS_COLORS.en_tratamiento} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="resuelto" stackId="a" fill={STATUS_COLORS.resuelto} radius={[4, 4, 4, 4]} />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Severity Distribution */}
+        <Card className="border-0 shadow-soft">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Distribución por Severidad</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
+              <BarChart data={severityData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} />
+                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {severityData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Status Distribution */}
+        <Card className="border-0 shadow-soft">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Estado de Reportes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px] w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={false}
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Pest Types */}
+        {pestTypeData.length > 0 && (
+          <Card className="border-0 shadow-soft lg:col-span-2">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Top 5 Tipos de Plaga</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                <BarChart data={pestTypeData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
