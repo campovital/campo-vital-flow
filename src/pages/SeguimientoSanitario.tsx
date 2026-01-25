@@ -10,6 +10,7 @@ import { PestReportCard } from "@/components/sanitary/PestReportCard";
 import { SanitaryFilters, SortOption, SortDirection } from "@/components/sanitary/SanitaryFilters";
 import { ExportButton } from "@/components/sanitary/ExportButton";
 import { SanitaryDashboard } from "@/components/sanitary/SanitaryDashboard";
+import { BatchActionsBar } from "@/components/sanitary/BatchActionsBar";
 import {
   Bug,
   Clock,
@@ -19,6 +20,7 @@ import {
   RefreshCw,
   BarChart3,
   List,
+  CheckSquare,
 } from "lucide-react";
 
 type PestReportStatus = "pendiente" | "en_tratamiento" | "resuelto";
@@ -69,6 +71,9 @@ export default function SeguimientoSanitario() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [activeTab, setActiveTab] = useState<string>("pendiente");
   const [viewMode, setViewMode] = useState<"list" | "dashboard">("list");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
+  const [batchUpdating, setBatchUpdating] = useState(false);
   
   // Debounced search for performance
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
@@ -217,6 +222,54 @@ export default function SeguimientoSanitario() {
     setUpdating(null);
   };
 
+  const handleSelectionChange = (id: string, selected: boolean) => {
+    setSelectedReports(prev => {
+      const newSet = new Set(prev);
+      if (selected) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBatchStatusChange = async (newStatus: PestReportStatus) => {
+    if (selectedReports.size === 0) return;
+    
+    setBatchUpdating(true);
+    
+    const { error } = await supabase
+      .from("pest_reports")
+      .update({ status: newStatus })
+      .in("id", Array.from(selectedReports));
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "No se pudieron actualizar los reportes",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Estados actualizados",
+        description: `${selectedReports.size} reporte${selectedReports.size > 1 ? "s" : ""} actualizado${selectedReports.size > 1 ? "s" : ""} a "${newStatus.replace("_", " ")}"`,
+      });
+      setSelectedReports(new Set());
+      setSelectionMode(false);
+      fetchReports();
+    }
+    
+    setBatchUpdating(false);
+  };
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    if (selectionMode) {
+      setSelectedReports(new Set());
+    }
+  };
+
   const filterReportsByStatus = (status: PestReportStatus) =>
     reports.filter((r) => r.status === status);
 
@@ -269,6 +322,17 @@ export default function SeguimientoSanitario() {
                 <BarChart3 className="w-4 h-4" />
               </Button>
             </div>
+            {viewMode === "list" && (
+              <Button
+                variant={selectionMode ? "secondary" : "outline"}
+                size="sm"
+                onClick={toggleSelectionMode}
+                className="gap-1.5"
+              >
+                <CheckSquare className="w-4 h-4" />
+                <span className="hidden sm:inline">Seleccionar</span>
+              </Button>
+            )}
             <ExportButton reports={reports} disabled={loading} isFiltered={hasActiveFilters} totalCount={totalCount} />
             <Button variant="ghost" size="icon" onClick={fetchReports}>
               <RefreshCw className={loading ? "animate-spin" : ""} />
@@ -382,6 +446,9 @@ export default function SeguimientoSanitario() {
                   onStatusChange={handleStatusChange}
                   onPhotosAdded={fetchReports}
                   isUpdating={updating === report.id}
+                  selectable={selectionMode}
+                  isSelected={selectedReports.has(report.id)}
+                  onSelectionChange={handleSelectionChange}
                 />
               ))
             )}
@@ -398,6 +465,9 @@ export default function SeguimientoSanitario() {
                   onStatusChange={handleStatusChange}
                   onPhotosAdded={fetchReports}
                   isUpdating={updating === report.id}
+                  selectable={selectionMode}
+                  isSelected={selectedReports.has(report.id)}
+                  onSelectionChange={handleSelectionChange}
                 />
               ))
             )}
@@ -413,11 +483,25 @@ export default function SeguimientoSanitario() {
                   report={report}
                   onStatusChange={handleStatusChange}
                   isUpdating={updating === report.id}
+                  selectable={selectionMode}
+                  isSelected={selectedReports.has(report.id)}
+                  onSelectionChange={handleSelectionChange}
                 />
               ))
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Batch Actions Bar */}
+        <BatchActionsBar
+          selectedCount={selectedReports.size}
+          onClearSelection={() => {
+            setSelectedReports(new Set());
+            setSelectionMode(false);
+          }}
+          onBatchStatusChange={handleBatchStatusChange}
+          isUpdating={batchUpdating}
+        />
           </>
         )}
       </div>

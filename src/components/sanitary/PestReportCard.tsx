@@ -4,6 +4,7 @@ import { es } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PestReportStatusBadge } from "./PestReportStatusBadge";
 import { StatusHistoryDialog } from "./StatusHistoryDialog";
 import { PhotoGalleryViewer } from "./PhotoGalleryViewer";
@@ -48,6 +49,9 @@ interface PestReportCardProps {
   onStatusChange: (id: string, newStatus: PestReportStatus) => void;
   onPhotosAdded?: () => void;
   isUpdating?: boolean;
+  selectable?: boolean;
+  isSelected?: boolean;
+  onSelectionChange?: (id: string, selected: boolean) => void;
 }
 
 const getSeverityColor = (severity: number) => {
@@ -61,7 +65,15 @@ const getSeverityLabel = (severity: number) => {
   return labels[severity - 1] || "Moderado";
 };
 
-export function PestReportCard({ report, onStatusChange, onPhotosAdded, isUpdating }: PestReportCardProps) {
+export function PestReportCard({ 
+  report, 
+  onStatusChange, 
+  onPhotosAdded, 
+  isUpdating,
+  selectable = false,
+  isSelected = false,
+  onSelectionChange,
+}: PestReportCardProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
 
@@ -101,11 +113,19 @@ export function PestReportCard({ report, onStatusChange, onPhotosAdded, isUpdati
     <Card className={cn(
       "p-4 space-y-3 transition-all",
       isOverdue && "border-destructive/50 bg-destructive/5",
-      isDueToday && report.status !== "resuelto" && "border-warning/50 bg-warning/5"
+      isDueToday && report.status !== "resuelto" && "border-warning/50 bg-warning/5",
+      isSelected && "ring-2 ring-primary border-primary"
     )}>
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
+          {selectable && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={(checked) => onSelectionChange?.(report.id, !!checked)}
+              className="mr-1"
+            />
+          )}
           <Bug className={cn("w-5 h-5", getSeverityColor(report.severity))} />
           <span className="font-semibold">{report.pest_type}</span>
         </div>
