@@ -17,6 +17,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import { GpsIndicator } from "@/components/sanitary/GpsIndicator";
 import {
   Bug,
   MapPin,
@@ -60,6 +62,9 @@ export default function ReporteSanitario() {
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
+  // GPS capture
+  const gps = useGeolocation({ autoCapture: false });
+  
   // Form fields
   const [pestType, setPestType] = useState("");
   const [severity, setSeverity] = useState([3]);
@@ -81,6 +86,8 @@ export default function ReporteSanitario() {
   const handleSelectLot = (lot: Lot) => {
     setSelectedLot(lot);
     setCurrentStep("form");
+    // Trigger GPS capture when entering the form
+    gps.capturePosition();
   };
 
   const handleSubmitReport = async () => {
@@ -94,6 +101,8 @@ export default function ReporteSanitario() {
       pest_type: pestType,
       severity: severity[0],
       incidence_percent: incidence ? parseFloat(incidence) : null,
+      gps_lat: gps.latitude,
+      gps_lng: gps.longitude,
       notes,
     });
 
@@ -265,6 +274,22 @@ export default function ReporteSanitario() {
                     onChange={(e) => setNotes(e.target.value)}
                     className="mt-1"
                     rows={4}
+                  />
+                </div>
+
+                {/* GPS Location */}
+                <div>
+                  <Label className="flex items-center gap-2 mb-2">
+                    <MapPin className="w-4 h-4" />
+                    Ubicación GPS
+                  </Label>
+                  <GpsIndicator
+                    latitude={gps.latitude}
+                    longitude={gps.longitude}
+                    accuracy={gps.accuracy}
+                    loading={gps.loading}
+                    error={gps.error}
+                    onRetry={gps.capturePosition}
                   />
                 </div>
 
