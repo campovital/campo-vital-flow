@@ -452,6 +452,50 @@ export type Database = {
           },
         ]
       }
+      pest_report_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_status: Database["public"]["Enums"]["pest_report_status"]
+          notes: string | null
+          pest_report_id: string
+          previous_status:
+            | Database["public"]["Enums"]["pest_report_status"]
+            | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status: Database["public"]["Enums"]["pest_report_status"]
+          notes?: string | null
+          pest_report_id: string
+          previous_status?:
+            | Database["public"]["Enums"]["pest_report_status"]
+            | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status?: Database["public"]["Enums"]["pest_report_status"]
+          notes?: string | null
+          pest_report_id?: string
+          previous_status?:
+            | Database["public"]["Enums"]["pest_report_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pest_report_status_history_pest_report_id_fkey"
+            columns: ["pest_report_id"]
+            isOneToOne: false
+            referencedRelation: "pest_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pest_reports: {
         Row: {
           created_at: string
