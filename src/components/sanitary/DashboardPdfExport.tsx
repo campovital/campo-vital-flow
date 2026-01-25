@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,9 @@ interface DashboardPdfExportProps {
   pendingReports: number;
   inTreatmentReports: number;
   resolvedReports: number;
+  dateFrom?: Date;
+  dateTo?: Date;
+  dateRangeLabel?: string;
 }
 
 export function DashboardPdfExport({
@@ -21,6 +24,9 @@ export function DashboardPdfExport({
   pendingReports,
   inTreatmentReports,
   resolvedReports,
+  dateFrom,
+  dateTo,
+  dateRangeLabel,
 }: DashboardPdfExportProps) {
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
@@ -67,24 +73,33 @@ export function DashboardPdfExport({
 
       // Header
       pdf.setFillColor(34, 139, 34); // Forest green
-      pdf.rect(0, 0, pageWidth, 35, "F");
+      pdf.rect(0, 0, pageWidth, 40, "F");
       
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(20);
       pdf.setFont("helvetica", "bold");
       pdf.text("Dashboard Sanitario", margin, 18);
       
+      // Date range info
       pdf.setFontSize(11);
       pdf.setFont("helvetica", "normal");
-      const dateStr = format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
-      pdf.text(`Generado el ${dateStr}`, margin, 28);
+      const generatedDateStr = format(new Date(), "d 'de' MMMM 'de' yyyy, HH:mm", { locale: es });
+      pdf.text(`Generado el ${generatedDateStr}`, margin, 28);
+      
+      // Period info
+      if (dateFrom && dateTo) {
+        const periodStr = `Período: ${format(dateFrom, "d MMM yyyy", { locale: es })} - ${format(dateTo, "d MMM yyyy", { locale: es })}`;
+        pdf.text(periodStr, margin, 36);
+      } else if (dateRangeLabel) {
+        pdf.text(`Período: ${dateRangeLabel}`, margin, 36);
+      }
 
       // Summary section
-      let yPos = 45;
+      let yPos = 50;
       pdf.setTextColor(0, 0, 0);
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");
-      pdf.text("Resumen (Últimos 30 días)", margin, yPos);
+      pdf.text("Resumen del Período", margin, yPos);
       
       yPos += 10;
       pdf.setFontSize(10);
@@ -174,7 +189,10 @@ export function DashboardPdfExport({
       pdf.text("Sistema de Gestión Agrícola - Dashboard Sanitario", pageWidth / 2, footerY, { align: "center" });
 
       // Save PDF
-      const fileName = `dashboard-sanitario-${format(new Date(), "yyyy-MM-dd-HHmm")}.pdf`;
+      const datePrefix = dateFrom && dateTo 
+        ? `${format(dateFrom, "yyyyMMdd")}-${format(dateTo, "yyyyMMdd")}`
+        : format(new Date(), "yyyy-MM-dd-HHmm");
+      const fileName = `dashboard-sanitario-${datePrefix}.pdf`;
       pdf.save(fileName);
 
       toast({
