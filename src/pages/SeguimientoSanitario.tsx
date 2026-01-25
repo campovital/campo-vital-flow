@@ -1,23 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { format, startOfDay, endOfDay } from "date-fns";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PestReportCard } from "@/components/sanitary/PestReportCard";
-import { PestReportStatusBadge } from "@/components/sanitary/PestReportStatusBadge";
+import { SanitaryFilters } from "@/components/sanitary/SanitaryFilters";
 import {
   Bug,
-  Filter,
   Clock,
   Wrench,
   CheckCircle,
@@ -52,17 +44,26 @@ export default function SeguimientoSanitario() {
   const [lots, setLots] = useState<Lot[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  
+  // Filters
   const [selectedLot, setSelectedLot] = useState<string>("all");
+  const [selectedPestType, setSelectedPestType] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<string>("pendiente");
+
+  // Get unique pest types from all reports
+  const [allPestTypes, setAllPestTypes] = useState<string[]>([]);
 
   useEffect(() => {
     fetchLots();
+    fetchPestTypes();
     fetchReports();
   }, []);
 
   useEffect(() => {
     fetchReports();
-  }, [selectedLot]);
+  }, [selectedLot, selectedPestType, dateFrom, dateTo]);
 
   const fetchLots = async () => {
     const { data } = await supabase
@@ -70,6 +71,16 @@ export default function SeguimientoSanitario() {
       .select("id, name")
       .order("name");
     if (data) setLots(data);
+  };
+
+  const fetchPestTypes = async () => {
+    const { data } = await supabase
+      .from("pest_reports")
+      .select("pest_type");
+    if (data) {
+      const uniqueTypes = [...new Set(data.map((r) => r.pest_type))].sort();
+      setAllPestTypes(uniqueTypes);
+    }
   };
 
   const fetchReports = async () => {
@@ -95,12 +106,37 @@ export default function SeguimientoSanitario() {
       query = query.eq("lot_id", selectedLot);
     }
 
+    if (selectedPestType !== "all") {
+      query = query.eq("pest_type", selectedPestType);
+    }
+
+    if (dateFrom) {
+      query = query.gte("created_at", startOfDay(dateFrom).toISOString());
+    }
+
+    if (dateTo) {
+      query = query.lte("created_at", endOfDay(dateTo).toISOString());
+    }
+
     const { data, error } = await query;
 
     if (!error && data) {
       setReports(data as unknown as PestReport[]);
     }
     setLoading(false);
+  };
+
+  const hasActiveFilters = 
+    selectedLot !== "all" || 
+    selectedPestType !== "all" || 
+    dateFrom !== undefined || 
+    dateTo !== undefined;
+
+  const clearFilters = () => {
+    setSelectedLot("all");
+    setSelectedPestType("all");
+    setDateFrom(undefined);
+    setDateTo(undefined);
   };
 
   const handleStatusChange = async (id: string, newStatus: PestReportStatus) => {
@@ -207,30 +243,21 @@ export default function SeguimientoSanitario() {
           </Card>
         </div>
 
-        {/* Filter */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              Filtrar por lote
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select value={selectedLot} onValueChange={setSelectedLot}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos los lotes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los lotes</SelectItem>
-                {lots.map((lot) => (
-                  <SelectItem key={lot.id} value={lot.id}>
-                    {lot.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
+        {/* Filters */}
+        <SanitaryFilters
+          lots={lots}
+          pestTypes={allPestTypes}
+          selectedLot={selectedLot}
+          selectedPestType={selectedPestType}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onLotChange={setSelectedLot}
+          onPestTypeChange={setSelectedPestType}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
+          onClearFilters={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
 
         {/* Tabs with reports */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
