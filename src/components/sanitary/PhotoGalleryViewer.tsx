@@ -5,11 +5,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Clock, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { EditPhotoCaptionDialog } from "./EditPhotoCaptionDialog";
 
 interface Photo {
   id: string;
@@ -23,6 +24,7 @@ interface PhotoGalleryViewerProps {
   initialIndex?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPhotoUpdated?: () => void;
 }
 
 export function PhotoGalleryViewer({
@@ -30,24 +32,32 @@ export function PhotoGalleryViewer({
   initialIndex = 0,
   open,
   onOpenChange,
+  onPhotoUpdated,
 }: PhotoGalleryViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [localPhotos, setLocalPhotos] = useState(photos);
 
-  const currentPhoto = photos[currentIndex];
+  // Sync localPhotos when photos prop changes
+  useState(() => {
+    setLocalPhotos(photos);
+  });
+
+  const currentPhoto = localPhotos[currentIndex];
 
   const goToPrevious = useCallback(() => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1));
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : localPhotos.length - 1));
     resetZoom();
-  }, [photos.length]);
+  }, [localPhotos.length]);
 
   const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
+    setCurrentIndex((prev) => (prev < localPhotos.length - 1 ? prev + 1 : 0));
     resetZoom();
-  }, [photos.length]);
+  }, [localPhotos.length]);
 
   const zoomIn = () => {
     setZoomLevel((prev) => Math.min(prev + 0.5, 4));
@@ -132,148 +142,185 @@ export function PhotoGalleryViewer({
     [goToPrevious, goToNext, onOpenChange]
   );
 
+  const handleCaptionUpdated = (newCaption: string) => {
+    // Update local state immediately for responsive UI
+    setLocalPhotos((prev) =>
+      prev.map((photo, idx) =>
+        idx === currentIndex ? { ...photo, caption: newCaption } : photo
+      )
+    );
+    // Notify parent to refresh data
+    onPhotoUpdated?.();
+  };
+
+  const canEditCaption = currentPhoto?.id !== "single";
+
   if (!currentPhoto) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-full w-full h-full max-h-full p-0 border-0 bg-black/95 rounded-none"
-        onKeyDown={handleKeyDown}
-      >
-        <VisuallyHidden>
-          <DialogTitle>Galería de fotos</DialogTitle>
-        </VisuallyHidden>
-
-        {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 z-50 text-white hover:bg-white/20"
-          onClick={() => onOpenChange(false)}
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className="max-w-full w-full h-full max-h-full p-0 border-0 bg-black/95 rounded-none"
+          onKeyDown={handleKeyDown}
         >
-          <X className="w-6 h-6" />
-        </Button>
+          <VisuallyHidden>
+            <DialogTitle>Galería de fotos</DialogTitle>
+          </VisuallyHidden>
 
-        {/* Image counter */}
-        <div className="absolute top-4 left-4 z-50 text-white text-sm bg-black/50 px-3 py-1 rounded-full">
-          {currentIndex + 1} / {photos.length}
-        </div>
-
-        {/* Zoom controls */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-black/50 rounded-full px-2 py-1">
+          {/* Close button */}
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20 h-8 w-8"
-            onClick={zoomOut}
-            disabled={zoomLevel <= 1}
+            className="absolute top-4 right-4 z-50 text-white hover:bg-white/20"
+            onClick={() => onOpenChange(false)}
           >
-            <ZoomOut className="w-4 h-4" />
+            <X className="w-6 h-6" />
           </Button>
-          <span className="text-white text-xs min-w-[3rem] text-center">
-            {Math.round(zoomLevel * 100)}%
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20 h-8 w-8"
-            onClick={zoomIn}
-            disabled={zoomLevel >= 4}
-          >
-            <ZoomIn className="w-4 h-4" />
-          </Button>
-        </div>
 
-        {/* Navigation arrows */}
-        {photos.length > 1 && (
-          <>
+          {/* Image counter */}
+          <div className="absolute top-4 left-4 z-50 text-white text-sm bg-black/50 px-3 py-1 rounded-full">
+            {currentIndex + 1} / {localPhotos.length}
+          </div>
+
+          {/* Zoom controls */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-black/50 rounded-full px-2 py-1">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/20 h-12 w-12"
-              onClick={goToPrevious}
+              className="text-white hover:bg-white/20 h-8 w-8"
+              onClick={zoomOut}
+              disabled={zoomLevel <= 1}
             >
-              <ChevronLeft className="w-8 h-8" />
+              <ZoomOut className="w-4 h-4" />
             </Button>
+            <span className="text-white text-xs min-w-[3rem] text-center">
+              {Math.round(zoomLevel * 100)}%
+            </span>
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/20 h-12 w-12"
-              onClick={goToNext}
+              className="text-white hover:bg-white/20 h-8 w-8"
+              onClick={zoomIn}
+              disabled={zoomLevel >= 4}
             >
-              <ChevronRight className="w-8 h-8" />
+              <ZoomIn className="w-4 h-4" />
             </Button>
-          </>
-        )}
+          </div>
 
-        {/* Image container */}
-        <div
-          className="w-full h-full flex items-center justify-center overflow-hidden"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onDoubleClick={handleDoubleClick}
-        >
-          <img
-            src={currentPhoto.photo_url}
-            alt={`Foto ${currentIndex + 1}`}
-            className={cn(
-              "max-w-full max-h-full object-contain transition-transform duration-200",
-              zoomLevel > 1 && "cursor-grab",
-              isDragging && "cursor-grabbing"
+          {/* Navigation arrows */}
+          {localPhotos.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/20 h-12 w-12"
+                onClick={goToPrevious}
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white hover:bg-white/20 h-12 w-12"
+                onClick={goToNext}
+              >
+                <ChevronRight className="w-8 h-8" />
+              </Button>
+            </>
+          )}
+
+          {/* Image container */}
+          <div
+            className="w-full h-full flex items-center justify-center overflow-hidden"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onDoubleClick={handleDoubleClick}
+          >
+            <img
+              src={currentPhoto.photo_url}
+              alt={`Foto ${currentIndex + 1}`}
+              className={cn(
+                "max-w-full max-h-full object-contain transition-transform duration-200",
+                zoomLevel > 1 && "cursor-grab",
+                isDragging && "cursor-grabbing"
+              )}
+              style={{
+                transform: `scale(${zoomLevel}) translate(${position.x / zoomLevel}px, ${position.y / zoomLevel}px)`,
+              }}
+              draggable={false}
+            />
+            {/* Caption and date overlay */}
+            {zoomLevel === 1 && (
+              <div className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-md bg-black/70 text-white px-4 py-2 rounded-lg text-sm text-center space-y-1">
+                {currentPhoto.caption ? (
+                  <p>{currentPhoto.caption}</p>
+                ) : (
+                  <p className="text-white/60 italic">Sin nota</p>
+                )}
+                {currentPhoto.created_at && (
+                  <p className="flex items-center justify-center gap-1 text-xs text-white/80">
+                    <Clock className="w-3 h-3" />
+                    {format(new Date(currentPhoto.created_at), "d MMM yyyy, HH:mm", { locale: es })}
+                  </p>
+                )}
+                {canEditCaption && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white/80 hover:text-white hover:bg-white/20 h-7 mt-1"
+                    onClick={() => setEditDialogOpen(true)}
+                  >
+                    <Pencil className="w-3 h-3 mr-1" />
+                    Editar nota
+                  </Button>
+                )}
+              </div>
             )}
-            style={{
-              transform: `scale(${zoomLevel}) translate(${position.x / zoomLevel}px, ${position.y / zoomLevel}px)`,
-            }}
-            draggable={false}
-          />
-          {/* Caption and date overlay */}
-          {zoomLevel === 1 && (currentPhoto.caption || currentPhoto.created_at) && (
-            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 max-w-md bg-black/70 text-white px-4 py-2 rounded-lg text-sm text-center space-y-1">
-              {currentPhoto.caption && (
-                <p>{currentPhoto.caption}</p>
-              )}
-              {currentPhoto.created_at && (
-                <p className="flex items-center justify-center gap-1 text-xs text-white/80">
-                  <Clock className="w-3 h-3" />
-                  {format(new Date(currentPhoto.created_at), "d MMM yyyy, HH:mm", { locale: es })}
-                </p>
-              )}
+          </div>
+
+          {/* Thumbnail strip */}
+          {localPhotos.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 bg-black/50 p-2 rounded-lg max-w-[90%] overflow-x-auto">
+              {localPhotos.map((photo, index) => (
+                <button
+                  key={photo.id}
+                  onClick={() => {
+                    setCurrentIndex(index);
+                    resetZoom();
+                  }}
+                  className={cn(
+                    "w-12 h-12 rounded overflow-hidden flex-shrink-0 border-2 transition-all",
+                    index === currentIndex
+                      ? "border-primary"
+                      : "border-transparent opacity-60 hover:opacity-100"
+                  )}
+                >
+                  <img
+                    src={photo.photo_url}
+                    alt={`Miniatura ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
             </div>
           )}
-        </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Thumbnail strip */}
-        {photos.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex gap-2 bg-black/50 p-2 rounded-lg max-w-[90%] overflow-x-auto">
-            {photos.map((photo, index) => (
-              <button
-                key={photo.id}
-                onClick={() => {
-                  setCurrentIndex(index);
-                  resetZoom();
-                }}
-                className={cn(
-                  "w-12 h-12 rounded overflow-hidden flex-shrink-0 border-2 transition-all",
-                  index === currentIndex
-                    ? "border-primary"
-                    : "border-transparent opacity-60 hover:opacity-100"
-                )}
-              >
-                <img
-                  src={photo.photo_url}
-                  alt={`Miniatura ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+      {/* Edit Caption Dialog */}
+      <EditPhotoCaptionDialog
+        photoId={currentPhoto.id}
+        currentCaption={currentPhoto.caption}
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        onCaptionUpdated={handleCaptionUpdated}
+      />
+    </>
   );
 }
