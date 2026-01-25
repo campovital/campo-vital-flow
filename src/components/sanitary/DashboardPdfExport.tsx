@@ -13,6 +13,8 @@ interface DashboardPdfExportProps {
   pendingReports: number;
   inTreatmentReports: number;
   resolvedReports: number;
+  avgResolutionHours: number | null;
+  overallEffectivenessRate: number;
   dateFrom?: Date;
   dateTo?: Date;
   dateRangeLabel?: string;
@@ -24,6 +26,8 @@ export function DashboardPdfExport({
   pendingReports,
   inTreatmentReports,
   resolvedReports,
+  avgResolutionHours,
+  overallEffectivenessRate,
   dateFrom,
   dateTo,
   dateRangeLabel,
@@ -105,10 +109,11 @@ export function DashboardPdfExport({
       pdf.setFontSize(10);
       pdf.setFont("helvetica", "normal");
       
-      // Summary boxes
-      const boxWidth = (contentWidth - 9) / 4;
+      // Summary boxes - 2 rows of 3
+      const boxWidth = (contentWidth - 6) / 3;
       const boxHeight = 22;
       
+      // Row 1: Total, Pending, In Treatment
       // Total reports
       pdf.setFillColor(240, 240, 240);
       pdf.roundedRect(margin, yPos, boxWidth, boxHeight, 2, 2, "F");
@@ -141,16 +146,46 @@ export function DashboardPdfExport({
       pdf.setFont("helvetica", "normal");
       pdf.text("En Tratamiento", margin + (boxWidth + 3) * 2 + boxWidth / 2, yPos + 17, { align: "center" });
       
+      // Row 2: Resolved, Avg Time, Effectiveness
+      yPos += boxHeight + 4;
+      
       // Resolved
       pdf.setFillColor(220, 252, 231);
       pdf.setTextColor(22, 101, 52);
-      pdf.roundedRect(margin + (boxWidth + 3) * 3, yPos, boxWidth, boxHeight, 2, 2, "F");
+      pdf.roundedRect(margin, yPos, boxWidth, boxHeight, 2, 2, "F");
       pdf.setFontSize(16);
       pdf.setFont("helvetica", "bold");
-      pdf.text(String(resolvedReports), margin + (boxWidth + 3) * 3 + boxWidth / 2, yPos + 10, { align: "center" });
+      pdf.text(String(resolvedReports), margin + boxWidth / 2, yPos + 10, { align: "center" });
       pdf.setFontSize(8);
       pdf.setFont("helvetica", "normal");
-      pdf.text("Resueltos", margin + (boxWidth + 3) * 3 + boxWidth / 2, yPos + 17, { align: "center" });
+      pdf.text("Resueltos", margin + boxWidth / 2, yPos + 17, { align: "center" });
+      
+      // Average resolution time
+      pdf.setFillColor(243, 232, 255);
+      pdf.setTextColor(107, 33, 168);
+      pdf.roundedRect(margin + boxWidth + 3, yPos, boxWidth, boxHeight, 2, 2, "F");
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      const avgTimeStr = avgResolutionHours !== null 
+        ? avgResolutionHours >= 24 
+          ? `${Math.round(avgResolutionHours / 24)}d`
+          : `${avgResolutionHours}h`
+        : "—";
+      pdf.text(avgTimeStr, margin + boxWidth + 3 + boxWidth / 2, yPos + 10, { align: "center" });
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text("Tiempo Promedio", margin + boxWidth + 3 + boxWidth / 2, yPos + 17, { align: "center" });
+      
+      // Effectiveness rate
+      pdf.setFillColor(204, 251, 241);
+      pdf.setTextColor(17, 94, 89);
+      pdf.roundedRect(margin + (boxWidth + 3) * 2, yPos, boxWidth, boxHeight, 2, 2, "F");
+      pdf.setFontSize(16);
+      pdf.setFont("helvetica", "bold");
+      pdf.text(`${overallEffectivenessRate}%`, margin + (boxWidth + 3) * 2 + boxWidth / 2, yPos + 10, { align: "center" });
+      pdf.setFontSize(8);
+      pdf.setFont("helvetica", "normal");
+      pdf.text("Tasa Efectividad", margin + (boxWidth + 3) * 2 + boxWidth / 2, yPos + 17, { align: "center" });
       
       // Reset text color
       pdf.setTextColor(0, 0, 0);
