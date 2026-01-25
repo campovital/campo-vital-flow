@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +18,9 @@ import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { usePhotoUpload } from "@/hooks/use-photo-upload";
+import { useMultiPhotoUpload } from "@/hooks/use-multi-photo-upload";
 import { GpsIndicator } from "@/components/sanitary/GpsIndicator";
-import { PhotoCapture } from "@/components/sanitary/PhotoCapture";
+import { MultiPhotoCapture } from "@/components/sanitary/MultiPhotoCapture";
 import {
   Bug,
   MapPin,
@@ -67,8 +67,8 @@ export default function ReporteSanitario() {
   // GPS capture
   const gps = useGeolocation({ autoCapture: false });
   
-  // Photo upload
-  const photo = usePhotoUpload({ bucket: "pest-photos", folder: "reports" });
+  // Multiple photo upload
+  const photos = useMultiPhotoUpload({ bucket: "pest-photos", folder: "reports", maxPhotos: 5 });
   
   // Form fields
   const [pestType, setPestType] = useState("");
@@ -100,31 +100,52 @@ export default function ReporteSanitario() {
 
     setIsLoading(true);
 
-    const { error } = await supabase.from("pest_reports").insert({
-      lot_id: selectedLot.id,
-      reported_by: user.id,
-      pest_type: pestType,
-      severity: severity[0],
-      incidence_percent: incidence ? parseFloat(incidence) : null,
-      gps_lat: gps.latitude,
-      gps_lng: gps.longitude,
-      photo_url: photo.photoUrl,
-      notes,
-    });
+    const uploadedUrls = photos.getUploadedUrls();
+    const mainPhotoUrl = uploadedUrls.length > 0 ? uploadedUrls[0] : null;
 
-    if (error) {
+    // Create the pest report
+    const { data: reportData, error: reportError } = await supabase
+      .from("pest_reports")
+      .insert({
+        lot_id: selectedLot.id,
+        reported_by: user.id,
+        pest_type: pestType,
+        severity: severity[0],
+        incidence_percent: incidence ? parseFloat(incidence) : null,
+        gps_lat: gps.latitude,
+        gps_lng: gps.longitude,
+        photo_url: mainPhotoUrl,
+        notes,
+      })
+      .select("id")
+      .single();
+
+    if (reportError) {
       toast({
         title: "Error",
         description: "No se pudo registrar el reporte",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "¡Reporte enviado!",
-        description: `${pestType} reportado en ${selectedLot.name}`,
-      });
-      setCurrentStep("result");
+      setIsLoading(false);
+      return;
     }
+
+    // Insert all photos into pest_report_photos table
+    if (uploadedUrls.length > 0) {
+      const photosToInsert = uploadedUrls.map((url) => ({
+        pest_report_id: reportData.id,
+        photo_url: url,
+        uploaded_by: user.id,
+      }));
+
+      await supabase.from("pest_report_photos").insert(photosToInsert);
+    }
+
+    toast({
+      title: "¡Reporte enviado!",
+      description: `${pestType} reportado en ${selectedLot.name} con ${uploadedUrls.length} foto(s)`,
+    });
+    setCurrentStep("result");
     setIsLoading(false);
   };
 
@@ -135,7 +156,7 @@ export default function ReporteSanitario() {
     setSeverity([3]);
     setIncidence("");
     setNotes("");
-    photo.clearPhoto();
+    photos.clearAllPhotos();
   };
 
   const getSeverityColor = (value: number) => {
@@ -300,18 +321,17 @@ export default function ReporteSanitario() {
                   />
                 </div>
 
-                {/* Photo capture */}
+                {/* Multiple photo capture */}
                 <div>
                   <Label className="flex items-center gap-2 mb-2">
                     <Camera className="w-4 h-4" />
-                    Evidencia fotográfica
+                    Evidencia fotográfica (múltiples)
                   </Label>
-                  <PhotoCapture
-                    previewUrl={photo.previewUrl}
-                    uploading={photo.uploading}
-                    error={photo.error}
-                    onCapture={photo.uploadPhoto}
-                    onClear={photo.clearPhoto}
+                  <MultiPhotoCapture
+                    photos={photos.photos}
+                    maxPhotos={5}
+                    onCapture={photos.uploadPhoto}
+                    onRemove={photos.removePhoto}
                   />
                 </div>
               </CardContent>
@@ -320,14 +340,14 @@ export default function ReporteSanitario() {
             <Button
               variant="confirm-warning"
               onClick={handleSubmitReport}
-              disabled={isLoading || !pestType}
+              disabled={isLoading || !pestType || photos.isUploading}
             >
-              {isLoading ? (
+              {isLoading || photos.isUploading ? (
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
               ) : (
                 <AlertTriangle className="w-5 h-5 mr-2" />
               )}
-              Enviar Reporte
+              {photos.isUploading ? "Subiendo fotos..." : "Enviar Reporte"}
             </Button>
           </div>
         )}
