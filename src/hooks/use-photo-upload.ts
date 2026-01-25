@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/lib/image-compression";
 
 interface PhotoUploadState {
   uploading: boolean;
@@ -58,15 +59,22 @@ export function usePhotoUpload(options: UsePhotoUploadOptions) {
           throw new Error("Usuario no autenticado");
         }
 
-        // Generate unique file name
-        const timestamp = Date.now();
-        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-        const fileName = `${user.id}/${folder}${folder ? "/" : ""}${timestamp}.${ext}`;
+        // Compress image before upload
+        const compressedFile = await compressImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 0.8,
+          maxSizeMB: 1,
+        });
 
-        // Upload to storage
+        // Generate unique file name (always .jpg after compression)
+        const timestamp = Date.now();
+        const fileName = `${user.id}/${folder}${folder ? "/" : ""}${timestamp}.jpg`;
+
+        // Upload compressed file to storage
         const { data, error } = await supabase.storage
           .from(bucket)
-          .upload(fileName, file, {
+          .upload(fileName, compressedFile, {
             cacheControl: "3600",
             upsert: false,
           });
