@@ -2,6 +2,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -15,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Filter, CalendarIcon, X, ArrowUpDown } from "lucide-react";
+import { Filter, CalendarIcon, X, ArrowUpDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type SortOption = "follow_up_date" | "severity" | "created_at";
@@ -32,6 +33,7 @@ interface SanitaryFiltersProps {
   selectedLot: string;
   selectedPestType: string;
   selectedSeverity: string;
+  searchText: string;
   dateFrom: Date | undefined;
   dateTo: Date | undefined;
   sortBy: SortOption;
@@ -39,6 +41,7 @@ interface SanitaryFiltersProps {
   onLotChange: (value: string) => void;
   onPestTypeChange: (value: string) => void;
   onSeverityChange: (value: string) => void;
+  onSearchTextChange: (value: string) => void;
   onDateFromChange: (date: Date | undefined) => void;
   onDateToChange: (date: Date | undefined) => void;
   onSortChange: (sort: SortOption) => void;
@@ -53,6 +56,7 @@ export function SanitaryFilters({
   selectedLot,
   selectedPestType,
   selectedSeverity,
+  searchText,
   dateFrom,
   dateTo,
   sortBy,
@@ -60,6 +64,7 @@ export function SanitaryFilters({
   onLotChange,
   onPestTypeChange,
   onSeverityChange,
+  onSearchTextChange,
   onDateFromChange,
   onDateToChange,
   onSortChange,
@@ -102,6 +107,23 @@ export function SanitaryFilters({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Search input */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-muted-foreground">
+            Buscar
+          </label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar en notas o tipo de plaga..."
+              value={searchText}
+              onChange={(e) => onSearchTextChange(e.target.value)}
+              className="h-9 pl-9"
+              maxLength={100}
+            />
+          </div>
+        </div>
+
         {/* Row 1: Lot and Pest Type */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
