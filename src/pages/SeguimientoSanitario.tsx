@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PestReportCard } from "@/components/sanitary/PestReportCard";
 import { SanitaryFilters } from "@/components/sanitary/SanitaryFilters";
+import { ExportButton } from "@/components/sanitary/ExportButton";
 import {
   Bug,
   Clock,
@@ -181,19 +182,22 @@ export default function SeguimientoSanitario() {
     <AppLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Bug className="w-6 h-6 text-warning" />
-              Seguimiento Sanitario
+              <Bug className="w-6 h-6 text-warning flex-shrink-0" />
+              <span className="truncate">Seguimiento Sanitario</span>
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Gestiona el estado de los reportes de plagas
             </p>
           </div>
-          <Button variant="ghost" size="icon" onClick={fetchReports}>
-            <RefreshCw className={loading ? "animate-spin" : ""} />
-          </Button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <ExportButton reports={reports} disabled={loading} />
+            <Button variant="ghost" size="icon" onClick={fetchReports}>
+              <RefreshCw className={loading ? "animate-spin" : ""} />
+            </Button>
+          </div>
         </div>
 
         {/* Overdue alert */}
