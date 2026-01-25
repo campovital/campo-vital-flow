@@ -1,13 +1,18 @@
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
 } from "@/components/ui/chart";
 import {
   BarChart,
@@ -22,10 +27,11 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, subMonths, startOfDay, endOfDay, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
-import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import { Bug, AlertTriangle, CheckCircle, Clock, TrendingUp, CalendarIcon, RefreshCw } from "lucide-react";
 import { DashboardPdfExport } from "./DashboardPdfExport";
+import { cn } from "@/lib/utils";
 
 interface PestReport {
   id: string;
@@ -62,12 +68,26 @@ interface StatusData {
   color: string;
 }
 
+type DatePreset = "7days" | "30days" | "90days" | "custom";
+
+interface DatePresetOption {
+  id: DatePreset;
+  label: string;
+  getDays: () => number;
+}
+
 const SEVERITY_COLORS = ["#22c55e", "#84cc16", "#eab308", "#f97316", "#ef4444"];
 const STATUS_COLORS = {
   pendiente: "hsl(var(--warning))",
   en_tratamiento: "hsl(var(--info))",
   resuelto: "hsl(var(--success))",
 };
+
+const DATE_PRESETS: DatePresetOption[] = [
+  { id: "7days", label: "7 días", getDays: () => 7 },
+  { id: "30days", label: "30 días", getDays: () => 30 },
+  { id: "90days", label: "90 días", getDays: () => 90 },
+];
 
 export function SanitaryDashboard() {
   const dashboardRef = useRef<HTMLDivElement>(null);
@@ -78,20 +98,42 @@ export function SanitaryDashboard() {
   const [severityData, setSeverityData] = useState<SeverityData[]>([]);
   const [statusData, setStatusData] = useState<StatusData[]>([]);
   const [pestTypeData, setPestTypeData] = useState<{ name: string; value: number }[]>([]);
+  
+  // Date range state
+  const [dateFrom, setDateFrom] = useState<Date>(subDays(new Date(), 30));
+  const [dateTo, setDateTo] = useState<Date>(new Date());
+  const [activePreset, setActivePreset] = useState<DatePreset>("30days");
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [dateFrom, dateTo]);
+
+  const handlePresetClick = (preset: DatePresetOption) => {
+    const today = new Date();
+    setDateTo(today);
+    setDateFrom(subDays(today, preset.getDays()));
+    setActivePreset(preset.id);
+  };
+
+  const handleCustomDateChange = (type: "from" | "to", date: Date | undefined) => {
+    if (!date) return;
+    
+    if (type === "from") {
+      setDateFrom(date);
+    } else {
+      setDateTo(date);
+    }
+    setActivePreset("custom");
+  };
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const thirtyDaysAgo = subDays(new Date(), 30);
-      
       const { data, error } = await supabase
         .from("pest_reports")
         .select("id, pest_type, severity, status, created_at, lot_id, lots(name)")
-        .gte("created_at", startOfDay(thirtyDaysAgo).toISOString())
+        .gte("created_at", startOfDay(dateFrom).toISOString())
+        .lte("created_at", endOfDay(dateTo).toISOString())
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -128,10 +170,11 @@ export function SanitaryDashboard() {
     });
     setLotStats(Array.from(lotMap.values()));
 
-    // Process time series (daily counts for last 30 days)
+    // Process time series (daily counts for the selected range)
+    const daysDiff = differenceInDays(dateTo, dateFrom);
     const dateMap = new Map<string, number>();
-    for (let i = 29; i >= 0; i--) {
-      const date = format(subDays(new Date(), i), "yyyy-MM-dd");
+    for (let i = daysDiff; i >= 0; i--) {
+      const date = format(subDays(dateTo, i), "yyyy-MM-dd");
       dateMap.set(date, 0);
     }
     data.forEach((report) => {
@@ -192,6 +235,12 @@ export function SanitaryDashboard() {
   const pendingReports = reports.filter((r) => r.status === "pendiente").length;
   const inTreatmentReports = reports.filter((r) => r.status === "en_tratamiento").length;
   const resolvedReports = reports.filter((r) => r.status === "resuelto").length;
+  
+  const getDateRangeLabel = () => {
+    const preset = DATE_PRESETS.find(p => p.id === activePreset);
+    if (preset) return `Últimos ${preset.label}`;
+    return `${format(dateFrom, "d MMM", { locale: es })} - ${format(dateTo, "d MMM yyyy", { locale: es })}`;
+  };
 
   if (loading) {
     return (
@@ -219,16 +268,113 @@ export function SanitaryDashboard() {
 
   return (
     <div className="space-y-4">
-      {/* Export Button */}
-      <div className="flex justify-end">
-        <DashboardPdfExport
-          dashboardRef={dashboardRef}
-          totalReports={totalReports}
-          pendingReports={pendingReports}
-          inTreatmentReports={inTreatmentReports}
-          resolvedReports={resolvedReports}
-        />
-      </div>
+      {/* Date Range Controls & Export */}
+      <Card className="border-0 shadow-soft">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                <CalendarIcon className="w-3.5 h-3.5" />
+                Período del Dashboard
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Preset buttons */}
+                {DATE_PRESETS.map((preset) => (
+                  <Button
+                    key={preset.id}
+                    variant={activePreset === preset.id ? "secondary" : "outline"}
+                    size="sm"
+                    className={cn(
+                      "h-8 text-xs",
+                      activePreset === preset.id && "bg-primary/10 border-primary/50"
+                    )}
+                    onClick={() => handlePresetClick(preset)}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+                
+                {/* Custom date pickers */}
+                <div className="flex items-center gap-1">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={activePreset === "custom" ? "secondary" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "h-8 text-xs gap-1",
+                          activePreset === "custom" && "bg-primary/10 border-primary/50"
+                        )}
+                      >
+                        <CalendarIcon className="w-3 h-3" />
+                        {format(dateFrom, "d MMM", { locale: es })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateFrom}
+                        onSelect={(date) => handleCustomDateChange("from", date)}
+                        disabled={(date) => date > dateTo}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <span className="text-xs text-muted-foreground">a</span>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={activePreset === "custom" ? "secondary" : "outline"}
+                        size="sm"
+                        className={cn(
+                          "h-8 text-xs gap-1",
+                          activePreset === "custom" && "bg-primary/10 border-primary/50"
+                        )}
+                      >
+                        <CalendarIcon className="w-3 h-3" />
+                        {format(dateTo, "d MMM", { locale: es })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateTo}
+                        onSelect={(date) => handleCustomDateChange("to", date)}
+                        disabled={(date) => date < dateFrom || date > new Date()}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={fetchData}
+                >
+                  <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                </Button>
+              </div>
+            </div>
+            
+            <DashboardPdfExport
+              dashboardRef={dashboardRef}
+              totalReports={totalReports}
+              pendingReports={pendingReports}
+              inTreatmentReports={inTreatmentReports}
+              resolvedReports={resolvedReports}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              dateRangeLabel={getDateRangeLabel()}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div ref={dashboardRef} className="space-y-4 bg-background">
       {/* Summary Cards */}
@@ -241,7 +387,7 @@ export function SanitaryDashboard() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{totalReports}</p>
-                <p className="text-xs text-muted-foreground">Total (30 días)</p>
+                <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
@@ -297,7 +443,7 @@ export function SanitaryDashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              Reportes por Día (últimos 30 días)
+              Reportes por Día
             </CardTitle>
           </CardHeader>
           <CardContent>
