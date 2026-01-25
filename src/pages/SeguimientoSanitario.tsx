@@ -23,6 +23,11 @@ import {
 
 type PestReportStatus = "pendiente" | "en_tratamiento" | "resuelto";
 
+interface PestReportPhoto {
+  id: string;
+  photo_url: string;
+}
+
 interface PestReport {
   id: string;
   pest_type: string;
@@ -35,6 +40,7 @@ interface PestReport {
   lot: {
     name: string;
   } | null;
+  pest_report_photos?: PestReportPhoto[];
 }
 
 interface Lot {
@@ -102,7 +108,8 @@ export default function SeguimientoSanitario() {
         created_at,
         incidence_percent,
         photo_url,
-        lot:lots(name)
+        lot:lots(name),
+        pest_report_photos(id, photo_url)
       `)
       .order("follow_up_date", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false });

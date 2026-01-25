@@ -17,6 +17,11 @@ import { cn } from "@/lib/utils";
 
 type PestReportStatus = "pendiente" | "en_tratamiento" | "resuelto";
 
+interface PestReportPhoto {
+  id: string;
+  photo_url: string;
+}
+
 interface PestReport {
   id: string;
   pest_type: string;
@@ -29,6 +34,7 @@ interface PestReport {
   lot: {
     name: string;
   } | null;
+  pest_report_photos?: PestReportPhoto[];
 }
 
 interface PestReportCardProps {
@@ -103,14 +109,33 @@ export function PestReportCard({ report, onStatusChange, isUpdating }: PestRepor
         )}
       </div>
 
-      {/* Photo preview */}
-      {report.photo_url && (
+      {/* Photo preview - multiple photos support */}
+      {(report.pest_report_photos && report.pest_report_photos.length > 0) ? (
+        <div className="grid grid-cols-3 gap-1">
+          {report.pest_report_photos.slice(0, 3).map((photo, index) => (
+            <div key={photo.id} className="relative">
+              <img
+                src={photo.photo_url}
+                alt={`Evidencia ${index + 1}`}
+                className="w-full h-16 object-cover rounded-lg"
+              />
+              {index === 2 && report.pest_report_photos!.length > 3 && (
+                <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-medium">
+                    +{report.pest_report_photos!.length - 3}
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : report.photo_url ? (
         <img
           src={report.photo_url}
           alt="Evidencia"
           className="w-full h-24 object-cover rounded-lg"
         />
-      )}
+      ) : null}
 
       {/* Dates */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">

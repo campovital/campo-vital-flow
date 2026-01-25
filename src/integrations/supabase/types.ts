@@ -452,6 +452,41 @@ export type Database = {
           },
         ]
       }
+      pest_report_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          pest_report_id: string
+          photo_url: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          pest_report_id: string
+          photo_url: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          pest_report_id?: string
+          photo_url?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pest_report_photos_pest_report_id_fkey"
+            columns: ["pest_report_id"]
+            isOneToOne: false
+            referencedRelation: "pest_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pest_report_status_history: {
         Row: {
           changed_at: string
