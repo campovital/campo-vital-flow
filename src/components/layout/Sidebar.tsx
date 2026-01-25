@@ -17,6 +17,7 @@ import {
   Users,
   MapPin,
   ClipboardCheck,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from "react";
+import { useOverdueAlertsContext } from "@/components/sanitary/OverdueAlertsProvider";
+import { OverdueBadge } from "@/components/sanitary/OverdueBadge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
   className?: string;
@@ -33,6 +41,7 @@ interface SidebarProps {
 export function Sidebar({ className }: SidebarProps) {
   const { profile, canManage, signOut } = useAuth();
   const [protocolsOpen, setProtocolsOpen] = useState(true);
+  const { overdueCount, notificationsEnabled, requestNotificationPermission } = useOverdueAlertsContext();
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -90,7 +99,10 @@ export function Sidebar({ className }: SidebarProps) {
         </NavLink>
 
         <NavLink to="/seguimiento-sanitario" className={navLinkClass}>
-          <ClipboardCheck className="w-5 h-5" />
+          <div className="relative">
+            <ClipboardCheck className="w-5 h-5" />
+            <OverdueBadge count={overdueCount} className="-top-2 -right-2" />
+          </div>
           Seguimiento Sanitario
         </NavLink>
 
@@ -173,6 +185,28 @@ export function Sidebar({ className }: SidebarProps) {
               {profile?.role || "operario"}
             </p>
           </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-8 w-8",
+                  notificationsEnabled 
+                    ? "text-success" 
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground"
+                )}
+                onClick={requestNotificationPermission}
+              >
+                <Bell className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {notificationsEnabled 
+                ? "Notificaciones activadas" 
+                : "Activar notificaciones"}
+            </TooltipContent>
+          </Tooltip>
         </div>
         <Button
           variant="ghost"
