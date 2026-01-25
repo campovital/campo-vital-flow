@@ -27,9 +27,11 @@ interface PestReport {
 interface ExportButtonProps {
   reports: PestReport[];
   disabled?: boolean;
+  isFiltered?: boolean;
+  totalCount?: number;
 }
 
-export function ExportButton({ reports, disabled }: ExportButtonProps) {
+export function ExportButton({ reports, disabled, isFiltered, totalCount }: ExportButtonProps) {
   const handleExportExcel = () => {
     exportToExcel(reports);
   };
@@ -38,15 +40,24 @@ export function ExportButton({ reports, disabled }: ExportButtonProps) {
     exportToPDF(reports);
   };
 
+  const exportLabel = isFiltered 
+    ? `Exportar (${reports.length})` 
+    : "Exportar";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" disabled={disabled || reports.length === 0}>
           <Download className="w-4 h-4 mr-2" />
-          Exportar
+          {exportLabel}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-background">
+        {isFiltered && totalCount && (
+          <div className="px-2 py-1.5 text-xs text-muted-foreground border-b mb-1">
+            Exportando {reports.length} de {totalCount} reportes
+          </div>
+        )}
         <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
           <FileSpreadsheet className="w-4 h-4 text-green-600" />
           Exportar a Excel

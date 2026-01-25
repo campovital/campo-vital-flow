@@ -269,7 +269,7 @@ export default function SeguimientoSanitario() {
                 <BarChart3 className="w-4 h-4" />
               </Button>
             </div>
-            <ExportButton reports={reports} disabled={loading} />
+            <ExportButton reports={reports} disabled={loading} isFiltered={hasActiveFilters} totalCount={totalCount} />
             <Button variant="ghost" size="icon" onClick={fetchReports}>
               <RefreshCw className={loading ? "animate-spin" : ""} />
             </Button>
