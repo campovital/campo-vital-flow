@@ -220,6 +220,7 @@ export type Database = {
       }
       harvests: {
         Row: {
+          classification: string | null
           created_at: string
           exportable_kg: number | null
           harvest_date: string
@@ -230,11 +231,13 @@ export type Database = {
           override_by: string | null
           override_pc: boolean | null
           override_reason: string | null
+          photo_url: string | null
           recorded_by: string | null
           rejected_kg: number | null
           total_kg: number
         }
         Insert: {
+          classification?: string | null
           created_at?: string
           exportable_kg?: number | null
           harvest_date: string
@@ -245,11 +248,13 @@ export type Database = {
           override_by?: string | null
           override_pc?: boolean | null
           override_reason?: string | null
+          photo_url?: string | null
           recorded_by?: string | null
           rejected_kg?: number | null
           total_kg: number
         }
         Update: {
+          classification?: string | null
           created_at?: string
           exportable_kg?: number | null
           harvest_date?: string
@@ -260,6 +265,7 @@ export type Database = {
           override_by?: string | null
           override_pc?: boolean | null
           override_reason?: string | null
+          photo_url?: string | null
           recorded_by?: string | null
           rejected_kg?: number | null
           total_kg?: number
@@ -545,6 +551,8 @@ export type Database = {
           operator_id: string | null
           pest_type: string
           photo_url: string | null
+          plants_affected: number | null
+          plants_inspected: number | null
           reported_by: string | null
           resolved_at: string | null
           resolved_by: string | null
@@ -565,6 +573,8 @@ export type Database = {
           operator_id?: string | null
           pest_type: string
           photo_url?: string | null
+          plants_affected?: number | null
+          plants_inspected?: number | null
           reported_by?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
@@ -585,6 +595,8 @@ export type Database = {
           operator_id?: string | null
           pest_type?: string
           photo_url?: string | null
+          plants_affected?: number | null
+          plants_inspected?: number | null
           reported_by?: string | null
           resolved_at?: string | null
           resolved_by?: string | null

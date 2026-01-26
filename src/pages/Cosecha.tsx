@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePhotoUpload } from "@/hooks/use-photo-upload";
 import {
   MapPin,
   Sprout,
@@ -20,6 +22,9 @@ import {
   Calendar,
   Package,
   Scale,
+  Camera,
+  X,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -45,6 +50,13 @@ interface HarvestCheck {
 }
 
 type Step = "lot" | "check" | "form" | "result";
+type Classification = "primera" | "segunda" | "merma";
+
+const CLASSIFICATION_OPTIONS: { value: Classification; label: string; description: string; color: string }[] = [
+  { value: "primera", label: "Primera", description: "Calidad exportación", color: "text-success" },
+  { value: "segunda", label: "Segunda", description: "Mercado local", color: "text-warning" },
+  { value: "merma", label: "Merma", description: "Pérdida/descarte", color: "text-destructive" },
+];
 
 export default function Cosecha() {
   const { user } = useAuth();
@@ -55,11 +67,15 @@ export default function Cosecha() {
   const [harvestCheck, setHarvestCheck] = useState<HarvestCheck | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Photo upload hook
+  const photo = usePhotoUpload({ bucket: "pest-photos", folder: "harvests" });
+  
   // Form fields
   const [harvestDate, setHarvestDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [totalKg, setTotalKg] = useState("");
   const [exportableKg, setExportableKg] = useState("");
   const [rejectedKg, setRejectedKg] = useState("");
+  const [classification, setClassification] = useState<Classification>("primera");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -102,6 +118,13 @@ export default function Cosecha() {
     checkHarvestAllowed(lot.id);
   };
 
+  const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await photo.uploadPhoto(file);
+    }
+  };
+
   const handleSubmitHarvest = async () => {
     if (!selectedLot || !user) return;
 
@@ -126,6 +149,8 @@ export default function Cosecha() {
       total_kg: total,
       exportable_kg: exportable,
       rejected_kg: rejected,
+      classification,
+      photo_url: photo.photoUrl,
       recorded_by: user.id,
       notes,
     });
@@ -153,13 +178,17 @@ export default function Cosecha() {
     setTotalKg("");
     setExportableKg("");
     setRejectedKg("");
+    setClassification("primera");
     setNotes("");
     setHarvestDate(format(new Date(), "yyyy-MM-dd"));
+    photo.clearPhoto();
   };
 
   const exportablePercent = totalKg && exportableKg 
     ? ((parseFloat(exportableKg) / parseFloat(totalKg)) * 100).toFixed(1)
     : "—";
+
+  const classificationLabel = CLASSIFICATION_OPTIONS.find(c => c.value === classification);
 
   return (
     <AppLayout>
@@ -307,7 +336,7 @@ export default function Cosecha() {
         {currentStep === "form" && (
           <div className="space-y-4">
             <Card>
-              <CardContent className="p-4 space-y-4">
+              <CardContent className="p-4 space-y-5">
                 <div>
                   <Label htmlFor="date" className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
@@ -337,6 +366,39 @@ export default function Cosecha() {
                     className="mt-1 text-lg font-semibold"
                     required
                   />
+                </div>
+
+                {/* Classification */}
+                <div>
+                  <Label className="flex items-center gap-2 mb-3">
+                    <Star className="w-4 h-4" />
+                    Clasificación de calidad *
+                  </Label>
+                  <RadioGroup
+                    value={classification}
+                    onValueChange={(value) => setClassification(value as Classification)}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    {CLASSIFICATION_OPTIONS.map((option) => (
+                      <div key={option.value}>
+                        <RadioGroupItem
+                          value={option.value}
+                          id={option.value}
+                          className="peer sr-only"
+                        />
+                        <Label
+                          htmlFor={option.value}
+                          className={cn(
+                            "flex flex-col items-center justify-center rounded-lg border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all",
+                            classification === option.value && "border-primary bg-primary/5"
+                          )}
+                        >
+                          <span className={cn("font-semibold", option.color)}>{option.label}</span>
+                          <span className="text-xs text-muted-foreground text-center mt-1">{option.description}</span>
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -379,8 +441,56 @@ export default function Cosecha() {
                   </div>
                 )}
 
+                {/* Photo Evidence */}
                 <div>
-                  <Label htmlFor="notes">Notas (opcional)</Label>
+                  <Label className="flex items-center gap-2 mb-2">
+                    <Camera className="w-4 h-4" />
+                    Evidencia fotográfica (opcional)
+                  </Label>
+                  
+                  {photo.previewUrl ? (
+                    <div className="relative">
+                      <img
+                        src={photo.previewUrl}
+                        alt="Evidencia"
+                        className="w-full h-40 object-cover rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8"
+                        onClick={photo.clearPhoto}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                      {photo.uploading && (
+                        <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                          <Loader2 className="w-8 h-8 animate-spin text-white" />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-muted-foreground/25 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <Camera className="w-8 h-8 text-muted-foreground mb-2" />
+                      <span className="text-sm text-muted-foreground">Tomar o subir foto</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        className="hidden"
+                        onChange={handlePhotoCapture}
+                      />
+                    </label>
+                  )}
+                  
+                  {photo.error && (
+                    <p className="text-sm text-destructive mt-1">{photo.error}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Observaciones (opcional)</Label>
                   <Textarea
                     id="notes"
                     placeholder="Observaciones de la cosecha..."
@@ -395,7 +505,7 @@ export default function Cosecha() {
             <Button
               variant="confirm"
               onClick={handleSubmitHarvest}
-              disabled={isLoading || !totalKg}
+              disabled={isLoading || !totalKg || photo.uploading}
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -431,6 +541,12 @@ export default function Cosecha() {
                   </div>
                 )}
               </div>
+              <Badge 
+                variant="outline" 
+                className={cn("mt-4", classificationLabel?.color)}
+              >
+                {classificationLabel?.label} - {classificationLabel?.description}
+              </Badge>
             </div>
 
             <Button variant="field" onClick={resetFlow} className="mx-auto">
