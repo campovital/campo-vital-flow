@@ -917,6 +917,115 @@ export type Database = {
           },
         ]
       }
+      task_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          estimated_hours: number | null
+          id: string
+          is_active: boolean | null
+          name: string
+          requires_lot: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          requires_lot?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          estimated_hours?: number | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          requires_lot?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_by: string | null
+          assigned_to: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          created_at: string | null
+          hours_worked: number | null
+          id: string
+          lot_id: string | null
+          notes: string | null
+          priority: number | null
+          scheduled_date: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["task_status"] | null
+          task_type_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          hours_worked?: number | null
+          id?: string
+          lot_id?: string | null
+          notes?: string | null
+          priority?: number | null
+          scheduled_date: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          task_type_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_by?: string | null
+          assigned_to?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          created_at?: string | null
+          hours_worked?: number | null
+          id?: string
+          lot_id?: string | null
+          notes?: string | null
+          priority?: number | null
+          scheduled_date?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          task_type_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_task_type_id_fkey"
+            columns: ["task_type_id"]
+            isOneToOne: false
+            referencedRelation: "task_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -994,6 +1103,7 @@ export type Database = {
         | "PHENO_WEEK"
         | "DEFAULT"
       season_type: "lluvias" | "sequia" | "invierno" | "verano"
+      task_status: "pendiente" | "en_progreso" | "completada" | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1156,6 +1266,7 @@ export const Constants = {
         "DEFAULT",
       ],
       season_type: ["lluvias", "sequia", "invierno", "verano"],
+      task_status: ["pendiente", "en_progreso", "completada", "cancelada"],
     },
   },
 } as const
