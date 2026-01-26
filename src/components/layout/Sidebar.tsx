@@ -18,6 +18,7 @@ import {
   MapPin,
   ClipboardCheck,
   Bell,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +40,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ className }: SidebarProps) {
-  const { profile, canManage, signOut } = useAuth();
+  const { profile, canManage, isAdmin, signOut } = useAuth();
   const [protocolsOpen, setProtocolsOpen] = useState(true);
   const { overdueCount, notificationsEnabled, requestNotificationPermission } = useOverdueAlertsContext();
 
@@ -165,6 +166,13 @@ export function Sidebar({ className }: SidebarProps) {
               <Settings className="w-5 h-5" />
               Configuración
             </NavLink>
+
+            {isAdmin && (
+              <NavLink to="/roles" className={navLinkClass}>
+                <Shield className="w-5 h-5" />
+                Roles y Permisos
+              </NavLink>
+            )}
           </>
         )}
       </nav>

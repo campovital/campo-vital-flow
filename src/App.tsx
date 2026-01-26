@@ -13,6 +13,7 @@ import ReporteSanitario from "./pages/ReporteSanitario";
 import MapaPlagas from "./pages/MapaPlagas";
 import SeguimientoSanitario from "./pages/SeguimientoSanitario";
 import Historial from "./pages/Historial";
+import Roles from "./pages/Roles";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/mapa-plagas" element={<MapaPlagas />} />
               <Route path="/seguimiento-sanitario" element={<SeguimientoSanitario />} />
               <Route path="/historial" element={<Historial />} />
+              <Route path="/roles" element={<Roles />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
