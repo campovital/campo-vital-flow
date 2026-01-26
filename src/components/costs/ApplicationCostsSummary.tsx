@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, TrendingUp, Package, Users } from "lucide-react";
 import { format, subDays, startOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
+import { CostsExportButton } from "./CostsExportButton";
 
 interface ApplicationWithCosts {
   id: string;
@@ -140,7 +141,7 @@ export function ApplicationCostsSummary() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-4">
         <Select value={dateRange} onValueChange={setDateRange}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Período" />
@@ -151,6 +152,8 @@ export function ApplicationCostsSummary() {
             <SelectItem value="quarter">Últimos 3 meses</SelectItem>
           </SelectContent>
         </Select>
+        
+        <CostsExportButton dateRange={dateRange} />
       </div>
 
       {/* Summary Cards */}
