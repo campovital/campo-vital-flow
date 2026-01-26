@@ -81,19 +81,21 @@ export function usePhotoUpload(options: UsePhotoUploadOptions) {
 
         if (error) throw error;
 
-        // Get public URL
-        const { data: urlData } = supabase.storage
+        // Get signed URL (bucket is now private)
+        const { data: urlData, error: signedUrlError } = await supabase.storage
           .from(bucket)
-          .getPublicUrl(data.path);
+          .createSignedUrl(data.path, 60 * 60 * 24 * 365); // 1 year expiry
+
+        if (signedUrlError) throw signedUrlError;
 
         setState({
           uploading: false,
           error: null,
-          photoUrl: urlData.publicUrl,
+          photoUrl: urlData.signedUrl,
           previewUrl,
         });
 
-        return urlData.publicUrl;
+        return urlData.signedUrl;
       } catch (error: any) {
         setState({
           uploading: false,
