@@ -15,6 +15,7 @@ import SeguimientoSanitario from "./pages/SeguimientoSanitario";
 import Historial from "./pages/Historial";
 import Roles from "./pages/Roles";
 import Tareas from "./pages/Tareas";
+import Costos from "./pages/Costos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/historial" element={<Historial />} />
               <Route path="/roles" element={<Roles />} />
               <Route path="/tareas" element={<Tareas />} />
+              <Route path="/costos" element={<Costos />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
