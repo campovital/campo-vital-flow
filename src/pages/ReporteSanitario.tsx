@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,8 @@ import {
   Loader2,
   Target,
   Thermometer,
+  Calculator,
+  Leaf,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,8 +76,35 @@ export default function ReporteSanitario() {
   // Form fields
   const [pestType, setPestType] = useState("");
   const [severity, setSeverity] = useState([3]);
-  const [incidence, setIncidence] = useState("");
   const [notes, setNotes] = useState("");
+  
+  // Incidence calculation - new fields
+  const [useAutoIncidence, setUseAutoIncidence] = useState(false);
+  const [plantsInspected, setPlantsInspected] = useState("");
+  const [plantsAffected, setPlantsAffected] = useState("");
+  const [manualIncidence, setManualIncidence] = useState("");
+
+  // Calculated incidence
+  const calculatedIncidence = useMemo(() => {
+    if (!useAutoIncidence) return null;
+    const inspected = parseInt(plantsInspected);
+    const affected = parseInt(plantsAffected);
+    if (inspected > 0 && affected >= 0 && affected <= inspected) {
+      return ((affected / inspected) * 100).toFixed(1);
+    }
+    return null;
+  }, [useAutoIncidence, plantsInspected, plantsAffected]);
+
+  // Final incidence value (auto or manual)
+  const finalIncidence = useMemo(() => {
+    if (useAutoIncidence && calculatedIncidence) {
+      return parseFloat(calculatedIncidence);
+    }
+    if (!useAutoIncidence && manualIncidence) {
+      return parseFloat(manualIncidence);
+    }
+    return null;
+  }, [useAutoIncidence, calculatedIncidence, manualIncidence]);
 
   useEffect(() => {
     fetchLots();
@@ -103,7 +133,7 @@ export default function ReporteSanitario() {
     const uploadedPhotos = photos.getUploadedPhotos();
     const mainPhotoUrl = uploadedPhotos.length > 0 ? uploadedPhotos[0].url : null;
 
-    // Create the pest report
+    // Create the pest report with new fields
     const { data: reportData, error: reportError } = await supabase
       .from("pest_reports")
       .insert({
@@ -111,7 +141,9 @@ export default function ReporteSanitario() {
         reported_by: user.id,
         pest_type: pestType,
         severity: severity[0],
-        incidence_percent: incidence ? parseFloat(incidence) : null,
+        incidence_percent: finalIncidence,
+        plants_inspected: useAutoIncidence && plantsInspected ? parseInt(plantsInspected) : null,
+        plants_affected: useAutoIncidence && plantsAffected ? parseInt(plantsAffected) : null,
         gps_lat: gps.latitude,
         gps_lng: gps.longitude,
         photo_url: mainPhotoUrl,
@@ -155,7 +187,10 @@ export default function ReporteSanitario() {
     setSelectedLot(null);
     setPestType("");
     setSeverity([3]);
-    setIncidence("");
+    setManualIncidence("");
+    setPlantsInspected("");
+    setPlantsAffected("");
+    setUseAutoIncidence(false);
     setNotes("");
     photos.clearAllPhotos();
   };
@@ -274,23 +309,86 @@ export default function ReporteSanitario() {
                   </div>
                 </div>
 
-                {/* Incidence */}
-                <div>
-                  <Label htmlFor="incidence" className="flex items-center gap-2">
-                    <Target className="w-4 h-4" />
-                    Incidencia (% de plantas afectadas)
-                  </Label>
-                  <Input
-                    id="incidence"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="1"
-                    placeholder="Ej: 15"
-                    value={incidence}
-                    onChange={(e) => setIncidence(e.target.value)}
-                    className="mt-1"
-                  />
+                {/* Incidence Section - Enhanced */}
+                <div className="space-y-4 p-4 rounded-lg bg-muted/30 border">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      Incidencia
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {useAutoIncidence ? "Automático" : "Manual"}
+                      </span>
+                      <Switch
+                        checked={useAutoIncidence}
+                        onCheckedChange={setUseAutoIncidence}
+                      />
+                    </div>
+                  </div>
+
+                  {useAutoIncidence ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="inspected" className="flex items-center gap-1 text-sm">
+                            <Leaf className="w-3 h-3" />
+                            Plantas inspeccionadas
+                          </Label>
+                          <Input
+                            id="inspected"
+                            type="number"
+                            min="1"
+                            placeholder="Ej: 100"
+                            value={plantsInspected}
+                            onChange={(e) => setPlantsInspected(e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="affected" className="flex items-center gap-1 text-sm">
+                            <Bug className="w-3 h-3" />
+                            Plantas afectadas
+                          </Label>
+                          <Input
+                            id="affected"
+                            type="number"
+                            min="0"
+                            max={plantsInspected || undefined}
+                            placeholder="Ej: 15"
+                            value={plantsAffected}
+                            onChange={(e) => setPlantsAffected(e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                      
+                      {calculatedIncidence && (
+                        <div className="flex items-center justify-center gap-2 p-3 rounded-lg bg-primary/10">
+                          <Calculator className="w-4 h-4 text-primary" />
+                          <span className="text-sm text-muted-foreground">Incidencia calculada:</span>
+                          <span className="text-xl font-bold text-primary">{calculatedIncidence}%</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="incidence" className="text-sm">
+                        % de plantas afectadas
+                      </Label>
+                      <Input
+                        id="incidence"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        placeholder="Ej: 15"
+                        value={manualIncidence}
+                        onChange={(e) => setManualIncidence(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Notes */}
@@ -366,7 +464,7 @@ export default function ReporteSanitario() {
               <p className="text-muted-foreground mt-2">
                 {selectedLot?.name}
               </p>
-              <div className="flex items-center justify-center gap-4 mt-4">
+              <div className="flex items-center justify-center gap-4 mt-4 flex-wrap">
                 <Badge variant="outline" className="text-base py-1">
                   {pestType}
                 </Badge>
@@ -376,6 +474,11 @@ export default function ReporteSanitario() {
                 >
                   Severidad {severity[0]}/5
                 </Badge>
+                {finalIncidence !== null && (
+                  <Badge variant="outline" className="text-base py-1">
+                    {finalIncidence}% incidencia
+                  </Badge>
+                )}
               </div>
             </div>
 
