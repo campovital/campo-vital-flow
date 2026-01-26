@@ -58,6 +58,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "application_products_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_batches_basic"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "application_products_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -146,6 +153,13 @@ export type Database = {
             columns: ["operator_id"]
             isOneToOne: false
             referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators_basic"
             referencedColumns: ["id"]
           },
           {
@@ -295,6 +309,13 @@ export type Database = {
             columns: ["operator_id"]
             isOneToOne: false
             referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "harvests_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators_basic"
             referencedColumns: ["id"]
           },
         ]
@@ -635,6 +656,13 @@ export type Database = {
             columns: ["operator_id"]
             isOneToOne: false
             referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pest_reports_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators_basic"
             referencedColumns: ["id"]
           },
         ]
@@ -1067,6 +1095,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "operators_basic"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_lot_id_fkey"
             columns: ["lot_id"]
             isOneToOne: false
@@ -1105,7 +1140,67 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      inventory_batches_basic: {
+        Row: {
+          batch_number: string | null
+          expiry_date: string | null
+          id: string | null
+          product_id: string | null
+          quantity: number | null
+        }
+        Insert: {
+          batch_number?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Update: {
+          batch_number?: string | null
+          expiry_date?: string | null
+          id?: string | null
+          product_id?: string | null
+          quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_batches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operators_basic: {
+        Row: {
+          farm_id: string | null
+          full_name: string | null
+          id: string | null
+          is_active: boolean | null
+        }
+        Insert: {
+          farm_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+        }
+        Update: {
+          farm_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          is_active?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operators_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_harvest: { Args: { p_date: string; p_lot_id: string }; Returns: Json }
