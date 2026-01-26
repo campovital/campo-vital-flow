@@ -72,6 +72,7 @@ export type Database = {
           device_time: string
           id: string
           issue_reason: string | null
+          labor_hours: number | null
           lot_id: string
           notes: string | null
           operator_id: string
@@ -84,12 +85,16 @@ export type Database = {
           schedule_rule_id: string | null
           server_time: string
           status: Database["public"]["Enums"]["application_status"]
+          total_cost: number | null
+          total_labor_cost: number | null
+          total_product_cost: number | null
         }
         Insert: {
           created_at?: string
           device_time: string
           id?: string
           issue_reason?: string | null
+          labor_hours?: number | null
           lot_id: string
           notes?: string | null
           operator_id: string
@@ -102,12 +107,16 @@ export type Database = {
           schedule_rule_id?: string | null
           server_time?: string
           status: Database["public"]["Enums"]["application_status"]
+          total_cost?: number | null
+          total_labor_cost?: number | null
+          total_product_cost?: number | null
         }
         Update: {
           created_at?: string
           device_time?: string
           id?: string
           issue_reason?: string | null
+          labor_hours?: number | null
           lot_id?: string
           notes?: string | null
           operator_id?: string
@@ -120,6 +129,9 @@ export type Database = {
           schedule_rule_id?: string | null
           server_time?: string
           status?: Database["public"]["Enums"]["application_status"]
+          total_cost?: number | null
+          total_labor_cost?: number | null
+          total_product_cost?: number | null
         }
         Relationships: [
           {
@@ -420,8 +432,10 @@ export type Database = {
       operators: {
         Row: {
           created_at: string
+          currency: string | null
           farm_id: string | null
           full_name: string
+          hourly_rate: number | null
           id: string
           identification: string | null
           is_active: boolean | null
@@ -430,8 +444,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          currency?: string | null
           farm_id?: string | null
           full_name: string
+          hourly_rate?: number | null
           id?: string
           identification?: string | null
           is_active?: boolean | null
@@ -440,8 +456,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          currency?: string | null
           farm_id?: string | null
           full_name?: string
+          hourly_rate?: number | null
           id?: string
           identification?: string | null
           is_active?: boolean | null
@@ -617,6 +635,44 @@ export type Database = {
             columns: ["operator_id"]
             isOneToOne: false
             referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_price_history: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          id: string
+          notes: string | null
+          product_id: string
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_products"
             referencedColumns: ["id"]
           },
         ]
@@ -1053,6 +1109,10 @@ export type Database = {
     }
     Functions: {
       can_harvest: { Args: { p_date: string; p_lot_id: string }; Returns: Json }
+      get_current_product_price: {
+        Args: { p_product_id: string }
+        Returns: number
+      }
       get_suggested_mix: {
         Args: { p_date: string; p_lot_id: string }
         Returns: Json

@@ -20,6 +20,7 @@ import {
   Bell,
   Shield,
   ListTodo,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -156,6 +157,11 @@ export function Sidebar({ className }: SidebarProps) {
             <NavLink to="/inventario" className={navLinkClass}>
               <Package className="w-5 h-5" />
               Inventario
+            </NavLink>
+
+            <NavLink to="/costos" className={navLinkClass}>
+              <DollarSign className="w-5 h-5" />
+              Costos
             </NavLink>
 
             <NavLink to="/operarios" className={navLinkClass}>

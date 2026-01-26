@@ -76,6 +76,7 @@ export default function AplicarMezcla() {
   const [applicationStatus, setApplicationStatus] = useState<"ejecutada" | "no_ejecutada" | "ejecutada_con_novedad" | null>(null);
   const [issueReason, setIssueReason] = useState("");
   const [pumpsUsed, setPumpsUsed] = useState("");
+  const [laborHours, setLaborHours] = useState("");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -155,6 +156,7 @@ export default function AplicarMezcla() {
       status,
       device_time: new Date().toISOString(),
       pumps_used: pumpsUsed ? parseFloat(pumpsUsed) : null,
+      labor_hours: laborHours ? parseFloat(laborHours) : null,
       notes,
       issue_reason: status === "ejecutada_con_novedad" ? issueReason : null,
       reason_explanation: suggestedMix.reason,
@@ -199,6 +201,7 @@ export default function AplicarMezcla() {
     setApplicationStatus(null);
     setIssueReason("");
     setPumpsUsed("");
+    setLaborHours("");
     setNotes("");
   };
 
@@ -438,17 +441,31 @@ export default function AplicarMezcla() {
                 {/* Additional Info */}
                 <Card>
                   <CardContent className="p-4 space-y-4">
-                    <div>
-                      <Label htmlFor="pumps">Bombas utilizadas</Label>
-                      <Input
-                        id="pumps"
-                        type="number"
-                        step="0.5"
-                        placeholder="Ej: 2.5"
-                        value={pumpsUsed}
-                        onChange={(e) => setPumpsUsed(e.target.value)}
-                        className="mt-1"
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="pumps">Bombas utilizadas</Label>
+                        <Input
+                          id="pumps"
+                          type="number"
+                          step="0.5"
+                          placeholder="Ej: 2.5"
+                          value={pumpsUsed}
+                          onChange={(e) => setPumpsUsed(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="laborHours">Horas de trabajo</Label>
+                        <Input
+                          id="laborHours"
+                          type="number"
+                          step="0.5"
+                          placeholder="Ej: 2"
+                          value={laborHours}
+                          onChange={(e) => setLaborHours(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="notes">Notas (opcional)</Label>
