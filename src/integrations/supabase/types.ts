@@ -805,6 +805,33 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          action: Database["public"]["Enums"]["app_action"]
+          created_at: string
+          id: string
+          module: Database["public"]["Enums"]["app_module"]
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["app_action"]
+          created_at?: string
+          id?: string
+          module: Database["public"]["Enums"]["app_module"]
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["app_action"]
+          created_at?: string
+          id?: string
+          module?: Database["public"]["Enums"]["app_module"]
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       schedule_rules: {
         Row: {
           created_at: string
@@ -921,6 +948,14 @@ export type Database = {
         Args: { p_date: string; p_lot_id: string }
         Returns: Json
       }
+      has_permission: {
+        Args: {
+          _action: Database["public"]["Enums"]["app_action"]
+          _module: Database["public"]["Enums"]["app_module"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -931,6 +966,17 @@ export type Database = {
       is_admin_or_agronoma: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      app_action: "view" | "create" | "edit" | "delete" | "approve" | "export"
+      app_module:
+        | "aplicar_mezcla"
+        | "reporte_sanitario"
+        | "seguimiento_sanitario"
+        | "cosecha"
+        | "tareas"
+        | "costos"
+        | "informes"
+        | "configuracion"
+        | "roles"
       app_role: "admin" | "agronoma" | "operario" | "consulta"
       application_status: "ejecutada" | "no_ejecutada" | "ejecutada_con_novedad"
       pest_report_status: "pendiente" | "en_tratamiento" | "resuelto"
@@ -1075,6 +1121,18 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_action: ["view", "create", "edit", "delete", "approve", "export"],
+      app_module: [
+        "aplicar_mezcla",
+        "reporte_sanitario",
+        "seguimiento_sanitario",
+        "cosecha",
+        "tareas",
+        "costos",
+        "informes",
+        "configuracion",
+        "roles",
+      ],
       app_role: ["admin", "agronoma", "operario", "consulta"],
       application_status: [
         "ejecutada",
