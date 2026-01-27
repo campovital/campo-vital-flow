@@ -37,6 +37,11 @@ interface Lot {
   plant_count: number;
 }
 
+interface Operator {
+  id: string;
+  full_name: string;
+}
+
 interface HarvestCheck {
   allowed: boolean;
   release_date?: string;
@@ -49,7 +54,7 @@ interface HarvestCheck {
   message: string;
 }
 
-type Step = "lot" | "check" | "form" | "result";
+type Step = "operator" | "lot" | "check" | "form" | "result";
 type Classification = "primera" | "segunda" | "merma";
 
 const CLASSIFICATION_OPTIONS: { value: Classification; label: string; description: string; color: string }[] = [
@@ -61,7 +66,9 @@ const CLASSIFICATION_OPTIONS: { value: Classification; label: string; descriptio
 export default function Cosecha() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState<Step>("lot");
+  const [currentStep, setCurrentStep] = useState<Step>("operator");
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
   const [lots, setLots] = useState<Lot[]>([]);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [harvestCheck, setHarvestCheck] = useState<HarvestCheck | null>(null);
@@ -79,8 +86,18 @@ export default function Cosecha() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
+    fetchOperators();
     fetchLots();
   }, []);
+
+  const fetchOperators = async () => {
+    const { data } = await supabase
+      .from("operators")
+      .select("id, full_name")
+      .eq("is_active", true)
+      .order("full_name");
+    if (data) setOperators(data);
+  };
 
   const fetchLots = async () => {
     const { data } = await supabase
@@ -111,6 +128,11 @@ export default function Cosecha() {
     }
     setIsLoading(false);
     setCurrentStep("check");
+  };
+
+  const handleSelectOperator = (operator: Operator) => {
+    setSelectedOperator(operator);
+    setCurrentStep("lot");
   };
 
   const handleSelectLot = (lot: Lot) => {
@@ -152,6 +174,7 @@ export default function Cosecha() {
       classification,
       photo_url: photo.photoUrl,
       recorded_by: user.id,
+      operator_id: selectedOperator?.id || null,
       notes,
     });
 
@@ -172,7 +195,8 @@ export default function Cosecha() {
   };
 
   const resetFlow = () => {
-    setCurrentStep("lot");
+    setCurrentStep("operator");
+    setSelectedOperator(null);
     setSelectedLot(null);
     setHarvestCheck(null);
     setTotalKg("");
@@ -195,11 +219,11 @@ export default function Cosecha() {
       <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          {currentStep !== "lot" && currentStep !== "result" && (
+          {currentStep !== "operator" && currentStep !== "result" && (
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => setCurrentStep(currentStep === "form" ? "check" : "lot")}
+              onClick={() => setCurrentStep(currentStep === "form" ? "check" : currentStep === "check" ? "lot" : "operator")}
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
@@ -209,11 +233,35 @@ export default function Cosecha() {
               <Sprout className="w-6 h-6 text-success" />
               Registro de Cosecha
             </h1>
-            {selectedLot && (
-              <p className="text-muted-foreground">{selectedLot.name}</p>
+            {selectedOperator && selectedLot && (
+              <p className="text-muted-foreground">{selectedOperator.full_name} • {selectedLot.name}</p>
             )}
           </div>
         </div>
+
+        {/* Step: Select Operator */}
+        {currentStep === "operator" && (
+          <div className="space-y-4">
+            <p className="text-muted-foreground">¿Quién realizó la cosecha?</p>
+            <div className="grid gap-3">
+              {operators.map((operator) => (
+                <Card
+                  key={operator.id}
+                  className="lot-card"
+                  onClick={() => handleSelectOperator(operator)}
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Star className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{operator.full_name}</h3>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Step: Select Lot */}
         {currentStep === "lot" && (
