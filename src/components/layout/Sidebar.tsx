@@ -28,7 +28,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { useOverdueAlertsContext } from "@/components/sanitary/OverdueAlertsProvider";
 import { OverdueBadge } from "@/components/sanitary/OverdueBadge";
 import {
@@ -41,7 +41,7 @@ interface SidebarProps {
   className?: string;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({ className }, ref) {
   const { profile, canManage, isAdmin, signOut } = useAuth();
   const [protocolsOpen, setProtocolsOpen] = useState(true);
   const { overdueCount, notificationsEnabled, requestNotificationPermission } = useOverdueAlertsContext();
@@ -56,6 +56,7 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside
+      ref={ref}
       className={cn(
         "fixed left-0 top-0 z-40 h-screen w-64 flex flex-col bg-sidebar border-r border-sidebar-border",
         className
@@ -239,4 +240,4 @@ export function Sidebar({ className }: SidebarProps) {
       </div>
     </aside>
   );
-}
+});
