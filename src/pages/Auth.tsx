@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Leaf, Mail, Lock, User, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -141,6 +142,9 @@ export default function Auth() {
                         required
                       />
                     </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <ForgotPasswordDialog />
                   </div>
                   <Button type="submit" variant="field" className="w-full" disabled={isLoading}>
                     {isLoading ? "Ingresando..." : "Iniciar Sesión"}
