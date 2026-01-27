@@ -215,58 +215,66 @@ export default function Costos() {
                 <CardTitle>Catálogo de Productos</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Producto</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Unidad</TableHead>
-                      <TableHead className="text-right">Precio Actual</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>
-                          {product.category ? (
-                            <Badge variant="outline">{product.category}</Badge>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>{product.unit}</TableCell>
-                        <TableCell className="text-right font-mono">
-                          {product.current_price && product.current_price > 0 ? (
-                            formatCurrency(product.current_price)
-                          ) : (
-                            <span className="text-muted-foreground">Sin precio</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={product.is_active ? "default" : "secondary"}>
-                            {product.is_active ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedProduct(product);
-                              setShowPriceHistory(true);
-                            }}
-                          >
-                            <History className="h-4 w-4 mr-1" />
-                            Precios
-                          </Button>
-                        </TableCell>
+                {products.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No hay productos en el inventario</p>
+                    <p className="text-sm mt-1">Agregue productos desde el módulo de Inventario</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Producto</TableHead>
+                        <TableHead>Categoría</TableHead>
+                        <TableHead>Unidad</TableHead>
+                        <TableHead className="text-right">Precio Actual</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">{product.name}</TableCell>
+                          <TableCell>
+                            {product.category ? (
+                              <Badge variant="outline">{product.category}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{product.unit}</TableCell>
+                          <TableCell className="text-right font-mono">
+                            {product.current_price && product.current_price > 0 ? (
+                              formatCurrency(product.current_price)
+                            ) : (
+                              <span className="text-muted-foreground">Sin precio</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={product.is_active ? "default" : "secondary"}>
+                              {product.is_active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedProduct(product);
+                                setShowPriceHistory(true);
+                              }}
+                            >
+                              <History className="h-4 w-4 mr-1" />
+                              Precios
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -278,48 +286,56 @@ export default function Costos() {
                 <CardTitle>Tarifas de Mano de Obra</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Operario</TableHead>
-                      <TableHead className="text-right">Tarifa por Hora</TableHead>
-                      <TableHead>Estado</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {operators.map((operator) => (
-                      <TableRow key={operator.id}>
-                        <TableCell className="font-medium">{operator.full_name}</TableCell>
-                        <TableCell className="text-right font-mono">
-                          {operator.hourly_rate > 0 ? (
-                            formatCurrency(operator.hourly_rate, operator.currency)
-                          ) : (
-                            <span className="text-muted-foreground">Sin tarifa</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={operator.is_active ? "default" : "secondary"}>
-                            {operator.is_active ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedOperator(operator);
-                              setShowOperatorEditor(true);
-                            }}
-                          >
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            Editar
-                          </Button>
-                        </TableCell>
+                {operators.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No hay operarios registrados</p>
+                    <p className="text-sm mt-1">Agregue operarios desde el módulo de Operarios</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Operario</TableHead>
+                        <TableHead className="text-right">Tarifa por Hora</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {operators.map((operator) => (
+                        <TableRow key={operator.id}>
+                          <TableCell className="font-medium">{operator.full_name}</TableCell>
+                          <TableCell className="text-right font-mono">
+                            {operator.hourly_rate > 0 ? (
+                              formatCurrency(operator.hourly_rate, operator.currency)
+                            ) : (
+                              <span className="text-muted-foreground">Sin tarifa</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={operator.is_active ? "default" : "secondary"}>
+                              {operator.is_active ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedOperator(operator);
+                                setShowOperatorEditor(true);
+                              }}
+                            >
+                              <DollarSign className="h-4 w-4 mr-1" />
+                              Editar
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

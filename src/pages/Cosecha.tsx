@@ -244,21 +244,31 @@ export default function Cosecha() {
           <div className="space-y-4">
             <p className="text-muted-foreground">¿Quién realizó la cosecha?</p>
             <div className="grid gap-3">
-              {operators.map((operator) => (
-                <Card
-                  key={operator.id}
-                  className="lot-card"
-                  onClick={() => handleSelectOperator(operator)}
-                >
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Star className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{operator.full_name}</h3>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              {operators.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="p-6 text-center text-muted-foreground">
+                    <Star className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p>No hay operarios registrados</p>
+                    <p className="text-sm mt-1">Agregue operarios desde el módulo de Operarios</p>
+                  </CardContent>
                 </Card>
-              ))}
+              ) : (
+                operators.map((operator) => (
+                  <Card
+                    key={operator.id}
+                    className="lot-card"
+                    onClick={() => handleSelectOperator(operator)}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Star className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{operator.full_name}</h3>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -269,24 +279,34 @@ export default function Cosecha() {
             <p className="text-muted-foreground">Seleccione el lote cosechado</p>
             
             <div className="grid gap-3">
-              {lots.map((lot) => (
-                <Card
-                  key={lot.id}
-                  className="lot-card"
-                  onClick={() => handleSelectLot(lot)}
-                >
-                  <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-success" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{lot.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {lot.hectares} ha • {lot.plant_count?.toLocaleString() || "—"} plantas
-                    </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              {lots.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="p-6 text-center text-muted-foreground">
+                    <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p>No hay lotes registrados</p>
+                    <p className="text-sm mt-1">Configure lotes en Configuración</p>
+                  </CardContent>
                 </Card>
-              ))}
+              ) : (
+                lots.map((lot) => (
+                  <Card
+                    key={lot.id}
+                    className="lot-card"
+                    onClick={() => handleSelectLot(lot)}
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-success" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{lot.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {lot.hectares} ha • {lot.plant_count?.toLocaleString() || "—"} plantas
+                      </p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         )}

@@ -237,21 +237,31 @@ export default function ReporteSanitario() {
             <p className="text-muted-foreground">¿Dónde detectó el problema?</p>
             
             <div className="grid gap-3">
-              {lots.map((lot) => (
-                <Card
-                  key={lot.id}
-                  className="lot-card"
-                  onClick={() => handleSelectLot(lot)}
-                >
-                  <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-warning" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold">{lot.name}</h3>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              {lots.length === 0 ? (
+                <Card className="border-dashed">
+                  <CardContent className="p-6 text-center text-muted-foreground">
+                    <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                    <p>No hay lotes registrados</p>
+                    <p className="text-sm mt-1">Configure lotes en Configuración</p>
+                  </CardContent>
                 </Card>
-              ))}
+              ) : (
+                lots.map((lot) => (
+                  <Card
+                    key={lot.id}
+                    className="lot-card"
+                    onClick={() => handleSelectLot(lot)}
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
+                      <MapPin className="w-6 h-6 text-warning" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{lot.name}</h3>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         )}
