@@ -32,7 +32,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, ClipboardList, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, ClipboardList, Loader2, FileText } from "lucide-react";
+import { ProtocolVersionsManager } from "@/components/protocols/ProtocolVersionsManager";
 import type { Database } from "@/integrations/supabase/types";
 
 type Protocol = Database["public"]["Tables"]["protocols"]["Row"];
@@ -67,6 +68,7 @@ export default function Protocolos() {
     description: "",
     category: "otro" as ProtocolCategory,
   });
+  const [versionsProtocol, setVersionsProtocol] = useState<Protocol | null>(null);
 
   useEffect(() => {
     fetchProtocols();
@@ -243,7 +245,7 @@ export default function Protocolos() {
                     <TableHead>Nombre</TableHead>
                     <TableHead>Categoría</TableHead>
                     <TableHead>Descripción</TableHead>
-                    {canManage && <TableHead className="w-24">Acciones</TableHead>}
+                    <TableHead className="w-48">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -258,26 +260,36 @@ export default function Protocolos() {
                       <TableCell className="text-muted-foreground max-w-xs truncate">
                         {protocol.description || "-"}
                       </TableCell>
-                      {canManage && (
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDialog(protocol)}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDelete(protocol)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setVersionsProtocol(protocol)}
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            Versiones
+                          </Button>
+                          {canManage && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenDialog(protocol)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(protocol)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -358,6 +370,15 @@ export default function Protocolos() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {versionsProtocol && (
+          <ProtocolVersionsManager
+            protocol={versionsProtocol}
+            open={!!versionsProtocol}
+            onOpenChange={(open) => !open && setVersionsProtocol(null)}
+            canManage={canManage}
+          />
+        )}
       </section>
     </AppLayout>
   );
