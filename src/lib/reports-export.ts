@@ -1,26 +1,20 @@
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
-import { es } from "date-fns/locale";
+import { format, subDays } from "date-fns";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
+
+interface ReportFilters {
+  dateFrom?: Date;
+  dateTo?: Date;
+  lotId?: string;
+  operatorId?: string;
+}
 
 // ============================================
 // PRODUCTION REPORTS
 // ============================================
 
-export interface ProductionReportData {
-  harvest_date: string;
-  lot_name: string;
-  operator_name: string;
-  total_kg: number;
-  exportable_kg: number;
-  rejected_kg: number;
-  classification: string;
-}
-
-export async function exportProductionReport(days: number = 30): Promise<void> {
-  const startDate = subDays(new Date(), days).toISOString().split("T")[0];
-  
-  const { data } = await supabase
+export async function exportProductionReport(filters: ReportFilters = {}): Promise<void> {
+  let query = supabase
     .from("harvests")
     .select(`
       harvest_date,
@@ -28,17 +22,40 @@ export async function exportProductionReport(days: number = 30): Promise<void> {
       exportable_kg,
       rejected_kg,
       classification,
-      lot:lots(name),
-      operator:operators(full_name)
+      lot:lots(id, name),
+      operator:operators(id, full_name)
     `)
-    .gte("harvest_date", startDate)
     .order("harvest_date", { ascending: false });
 
+  if (filters.dateFrom) {
+    query = query.gte("harvest_date", format(filters.dateFrom, "yyyy-MM-dd"));
+  } else {
+    query = query.gte("harvest_date", subDays(new Date(), 30).toISOString().split("T")[0]);
+  }
+  if (filters.dateTo) {
+    query = query.lte("harvest_date", format(filters.dateTo, "yyyy-MM-dd"));
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error("Error al obtener datos: " + error.message);
   if (!data || data.length === 0) {
     throw new Error("No hay datos de producción para exportar");
   }
 
-  const reportData = data.map((row: any) => ({
+  let filteredData = data;
+  if (filters.lotId) {
+    filteredData = filteredData.filter((d: any) => d.lot?.id === filters.lotId);
+  }
+  if (filters.operatorId) {
+    filteredData = filteredData.filter((d: any) => d.operator?.id === filters.operatorId);
+  }
+
+  if (filteredData.length === 0) {
+    throw new Error("No hay datos con los filtros seleccionados");
+  }
+
+  const reportData = filteredData.map((row: any) => ({
     Fecha: format(new Date(row.harvest_date), "dd/MM/yyyy"),
     Lote: row.lot?.name || "—",
     Operario: row.operator?.full_name || "—",
@@ -52,9 +69,9 @@ export async function exportProductionReport(days: number = 30): Promise<void> {
   }));
 
   // Add summary row
-  const totalKg = data.reduce((sum: number, r: any) => sum + (r.total_kg || 0), 0);
-  const totalExportable = data.reduce((sum: number, r: any) => sum + (r.exportable_kg || 0), 0);
-  const totalRejected = data.reduce((sum: number, r: any) => sum + (r.rejected_kg || 0), 0);
+  const totalKg = filteredData.reduce((sum: number, r: any) => sum + (r.total_kg || 0), 0);
+  const totalExportable = filteredData.reduce((sum: number, r: any) => sum + (r.exportable_kg || 0), 0);
+  const totalRejected = filteredData.reduce((sum: number, r: any) => sum + (r.rejected_kg || 0), 0);
 
   reportData.push({
     Fecha: "TOTALES",
@@ -77,26 +94,26 @@ export async function exportProductionReport(days: number = 30): Promise<void> {
 // PRODUCTIVITY BY OPERATOR
 // ============================================
 
-export async function exportProductivityReport(days: number = 30): Promise<void> {
-  const startDate = subDays(new Date(), days).toISOString().split("T")[0];
-  
-  // Fetch harvests grouped by operator
-  const { data: harvests } = await supabase
-    .from("harvests")
-    .select(`
-      total_kg,
-      operator:operators(id, full_name)
-    `)
-    .gte("harvest_date", startDate);
+export async function exportProductivityReport(filters: ReportFilters = {}): Promise<void> {
+  let harvestQuery = supabase.from("harvests").select(`total_kg, operator:operators(id, full_name)`);
+  let appQuery = supabase.from("applications").select(`labor_hours, operator:operators(id, full_name)`);
 
-  // Fetch applications grouped by operator
-  const { data: applications } = await supabase
-    .from("applications")
-    .select(`
-      labor_hours,
-      operator:operators(id, full_name)
-    `)
-    .gte("device_time", subDays(new Date(), days).toISOString());
+  if (filters.dateFrom) {
+    harvestQuery = harvestQuery.gte("harvest_date", format(filters.dateFrom, "yyyy-MM-dd"));
+    appQuery = appQuery.gte("device_time", filters.dateFrom.toISOString());
+  } else {
+    const startDate = subDays(new Date(), 30);
+    harvestQuery = harvestQuery.gte("harvest_date", startDate.toISOString().split("T")[0]);
+    appQuery = appQuery.gte("device_time", startDate.toISOString());
+  }
+
+  if (filters.dateTo) {
+    harvestQuery = harvestQuery.lte("harvest_date", format(filters.dateTo, "yyyy-MM-dd"));
+    appQuery = appQuery.lte("device_time", filters.dateTo.toISOString());
+  }
+
+  const { data: harvests } = await harvestQuery;
+  const { data: applications } = await appQuery;
 
   // Aggregate by operator
   const operatorStats: Record<string, {
@@ -110,6 +127,7 @@ export async function exportProductivityReport(days: number = 30): Promise<void>
   harvests?.forEach((h: any) => {
     const opId = h.operator?.id;
     if (!opId) return;
+    if (filters.operatorId && opId !== filters.operatorId) return;
     if (!operatorStats[opId]) {
       operatorStats[opId] = {
         name: h.operator.full_name,
@@ -126,6 +144,7 @@ export async function exportProductivityReport(days: number = 30): Promise<void>
   applications?.forEach((a: any) => {
     const opId = a.operator?.id;
     if (!opId) return;
+    if (filters.operatorId && opId !== filters.operatorId) return;
     if (!operatorStats[opId]) {
       operatorStats[opId] = {
         name: a.operator.full_name,
@@ -139,7 +158,12 @@ export async function exportProductivityReport(days: number = 30): Promise<void>
     operatorStats[opId].totalHours += a.labor_hours || 0;
   });
 
-  const reportData = Object.values(operatorStats).map(op => ({
+  const stats = Object.values(operatorStats);
+  if (stats.length === 0) {
+    throw new Error("No hay datos de productividad para exportar");
+  }
+
+  const reportData = stats.map(op => ({
     Operario: op.name,
     "Cosechas realizadas": op.harvests,
     "Total kg cosechados": op.totalKg.toFixed(1),
@@ -158,40 +182,53 @@ export async function exportProductivityReport(days: number = 30): Promise<void>
 // COSTS VS PRODUCTION
 // ============================================
 
-export async function exportCostsReport(days: number = 30): Promise<void> {
-  const startDate = subDays(new Date(), days).toISOString();
-  
-  const { data: applications } = await supabase
+export async function exportCostsReport(filters: ReportFilters = {}): Promise<void> {
+  let appQuery = supabase
     .from("applications")
-    .select(`
-      device_time,
-      total_product_cost,
-      total_labor_cost,
-      total_cost,
-      lot:lots(name)
-    `)
-    .gte("device_time", startDate)
+    .select(`device_time, total_product_cost, total_labor_cost, total_cost, lot:lots(id, name)`)
     .order("device_time", { ascending: false });
 
-  const { data: harvests } = await supabase
-    .from("harvests")
-    .select("harvest_date, total_kg")
-    .gte("harvest_date", startDate.split("T")[0]);
+  let harvestQuery = supabase.from("harvests").select("harvest_date, total_kg, lot:lots(id, name)");
 
-  const totalCost = applications?.reduce((sum: number, a: any) => sum + (a.total_cost || 0), 0) || 0;
-  const totalProductCost = applications?.reduce((sum: number, a: any) => sum + (a.total_product_cost || 0), 0) || 0;
-  const totalLaborCost = applications?.reduce((sum: number, a: any) => sum + (a.total_labor_cost || 0), 0) || 0;
-  const totalKg = harvests?.reduce((sum: number, h: any) => sum + (h.total_kg || 0), 0) || 0;
+  if (filters.dateFrom) {
+    appQuery = appQuery.gte("device_time", filters.dateFrom.toISOString());
+    harvestQuery = harvestQuery.gte("harvest_date", format(filters.dateFrom, "yyyy-MM-dd"));
+  } else {
+    const startDate = subDays(new Date(), 30).toISOString();
+    appQuery = appQuery.gte("device_time", startDate);
+    harvestQuery = harvestQuery.gte("harvest_date", startDate.split("T")[0]);
+  }
+
+  if (filters.dateTo) {
+    appQuery = appQuery.lte("device_time", filters.dateTo.toISOString());
+    harvestQuery = harvestQuery.lte("harvest_date", format(filters.dateTo, "yyyy-MM-dd"));
+  }
+
+  const { data: applications } = await appQuery;
+  const { data: harvests } = await harvestQuery;
+
+  let filteredApps = applications || [];
+  let filteredHarvests = harvests || [];
+
+  if (filters.lotId) {
+    filteredApps = filteredApps.filter((a: any) => a.lot?.id === filters.lotId);
+    filteredHarvests = filteredHarvests.filter((h: any) => h.lot?.id === filters.lotId);
+  }
+
+  const totalCost = filteredApps.reduce((sum: number, a: any) => sum + (a.total_cost || 0), 0);
+  const totalProductCost = filteredApps.reduce((sum: number, a: any) => sum + (a.total_product_cost || 0), 0);
+  const totalLaborCost = filteredApps.reduce((sum: number, a: any) => sum + (a.total_labor_cost || 0), 0);
+  const totalKg = filteredHarvests.reduce((sum: number, h: any) => sum + (h.total_kg || 0), 0);
   const costPerKg = totalKg > 0 ? totalCost / totalKg : 0;
 
   // Detailed applications
-  const detailData = applications?.map((app: any) => ({
+  const detailData = filteredApps.map((app: any) => ({
     Fecha: format(new Date(app.device_time), "dd/MM/yyyy"),
     Lote: app.lot?.name || "—",
     "Costo Insumos": app.total_product_cost || 0,
     "Costo M.O.": app.total_labor_cost || 0,
     "Costo Total": app.total_cost || 0,
-  })) || [];
+  }));
 
   // Summary sheet
   const summaryData = [
@@ -207,8 +244,10 @@ export async function exportCostsReport(days: number = 30): Promise<void> {
   const summarySheet = XLSX.utils.json_to_sheet(summaryData);
   XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen");
   
-  const detailSheet = XLSX.utils.json_to_sheet(detailData);
-  XLSX.utils.book_append_sheet(workbook, detailSheet, "Detalle");
+  if (detailData.length > 0) {
+    const detailSheet = XLSX.utils.json_to_sheet(detailData);
+    XLSX.utils.book_append_sheet(workbook, detailSheet, "Detalle");
+  }
   
   XLSX.writeFile(workbook, `costos_produccion_${format(new Date(), "yyyyMMdd")}.xlsx`);
 }
@@ -218,8 +257,6 @@ export async function exportCostsReport(days: number = 30): Promise<void> {
 // ============================================
 
 export async function exportInventoryReport(): Promise<void> {
-  const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
-  
   // Current stock
   const { data: batches } = await supabase
     .from("inventory_batches")
@@ -234,10 +271,8 @@ export async function exportInventoryReport(): Promise<void> {
     .from("application_products")
     .select(`
       quantity_used,
-      product:inventory_products(name, unit),
-      application:applications(device_time)
-    `)
-    .gte("application.device_time", thirtyDaysAgo);
+      product:inventory_products(name, unit)
+    `);
 
   // Aggregate stock by product
   const stockByProduct: Record<string, { name: string; unit: string; stock: number; used: number }> = {};
@@ -260,11 +295,17 @@ export async function exportInventoryReport(): Promise<void> {
     stockByProduct[name].used += u.quantity_used || 0;
   });
 
-  const reportData = Object.values(stockByProduct).map(p => ({
+  const products = Object.values(stockByProduct);
+  
+  if (products.length === 0) {
+    throw new Error("No hay datos de inventario para exportar");
+  }
+
+  const reportData = products.map(p => ({
     Producto: p.name,
     Unidad: p.unit,
     "Stock Actual": p.stock.toFixed(2),
-    "Consumo (30 días)": p.used.toFixed(2),
+    "Consumo Total": p.used.toFixed(2),
     "Estado": p.stock < 10 ? "BAJO" : "OK",
   }));
 
@@ -278,10 +319,8 @@ export async function exportInventoryReport(): Promise<void> {
 // SANITARY HISTORY
 // ============================================
 
-export async function exportSanitaryReport(days: number = 90): Promise<void> {
-  const startDate = subDays(new Date(), days).toISOString();
-  
-  const { data } = await supabase
+export async function exportSanitaryReport(filters: ReportFilters = {}): Promise<void> {
+  let query = supabase
     .from("pest_reports")
     .select(`
       created_at,
@@ -291,10 +330,32 @@ export async function exportSanitaryReport(days: number = 90): Promise<void> {
       incidence_percent,
       follow_up_date,
       resolved_at,
-      lot:lots(name)
+      lot:lots(id, name)
     `)
-    .gte("created_at", startDate)
     .order("created_at", { ascending: false });
+
+  if (filters.dateFrom) {
+    query = query.gte("created_at", filters.dateFrom.toISOString());
+  } else {
+    query = query.gte("created_at", subDays(new Date(), 90).toISOString());
+  }
+
+  if (filters.dateTo) {
+    query = query.lte("created_at", filters.dateTo.toISOString());
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error("Error al obtener datos: " + error.message);
+
+  let filteredData = data || [];
+  if (filters.lotId) {
+    filteredData = filteredData.filter((d: any) => d.lot?.id === filters.lotId);
+  }
+
+  if (filteredData.length === 0) {
+    throw new Error("No hay reportes sanitarios para exportar");
+  }
 
   const statusLabels: Record<string, string> = {
     pendiente: "Pendiente",
@@ -302,7 +363,7 @@ export async function exportSanitaryReport(days: number = 90): Promise<void> {
     resuelto: "Resuelto",
   };
 
-  const reportData = data?.map((r: any) => ({
+  const reportData = filteredData.map((r: any) => ({
     Fecha: format(new Date(r.created_at), "dd/MM/yyyy"),
     Lote: r.lot?.name || "—",
     "Tipo de Plaga": r.pest_type,
@@ -315,7 +376,7 @@ export async function exportSanitaryReport(days: number = 90): Promise<void> {
     "Fecha Resolución": r.resolved_at 
       ? format(new Date(r.resolved_at), "dd/MM/yyyy") 
       : "—",
-  })) || [];
+  }));
 
   const worksheet = XLSX.utils.json_to_sheet(reportData);
   const workbook = XLSX.utils.book_new();
