@@ -1117,6 +1117,35 @@ export type Database = {
           },
         ]
       }
+      user_farms: {
+        Row: {
+          created_at: string
+          farm_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          farm_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          farm_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_farms_farm_id_fkey"
+            columns: ["farm_id"]
+            isOneToOne: false
+            referencedRelation: "farms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1212,6 +1241,7 @@ export type Database = {
         Args: { p_date: string; p_lot_id: string }
         Returns: Json
       }
+      get_user_farm_ids: { Args: { _user_id: string }; Returns: string[] }
       has_permission: {
         Args: {
           _action: Database["public"]["Enums"]["app_action"]
@@ -1228,6 +1258,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_agronoma: { Args: { _user_id: string }; Returns: boolean }
+      user_has_farm_access: {
+        Args: { _farm_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_action: "view" | "create" | "edit" | "delete" | "approve" | "export"
