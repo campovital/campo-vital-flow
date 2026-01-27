@@ -8,9 +8,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { Shield, Users, Save, Loader2 } from "lucide-react";
+import { Shield, Users, Save, Loader2, Building2 } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { UserRolesManager } from "@/components/roles/UserRolesManager";
+import { UserFarmsManager } from "@/components/roles/UserFarmsManager";
 
 type AppRole = "admin" | "agronoma" | "operario" | "consulta";
 type AppModule = "aplicar_mezcla" | "reporte_sanitario" | "seguimiento_sanitario" | "cosecha" | "tareas" | "costos" | "informes" | "configuracion" | "roles";
@@ -203,6 +204,10 @@ export default function Roles() {
               <Users className="w-4 h-4" />
               Usuarios y Roles
             </TabsTrigger>
+            <TabsTrigger value="farms" className="flex items-center gap-2">
+              <Building2 className="w-4 h-4" />
+              Fincas por Usuario
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="permissions" className="space-y-4">
@@ -285,6 +290,10 @@ export default function Roles() {
 
           <TabsContent value="users">
             <UserRolesManager />
+          </TabsContent>
+
+          <TabsContent value="farms">
+            <UserFarmsManager />
           </TabsContent>
         </Tabs>
       </div>
