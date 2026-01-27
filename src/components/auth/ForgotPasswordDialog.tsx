@@ -39,14 +39,8 @@ export function ForgotPasswordDialog() {
         throw error;
       }
 
-      // Also send our custom email via edge function for better branding
-      try {
-        await supabase.functions.invoke("send-password-reset", {
-          body: { email, resetUrl },
-        });
-      } catch (fnError) {
-        console.log("Custom email failed, but Supabase email was sent:", fnError);
-      }
+      // Nota: el correo funcional lo envía el sistema de autenticación.
+      // El envío “brandeado” requiere un enlace con token de recuperación; lo habilitamos cuando lo generemos desde backend.
 
       setSuccess(true);
       toast({
@@ -74,12 +68,9 @@ export function ForgotPasswordDialog() {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button
-          type="button"
-          className="text-sm text-primary hover:underline focus:outline-none"
-        >
+        <Button type="button" variant="link" className="h-auto p-0">
           ¿Olvidaste tu contraseña?
-        </button>
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

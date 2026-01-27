@@ -17,6 +17,12 @@ import Historial from "./pages/Historial";
 import Roles from "./pages/Roles";
 import Tareas from "./pages/Tareas";
 import Costos from "./pages/Costos";
+import Protocolos from "./pages/Protocolos";
+import ProgramadorProtocolos from "./pages/ProgramadorProtocolos";
+import Inventario from "./pages/Inventario";
+import Dashboard from "./pages/Dashboard";
+import Operarios from "./pages/Operarios";
+import Configuracion from "./pages/Configuracion";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +48,12 @@ const App = () => (
               <Route path="/roles" element={<Roles />} />
               <Route path="/tareas" element={<Tareas />} />
               <Route path="/costos" element={<Costos />} />
+              <Route path="/protocolos" element={<Protocolos />} />
+              <Route path="/protocolos/programador" element={<ProgramadorProtocolos />} />
+              <Route path="/inventario" element={<Inventario />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/operarios" element={<Operarios />} />
+              <Route path="/configuracion" element={<Configuracion />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
