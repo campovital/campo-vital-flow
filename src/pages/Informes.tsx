@@ -104,25 +104,22 @@ export default function Informes() {
 
   const handleExportExcel = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
-    const days = reportFilters.dateFrom && reportFilters.dateTo 
-      ? Math.ceil((reportFilters.dateTo.getTime() - reportFilters.dateFrom.getTime()) / (1000 * 60 * 60 * 24))
-      : 30;
 
     switch (reportId) {
       case "production":
-        await exportProductionReport(days);
+        await exportProductionReport(reportFilters);
         break;
       case "productivity":
-        await exportProductivityReport(days);
+        await exportProductivityReport(reportFilters);
         break;
       case "costs":
-        await exportCostsReport(days);
+        await exportCostsReport(reportFilters);
         break;
       case "inventory":
         await exportInventoryReport();
         break;
       case "sanitary":
-        await exportSanitaryReport(days);
+        await exportSanitaryReport(reportFilters);
         break;
     }
   };
