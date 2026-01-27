@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth";
 import { OverdueAlertsProvider } from "@/components/sanitary/OverdueAlertsProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import AplicarMezcla from "./pages/AplicarMezcla";
 import Cosecha from "./pages/Cosecha";
 import ReporteSanitario from "./pages/ReporteSanitario";
@@ -31,6 +32,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/aplicar" element={<AplicarMezcla />} />
               <Route path="/cosecha" element={<Cosecha />} />
               <Route path="/plagas" element={<ReporteSanitario />} />
