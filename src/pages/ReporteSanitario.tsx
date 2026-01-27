@@ -22,6 +22,7 @@ import { useGeolocation } from "@/hooks/use-geolocation";
 import { useMultiPhotoUpload } from "@/hooks/use-multi-photo-upload";
 import { GpsIndicator } from "@/components/sanitary/GpsIndicator";
 import { MultiPhotoCapture } from "@/components/sanitary/MultiPhotoCapture";
+import { EmptyStateCard } from "@/components/common/EmptyStateCard";
 import {
   Bug,
   MapPin,
@@ -35,6 +36,7 @@ import {
   Thermometer,
   Calculator,
   Leaf,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -238,13 +240,12 @@ export default function ReporteSanitario() {
             
             <div className="grid gap-3">
               {lots.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                    <p>No hay lotes registrados</p>
-                    <p className="text-sm mt-1">Configure lotes en Configuración</p>
-                  </CardContent>
-                </Card>
+                <EmptyStateCard
+                  icon={MapPin}
+                  title="No hay lotes registrados"
+                  description="Configure lotes en el módulo de Configuración para poder reportar problemas"
+                  primaryAction={{ label: "Ir a Configuración", href: "/configuracion", icon: Settings }}
+                />
               ) : (
                 lots.map((lot) => (
                   <Card

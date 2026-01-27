@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { EmptyStateCard } from "@/components/common/EmptyStateCard";
 import {
   MapPin,
   User,
@@ -22,6 +23,7 @@ import {
   Loader2,
   Droplet,
   Clock,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -246,12 +248,12 @@ export default function AplicarMezcla() {
 
             <div className="grid gap-3">
               {operators.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    <User className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                    <p>No hay operarios registrados</p>
-                  </CardContent>
-                </Card>
+                <EmptyStateCard
+                  icon={User}
+                  title="No hay operarios registrados"
+                  description="Necesita registrar operarios para asignar aplicaciones"
+                  primaryAction={{ label: "Ir a Operarios", href: "/operarios" }}
+                />
               ) : (
                 operators.map((operator) => (
                   <Card
@@ -288,12 +290,12 @@ export default function AplicarMezcla() {
 
             <div className="grid gap-3">
               {lots.length === 0 ? (
-                <Card className="border-dashed">
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                    <p>No hay lotes registrados</p>
-                  </CardContent>
-                </Card>
+                <EmptyStateCard
+                  icon={MapPin}
+                  title="No hay lotes registrados"
+                  description="Configure lotes en el módulo de Configuración"
+                  primaryAction={{ label: "Ir a Configuración", href: "/configuracion", icon: Settings }}
+                />
               ) : (
                 lots.map((lot) => (
                   <Card
