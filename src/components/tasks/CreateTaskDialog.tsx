@@ -145,23 +145,27 @@ export function CreateTaskDialog({ open, onOpenChange, onSuccess }: CreateTaskDi
           {/* Task Type */}
           <div className="space-y-2">
             <Label htmlFor="taskType">Tipo de Tarea *</Label>
-            <Select value={taskTypeId} onValueChange={setTaskTypeId}>
+            <Select value={taskTypeId || "__none__"} onValueChange={(v) => setTaskTypeId(v === "__none__" ? "" : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar tipo de tarea" />
               </SelectTrigger>
               <SelectContent>
-                {taskTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{type.name}</span>
-                      {type.estimated_hours && (
-                        <span className="text-xs text-muted-foreground ml-2">
-                          ({type.estimated_hours}h est.)
-                        </span>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
+                {taskTypes.length === 0 ? (
+                  <SelectItem value="__none__" disabled>No hay tipos de tarea</SelectItem>
+                ) : (
+                  taskTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{type.name}</span>
+                        {type.estimated_hours && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            ({type.estimated_hours}h est.)
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -171,11 +175,12 @@ export function CreateTaskDialog({ open, onOpenChange, onSuccess }: CreateTaskDi
             <Label htmlFor="lot">
               Lote {selectedTaskType?.requires_lot && "*"}
             </Label>
-            <Select value={lotId} onValueChange={setLotId}>
+            <Select value={lotId || "__none__"} onValueChange={(v) => setLotId(v === "__none__" ? "" : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar lote" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">Sin lote asignado</SelectItem>
                 {lots.map((lot) => (
                   <SelectItem key={lot.id} value={lot.id}>
                     {lot.name}
@@ -188,11 +193,12 @@ export function CreateTaskDialog({ open, onOpenChange, onSuccess }: CreateTaskDi
           {/* Operator */}
           <div className="space-y-2">
             <Label htmlFor="operator">Asignar a</Label>
-            <Select value={operatorId} onValueChange={setOperatorId}>
+            <Select value={operatorId || "__none__"} onValueChange={(v) => setOperatorId(v === "__none__" ? "" : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Sin asignar" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">Sin asignar</SelectItem>
                 {operators.map((op) => (
                   <SelectItem key={op.id} value={op.id}>
                     {op.full_name}

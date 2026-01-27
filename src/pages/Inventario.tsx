@@ -480,11 +480,12 @@ export default function Inventario() {
                 <div className="space-y-2">
                   <Label>Categoría</Label>
                   <Select
-                    value={productForm.category}
-                    onValueChange={(v) => setProductForm({ ...productForm, category: v })}
+                    value={productForm.category || "__none__"}
+                    onValueChange={(v) => setProductForm({ ...productForm, category: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="__none__">Sin categoría</SelectItem>
                       {CATEGORY_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                       ))}
@@ -552,14 +553,18 @@ export default function Inventario() {
               <div className="space-y-2">
                 <Label>Producto *</Label>
                 <Select
-                  value={batchForm.product_id}
-                  onValueChange={(v) => setBatchForm({ ...batchForm, product_id: v })}
+                  value={batchForm.product_id || "__none__"}
+                  onValueChange={(v) => setBatchForm({ ...batchForm, product_id: v === "__none__" ? "" : v })}
                 >
                   <SelectTrigger><SelectValue placeholder="Seleccionar producto" /></SelectTrigger>
                   <SelectContent>
-                    {products.filter(p => p.is_active).map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
+                    {products.filter(p => p.is_active).length === 0 ? (
+                      <SelectItem value="__none__" disabled>No hay productos activos</SelectItem>
+                    ) : (
+                      products.filter(p => p.is_active).map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

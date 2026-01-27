@@ -299,8 +299,9 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
               <div className="flex-1 min-w-[200px]">
                 <Label className="text-xs">Producto</Label>
                 <Select
-                  value={newComponent.product_id}
+                  value={newComponent.product_id || "__none__"}
                   onValueChange={(value) => {
+                    if (value === "__none__") return;
                     const product = products.find(p => p.id === value);
                     setNewComponent({
                       ...newComponent,
@@ -313,11 +314,15 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
                     <SelectValue placeholder="Seleccionar producto" />
                   </SelectTrigger>
                   <SelectContent>
-                    {products.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name} {p.active_ingredient && `(${p.active_ingredient})`}
-                      </SelectItem>
-                    ))}
+                    {products.length === 0 ? (
+                      <SelectItem value="__none__" disabled>No hay productos</SelectItem>
+                    ) : (
+                      products.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} {p.active_ingredient && `(${p.active_ingredient})`}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

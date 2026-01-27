@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,8 +44,7 @@ import {
   Clock,
   Sprout,
 } from "lucide-react";
-import { format, subDays } from "date-fns";
-import { es } from "date-fns/locale";
+import { subDays } from "date-fns";
 
 interface Operator {
   id: string;
@@ -71,15 +71,11 @@ interface OperatorStats {
 }
 
 export default function Operarios() {
-  const { canManage, isAdmin, isAgronoma, isOperario, isConsulta } = useAuth();
+  const { canManage } = useAuth();
   const { toast } = useToast();
-  const [operators, setOperators] = useState<Operator[]>([]);
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
-  const [operatorStats, setOperatorStats] = useState<Record<string, OperatorStats>>({});
-  const [isSaving, setIsSaving] = useState(false);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -91,66 +87,107 @@ export default function Operarios() {
     is_active: true,
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Fetch operators
+  const { data: operators = [], isLoading: isLoadingOperators } = useQuery({
+    queryKey: ["operators"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("operators")
+        .select("*")
+        .order("full_name");
+      if (error) throw error;
+      return data as Operator[];
+    },
+  });
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    await Promise.all([fetchOperators(), fetchFarms()]);
-    setIsLoading(false);
-  };
+  // Fetch farms
+  const { data: farms = [] } = useQuery({
+    queryKey: ["farms"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("farms")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return data as Farm[];
+    },
+  });
 
-  const fetchOperators = async () => {
-    const { data, error } = await supabase
-      .from("operators")
-      .select("*")
-      .order("full_name");
-    
-    if (data) {
-      setOperators(data);
-      // Fetch stats for each operator
-      await fetchAllStats(data);
-    }
-  };
-
-  const fetchFarms = async () => {
-    const { data } = await supabase
-      .from("farms")
-      .select("id, name")
-      .order("name");
-    if (data) setFarms(data);
-  };
-
-  const fetchAllStats = async (ops: Operator[]) => {
-    const stats: Record<string, OperatorStats> = {};
-    const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
-    
-    for (const op of ops) {
-      // Fetch harvest stats
-      const { data: harvests } = await supabase
-        .from("harvests")
-        .select("total_kg")
-        .eq("operator_id", op.id)
-        .gte("harvest_date", thirtyDaysAgo.split("T")[0]);
+  // Fetch stats for all operators
+  const { data: operatorStats = {} } = useQuery({
+    queryKey: ["operator-stats", operators.map(o => o.id)],
+    queryFn: async () => {
+      const stats: Record<string, OperatorStats> = {};
+      const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
       
-      // Fetch application stats
-      const { data: applications } = await supabase
-        .from("applications")
-        .select("labor_hours")
-        .eq("operator_id", op.id)
-        .gte("device_time", thirtyDaysAgo);
+      for (const op of operators) {
+        const [harvests, applications] = await Promise.all([
+          supabase
+            .from("harvests")
+            .select("total_kg")
+            .eq("operator_id", op.id)
+            .gte("harvest_date", thirtyDaysAgo.split("T")[0]),
+          supabase
+            .from("applications")
+            .select("labor_hours")
+            .eq("operator_id", op.id)
+            .gte("device_time", thirtyDaysAgo)
+        ]);
 
-      stats[op.id] = {
-        total_harvests: harvests?.length || 0,
-        total_kg: harvests?.reduce((sum, h) => sum + (h.total_kg || 0), 0) || 0,
-        total_applications: applications?.length || 0,
-        total_hours: applications?.reduce((sum, a) => sum + (a.labor_hours || 0), 0) || 0,
+        stats[op.id] = {
+          total_harvests: harvests.data?.length || 0,
+          total_kg: harvests.data?.reduce((sum, h) => sum + (h.total_kg || 0), 0) || 0,
+          total_applications: applications.data?.length || 0,
+          total_hours: applications.data?.reduce((sum, a) => sum + (a.labor_hours || 0), 0) || 0,
+        };
+      }
+      
+      return stats;
+    },
+    enabled: operators.length > 0,
+  });
+
+  // Create/Update mutation
+  const saveMutation = useMutation({
+    mutationFn: async (data: { isEdit: boolean; id?: string }) => {
+      const payload = {
+        full_name: form.full_name.trim(),
+        identification: form.identification.trim() || null,
+        phone: form.phone.trim() || null,
+        hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : 0,
+        currency: form.currency,
+        farm_id: form.farm_id || null,
+        is_active: form.is_active,
       };
-    }
-    
-    setOperatorStats(stats);
-  };
+
+      if (data.isEdit && data.id) {
+        const { error } = await supabase
+          .from("operators")
+          .update(payload)
+          .eq("id", data.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("operators").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_, variables) => {
+      toast({ 
+        title: variables.isEdit ? "Operario actualizado" : "Operario creado",
+        description: "Los cambios se guardaron correctamente"
+      });
+      setIsDialogOpen(false);
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ["operators"] });
+    },
+    onError: (error) => {
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : "No se pudo guardar el operario", 
+        variant: "destructive" 
+      });
+    },
+  });
 
   const resetForm = () => {
     setForm({
@@ -179,43 +216,12 @@ export default function Operarios() {
     setIsDialogOpen(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!form.full_name.trim()) {
       toast({ title: "Error", description: "El nombre es obligatorio", variant: "destructive" });
       return;
     }
-
-    setIsSaving(true);
-
-    const payload = {
-      full_name: form.full_name.trim(),
-      identification: form.identification.trim() || null,
-      phone: form.phone.trim() || null,
-      hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : 0,
-      currency: form.currency,
-      farm_id: form.farm_id || null,
-      is_active: form.is_active,
-    };
-
-    let error;
-    if (editingOperator) {
-      ({ error } = await supabase
-        .from("operators")
-        .update(payload)
-        .eq("id", editingOperator.id));
-    } else {
-      ({ error } = await supabase.from("operators").insert(payload));
-    }
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: editingOperator ? "Operario actualizado" : "Operario creado" });
-      setIsDialogOpen(false);
-      resetForm();
-      fetchOperators();
-    }
-    setIsSaving(false);
+    saveMutation.mutate({ isEdit: !!editingOperator, id: editingOperator?.id });
   };
 
   const formatCurrency = (value: number, currency: string = "COP") => {
@@ -238,7 +244,7 @@ export default function Operarios() {
   // Hide cost info for operario/consulta roles
   const showCostInfo = canManage;
 
-  if (isLoading) {
+  if (isLoadingOperators) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -313,12 +319,15 @@ export default function Operarios() {
 
                   <div>
                     <Label htmlFor="farm_id">Finca asignada</Label>
-                    <Select value={form.farm_id} onValueChange={(v) => setForm({ ...form, farm_id: v })}>
+                    <Select 
+                      value={form.farm_id || "__none__"} 
+                      onValueChange={(v) => setForm({ ...form, farm_id: v === "__none__" ? "" : v })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar finca" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin asignar</SelectItem>
+                        <SelectItem value="__none__">Sin asignar</SelectItem>
                         {farms.map((farm) => (
                           <SelectItem key={farm.id} value={farm.id}>{farm.name}</SelectItem>
                         ))}
@@ -362,8 +371,8 @@ export default function Operarios() {
                     <Label htmlFor="is_active">Operario activo</Label>
                   </div>
 
-                  <Button onClick={handleSave} disabled={isSaving} className="w-full">
-                    {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  <Button onClick={handleSave} disabled={saveMutation.isPending} className="w-full">
+                    {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {editingOperator ? "Guardar cambios" : "Crear operario"}
                   </Button>
                 </div>
