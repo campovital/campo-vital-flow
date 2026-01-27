@@ -8,12 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  ResponsiveDialog,
+  ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog";
 import {
   Table,
   TableBody,
@@ -32,6 +29,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { EmptyStateCard } from "@/components/common/EmptyStateCard";
 import {
   Users,
   Plus,
@@ -269,22 +267,19 @@ export default function Operarios() {
           </div>
           
           {canManage && (
-            <Dialog open={isDialogOpen} onOpenChange={(open) => {
-              setIsDialogOpen(open);
-              if (!open) resetForm();
-            }}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Operario
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>
-                    {editingOperator ? "Editar Operario" : "Nuevo Operario"}
-                  </DialogTitle>
-                </DialogHeader>
+            <>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Operario
+              </Button>
+              <ResponsiveDialog
+                open={isDialogOpen}
+                onOpenChange={(open) => {
+                  setIsDialogOpen(open);
+                  if (!open) resetForm();
+                }}
+                title={editingOperator ? "Editar Operario" : "Nuevo Operario"}
+              >
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="full_name">Nombre completo *</Label>
@@ -371,13 +366,15 @@ export default function Operarios() {
                     <Label htmlFor="is_active">Operario activo</Label>
                   </div>
 
-                  <Button onClick={handleSave} disabled={saveMutation.isPending} className="w-full">
-                    {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    {editingOperator ? "Guardar cambios" : "Crear operario"}
-                  </Button>
+                  <ResponsiveDialogFooter>
+                    <Button onClick={handleSave} disabled={saveMutation.isPending} className="w-full">
+                      {saveMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      {editingOperator ? "Guardar cambios" : "Crear operario"}
+                    </Button>
+                  </ResponsiveDialogFooter>
                 </div>
-              </DialogContent>
-            </Dialog>
+              </ResponsiveDialog>
+            </>
           )}
         </div>
 
@@ -439,9 +436,16 @@ export default function Operarios() {
           </CardHeader>
           <CardContent>
             {operators.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No hay operarios registrados
-              </div>
+              <EmptyStateCard
+                icon={Users}
+                title="No hay operarios registrados"
+                description="Agregue operarios para asignarlos a cosechas y aplicaciones"
+                primaryAction={
+                  canManage
+                    ? { label: "Crear operario", onClick: () => setIsDialogOpen(true) }
+                    : undefined
+                }
+              />
             ) : (
               <Table>
                 <TableHeader>
