@@ -73,11 +73,17 @@ export default function MapaPlagas() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos los lotes</SelectItem>
-                    {lots.map((lot) => (
-                      <SelectItem key={lot.id} value={lot.id}>
-                        {lot.name}
+                    {lots.length === 0 ? (
+                      <SelectItem value="__no_lots__" disabled>
+                        No hay lotes disponibles
                       </SelectItem>
-                    ))}
+                    ) : (
+                      lots.map((lot) => (
+                        <SelectItem key={lot.id} value={lot.id}>
+                          {lot.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>

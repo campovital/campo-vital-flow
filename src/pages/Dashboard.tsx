@@ -265,11 +265,15 @@ export default function Dashboard() {
 
   const getPercentChange = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
-    return ((current - previous) / previous) * 100;
+    const change = ((current - previous) / previous) * 100;
+    return isNaN(change) || !isFinite(change) ? 0 : change;
   };
 
   const kgChange = getPercentChange(stats.totalKgThisMonth, stats.totalKgLastMonth);
   const costChange = getPercentChange(stats.totalCostThisMonth, stats.totalCostLastMonth);
+
+  // Safe cost per kg that handles NaN/Infinity
+  const safeCostPerKg = isNaN(stats.costPerKg) || !isFinite(stats.costPerKg) ? 0 : stats.costPerKg;
 
   const handleExportReport = () => {
     const reportData = [
@@ -379,7 +383,7 @@ export default function Dashboard() {
                 <TrendingUp className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(stats.costPerKg)}</div>
+                <div className="text-2xl font-bold">{formatCurrency(safeCostPerKg)}</div>
                 <p className="text-xs text-muted-foreground">promedio este mes</p>
               </CardContent>
             </Card>
@@ -443,27 +447,37 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={harvestData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip 
-                      formatter={(value) => [`${value} kg`, "Cosecha"]}
-                      contentStyle={{ 
-                        backgroundColor: "hsl(var(--background))",
-                        border: "1px solid hsl(var(--border))"
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="kg" 
-                      stroke="hsl(var(--success))" 
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                {harvestData.length === 0 || harvestData.every(d => d.kg === 0) ? (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <Sprout className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>Sin datos de cosecha</p>
+                      <p className="text-sm">Registre cosechas para ver la tendencia</p>
+                    </div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={harvestData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="date" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip 
+                        formatter={(value) => [`${value} kg`, "Cosecha"]}
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))"
+                        }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="kg" 
+                        stroke="hsl(var(--success))" 
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -476,43 +490,55 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={costData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={80}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      >
-                        {costData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value) => formatCurrency(value as number)}
-                        contentStyle={{ 
-                          backgroundColor: "hsl(var(--background))",
-                          border: "1px solid hsl(var(--border))"
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex justify-center gap-4 mt-2">
-                  {costData.map((item) => (
-                    <div key={item.name} className="flex items-center gap-2 text-sm">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span>{item.name}: {formatCurrency(item.value)}</span>
+                  {costData.length === 0 || costData.every(d => d.value === 0) ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <div className="text-center">
+                        <DollarSign className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p>Sin datos de costos</p>
+                        <p className="text-sm">Registre aplicaciones para ver costos</p>
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={costData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {costData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value) => formatCurrency(value as number)}
+                          contentStyle={{ 
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))"
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
+                {costData.length > 0 && costData.some(d => d.value > 0) && (
+                  <div className="flex justify-center gap-4 mt-2">
+                    {costData.map((item) => (
+                      <div key={item.name} className="flex items-center gap-2 text-sm">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span>{item.name}: {formatCurrency(item.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -524,20 +550,30 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sanitaryData} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="status" type="category" className="text-xs" width={100} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: "hsl(var(--background))",
-                        border: "1px solid hsl(var(--border))"
-                      }}
-                    />
-                    <Bar dataKey="count" fill="hsl(var(--warning))" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {sanitaryData.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <Bug className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>Sin reportes sanitarios</p>
+                      <p className="text-sm">No hay incidencias registradas</p>
+                    </div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={sanitaryData} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="status" type="category" className="text-xs" width={100} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))"
+                        }}
+                      />
+                      <Bar dataKey="count" fill="hsl(var(--warning))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
