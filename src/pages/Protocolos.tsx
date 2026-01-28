@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,9 +53,7 @@ const CATEGORY_COLORS: Record<ProtocolCategory, string> = {
 export default function Protocolos() {
   const { toast } = useToast();
   const { canManage } = useAuth();
-  const [protocols, setProtocols] = useState<Protocol[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProtocol, setEditingProtocol] = useState<Protocol | null>(null);
   const [formData, setFormData] = useState({
@@ -64,27 +63,109 @@ export default function Protocolos() {
   });
   const [versionsProtocol, setVersionsProtocol] = useState<Protocol | null>(null);
 
-  useEffect(() => {
-    fetchProtocols();
-  }, []);
+  // Query for protocols using React Query
+  const { data: protocols = [], isLoading } = useQuery({
+    queryKey: ["protocols"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("protocols")
+        .select("*")
+        .order("name");
+      if (error) throw error;
+      return data as Protocol[];
+    },
+  });
 
-  const fetchProtocols = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from("protocols")
-      .select("*")
-      .order("name");
-
-    if (error) {
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (data: { name: string; description: string | null; category: ProtocolCategory }) => {
+      const { error } = await supabase.from("protocols").insert({
+        name: data.name,
+        description: data.description,
+        category: data.category,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocols"] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-rules"] });
+      toast({
+        title: "Protocolo creado",
+        description: `"${formData.name}" se creó correctamente`,
+      });
+      setDialogOpen(false);
+      resetForm();
+    },
+    onError: () => {
       toast({
         title: "Error",
-        description: "No se pudieron cargar los protocolos",
+        description: "No se pudo crear el protocolo",
         variant: "destructive",
       });
-    } else {
-      setProtocols(data || []);
-    }
-    setIsLoading(false);
+    },
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data: { id: string; name: string; description: string | null; category: ProtocolCategory }) => {
+      const { error } = await supabase
+        .from("protocols")
+        .update({
+          name: data.name,
+          description: data.description,
+          category: data.category,
+        })
+        .eq("id", data.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocols"] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-rules"] });
+      toast({
+        title: "Protocolo actualizado",
+        description: `"${formData.name}" se actualizó correctamente`,
+      });
+      setDialogOpen(false);
+      resetForm();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el protocolo",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("protocols").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocols"] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-rules"] });
+      toast({
+        title: "Protocolo eliminado",
+        description: "El protocolo fue eliminado correctamente",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el protocolo. Puede tener versiones asociadas.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setEditingProtocol(null);
+    setFormData({ name: "", description: "", category: "otro" });
   };
 
   const handleOpenDialog = (protocol?: Protocol) => {
@@ -96,13 +177,12 @@ export default function Protocolos() {
         category: protocol.category,
       });
     } else {
-      setEditingProtocol(null);
-      setFormData({ name: "", description: "", category: "otro" });
+      resetForm();
     }
     setDialogOpen(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!formData.name.trim()) {
       toast({
         title: "Error",
@@ -112,80 +192,25 @@ export default function Protocolos() {
       return;
     }
 
-    setIsSaving(true);
+    const data = {
+      name: formData.name.trim(),
+      description: formData.description.trim() || null,
+      category: formData.category,
+    };
 
     if (editingProtocol) {
-      const { error } = await supabase
-        .from("protocols")
-        .update({
-          name: formData.name.trim(),
-          description: formData.description.trim() || null,
-          category: formData.category,
-        })
-        .eq("id", editingProtocol.id);
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "No se pudo actualizar el protocolo",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Protocolo actualizado",
-          description: `"${formData.name}" se actualizó correctamente`,
-        });
-        setDialogOpen(false);
-        fetchProtocols();
-      }
+      updateMutation.mutate({ id: editingProtocol.id, ...data });
     } else {
-      const { error } = await supabase.from("protocols").insert({
-        name: formData.name.trim(),
-        description: formData.description.trim() || null,
-        category: formData.category,
-      });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "No se pudo crear el protocolo",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Protocolo creado",
-          description: `"${formData.name}" se creó correctamente`,
-        });
-        setDialogOpen(false);
-        fetchProtocols();
-      }
+      createMutation.mutate(data);
     }
-
-    setIsSaving(false);
   };
 
-  const handleDelete = async (protocol: Protocol) => {
+  const handleDelete = (protocol: Protocol) => {
     if (!confirm(`¿Eliminar el protocolo "${protocol.name}"?`)) return;
-
-    const { error } = await supabase
-      .from("protocols")
-      .delete()
-      .eq("id", protocol.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el protocolo. Puede tener versiones asociadas.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Protocolo eliminado",
-        description: `"${protocol.name}" fue eliminado`,
-      });
-      fetchProtocols();
-    }
+    deleteMutation.mutate(protocol.id);
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <AppLayout>
@@ -277,6 +302,7 @@ export default function Protocolos() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleDelete(protocol)}
+                                disabled={deleteMutation.isPending}
                               >
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>

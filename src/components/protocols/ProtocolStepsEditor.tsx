@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,36 +19,95 @@ interface Props {
 
 export function ProtocolStepsEditor({ versionId, canEdit }: Props) {
   const { toast } = useToast();
-  const [steps, setSteps] = useState<ProtocolStep[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [newStep, setNewStep] = useState({ instruction: "", is_required: true });
 
-  useEffect(() => {
-    fetchSteps();
-  }, [versionId]);
+  // Query for steps
+  const { data: steps = [], isLoading } = useQuery({
+    queryKey: ["protocol-steps", versionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("protocol_steps")
+        .select("*")
+        .eq("protocol_version_id", versionId)
+        .order("step_order");
+      if (error) throw error;
+      return data as ProtocolStep[];
+    },
+  });
 
-  const fetchSteps = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from("protocol_steps")
-      .select("*")
-      .eq("protocol_version_id", versionId)
-      .order("step_order");
-
-    if (error) {
+  // Add step mutation
+  const addStepMutation = useMutation({
+    mutationFn: async (step: { instruction: string; is_required: boolean }) => {
+      const nextOrder = steps.length > 0 ? Math.max(...steps.map(s => s.step_order)) + 1 : 1;
+      const { error } = await supabase.from("protocol_steps").insert({
+        protocol_version_id: versionId,
+        step_order: nextOrder,
+        instruction: step.instruction.trim(),
+        is_required: step.is_required,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-steps", versionId] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions"] });
+      toast({ title: "Paso agregado" });
+      setNewStep({ instruction: "", is_required: true });
+    },
+    onError: () => {
       toast({
         title: "Error",
-        description: "No se pudieron cargar los pasos",
+        description: "No se pudo agregar el paso",
         variant: "destructive",
       });
-    } else {
-      setSteps(data || []);
-    }
-    setIsLoading(false);
-  };
+    },
+  });
 
-  const handleAddStep = async () => {
+  // Update step mutation
+  const updateStepMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<ProtocolStep> }) => {
+      const { error } = await supabase
+        .from("protocol_steps")
+        .update(updates)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-steps", versionId] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el paso",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete step mutation
+  const deleteStepMutation = useMutation({
+    mutationFn: async (stepId: string) => {
+      const { error } = await supabase
+        .from("protocol_steps")
+        .delete()
+        .eq("id", stepId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-steps", versionId] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions"] });
+      toast({ title: "Paso eliminado" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el paso",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddStep = () => {
     if (!newStep.instruction.trim()) {
       toast({
         title: "Error",
@@ -56,66 +116,16 @@ export function ProtocolStepsEditor({ versionId, canEdit }: Props) {
       });
       return;
     }
-
-    setIsSaving(true);
-    const nextOrder = steps.length > 0 ? Math.max(...steps.map(s => s.step_order)) + 1 : 1;
-
-    const { error } = await supabase.from("protocol_steps").insert({
-      protocol_version_id: versionId,
-      step_order: nextOrder,
-      instruction: newStep.instruction.trim(),
-      is_required: newStep.is_required,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo agregar el paso",
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "Paso agregado" });
-      setNewStep({ instruction: "", is_required: true });
-      fetchSteps();
-    }
-    setIsSaving(false);
+    addStepMutation.mutate(newStep);
   };
 
-  const handleDeleteStep = async (stepId: string) => {
+  const handleDeleteStep = (stepId: string) => {
     if (!confirm("¿Eliminar este paso?")) return;
-
-    const { error } = await supabase
-      .from("protocol_steps")
-      .delete()
-      .eq("id", stepId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el paso",
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "Paso eliminado" });
-      fetchSteps();
-    }
+    deleteStepMutation.mutate(stepId);
   };
 
-  const handleUpdateStep = async (step: ProtocolStep, updates: Partial<ProtocolStep>) => {
-    const { error } = await supabase
-      .from("protocol_steps")
-      .update(updates)
-      .eq("id", step.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el paso",
-        variant: "destructive",
-      });
-    } else {
-      fetchSteps();
-    }
+  const handleUpdateStep = (step: ProtocolStep, updates: Partial<ProtocolStep>) => {
+    updateStepMutation.mutate({ id: step.id, updates });
   };
 
   if (isLoading) {
@@ -179,6 +189,7 @@ export function ProtocolStepsEditor({ versionId, canEdit }: Props) {
                         size="sm"
                         onClick={() => handleDeleteStep(step.id)}
                         className="text-destructive hover:text-destructive"
+                        disabled={deleteStepMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
                         Eliminar
@@ -214,8 +225,8 @@ export function ProtocolStepsEditor({ versionId, canEdit }: Props) {
               />
               <span className="text-xs">Req.</span>
             </div>
-            <Button onClick={handleAddStep} disabled={isSaving} size="sm">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            <Button onClick={handleAddStep} disabled={addStepMutation.isPending} size="sm">
+              {addStepMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             </Button>
           </div>
         )}
