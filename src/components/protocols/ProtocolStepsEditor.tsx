@@ -142,45 +142,52 @@ export function ProtocolStepsEditor({ versionId, canEdit }: Props) {
             {steps.map((step) => (
               <div
                 key={step.id}
-                className="flex items-start gap-2 p-2 rounded-md border bg-card"
+                className="p-3 rounded-md border bg-card space-y-2"
               >
-                <GripVertical className="w-4 h-4 mt-1 text-muted-foreground" />
-                <span className="font-medium text-sm min-w-[24px]">{step.step_order}.</span>
-                <div className="flex-1">
-                  {canEdit ? (
-                    <Input
-                      value={step.instruction}
-                      onChange={(e) => handleUpdateStep(step, { instruction: e.target.value })}
-                      className="h-8 text-sm"
-                    />
-                  ) : (
-                    <span className="text-sm">{step.instruction}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {canEdit && (
-                    <div className="flex items-center gap-1">
-                      <Checkbox
-                        checked={step.is_required ?? true}
-                        onCheckedChange={(checked) =>
-                          handleUpdateStep(step, { is_required: checked as boolean })
-                        }
+                <div className="flex items-start gap-2">
+                  <GripVertical className="w-4 h-4 mt-1 text-muted-foreground shrink-0" />
+                  <span className="font-medium text-sm shrink-0">{step.step_order}.</span>
+                  <div className="flex-1 min-w-0">
+                    {canEdit ? (
+                      <Input
+                        value={step.instruction}
+                        onChange={(e) => handleUpdateStep(step, { instruction: e.target.value })}
+                        className="text-sm"
                       />
-                      <span className="text-xs text-muted-foreground">Req.</span>
-                    </div>
-                  )}
-                  {!canEdit && step.is_required && (
-                    <span className="text-xs text-muted-foreground">(Obligatorio)</span>
-                  )}
-                  {canEdit && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleDeleteStep(step.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                    ) : (
+                      <span className="text-sm break-words">{step.instruction}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pl-10">
+                  {canEdit ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`req-${step.id}`}
+                          checked={step.is_required ?? true}
+                          onCheckedChange={(checked) =>
+                            handleUpdateStep(step, { is_required: checked as boolean })
+                          }
+                        />
+                        <label htmlFor={`req-${step.id}`} className="text-xs text-muted-foreground cursor-pointer">
+                          Obligatorio
+                        </label>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteStep(step.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Eliminar
+                      </Button>
+                    </>
+                  ) : (
+                    step.is_required && (
+                      <span className="text-xs text-muted-foreground">(Obligatorio)</span>
+                    )
                   )}
                 </div>
               </div>

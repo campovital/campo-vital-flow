@@ -190,41 +190,57 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
         {components.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay componentes definidos</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {components.map((comp) => (
               <div
                 key={comp.id}
-                className="flex flex-wrap items-center gap-2 p-3 rounded-md border bg-card"
+                className="p-3 rounded-md border bg-card space-y-3"
               >
-                <div className="flex-1 min-w-[150px]">
-                  <span className="font-medium text-sm">
-                    {comp.product?.name || "Producto eliminado"}
-                  </span>
-                  {comp.product?.active_ingredient && (
-                    <span className="text-xs text-muted-foreground ml-1">
-                      ({comp.product.active_ingredient})
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <span className="font-medium text-sm block">
+                      {comp.product?.name || "Producto eliminado"}
                     </span>
+                    {comp.product?.active_ingredient && (
+                      <span className="text-xs text-muted-foreground">
+                        {comp.product.active_ingredient}
+                      </span>
+                    )}
+                  </div>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => handleDeleteComponent(comp.id)}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {canEdit ? (
-                    <>
+                {canEdit ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Dosis</Label>
                       <Input
                         type="number"
                         value={comp.dose_amount}
                         onChange={(e) =>
                           handleUpdateComponent(comp, { dose_amount: parseFloat(e.target.value) || 0 })
                         }
-                        className="h-8 w-20 text-sm"
+                        className="h-9"
                         min={0}
                         step={0.1}
                       />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Unidad</Label>
                       <Select
                         value={comp.dose_unit}
                         onValueChange={(value) => handleUpdateComponent(comp, { dose_unit: value })}
                       >
-                        <SelectTrigger className="h-8 w-16 text-xs">
+                        <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -233,12 +249,14 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <span className="text-xs text-muted-foreground">por</span>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">Por</Label>
                       <Select
                         value={comp.dose_base}
                         onValueChange={(value) => handleUpdateComponent(comp, { dose_base: value })}
                       >
-                        <SelectTrigger className="h-8 w-24 text-xs">
+                        <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -247,45 +265,25 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
                           ))}
                         </SelectContent>
                       </Select>
-                    </>
-                  ) : (
-                    <span className="text-sm">
-                      {comp.dose_amount} {comp.dose_unit} / {comp.dose_base}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {canEdit ? (
-                    <>
-                      <span className="text-xs text-muted-foreground">PC:</span>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">PC (días)</Label>
                       <Input
                         type="number"
                         value={comp.withdrawal_days}
                         onChange={(e) =>
                           handleUpdateComponent(comp, { withdrawal_days: parseInt(e.target.value) || 0 })
                         }
-                        className="h-8 w-16 text-sm"
+                        className="h-9"
                         min={0}
                       />
-                      <span className="text-xs text-muted-foreground">días</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      PC: {comp.withdrawal_days} días
-                    </span>
-                  )}
-                </div>
-
-                {canEdit && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => handleDeleteComponent(comp.id)}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                    <span>{comp.dose_amount} {comp.dose_unit} / {comp.dose_base}</span>
+                    <span>• PC: {comp.withdrawal_days} días</span>
+                  </div>
                 )}
               </div>
             ))}

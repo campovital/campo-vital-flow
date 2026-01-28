@@ -12,13 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ResponsiveDialog, ResponsiveDialogFooter } from "@/components/ui/responsive-dialog";
 import {
   Table,
   TableBody,
@@ -298,78 +292,72 @@ export default function Protocolos() {
           </CardContent>
         </Card>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingProtocol ? "Editar Protocolo" : "Nuevo Protocolo"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingProtocol
-                  ? "Modifica los datos del protocolo"
-                  : "Ingresa los datos del nuevo protocolo"}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nombre *</Label>
-                <Input
-                  id="name"
-                  placeholder="Ej: Protocolo Floración"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="category">Categoría</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value: ProtocolCategory) =>
-                    setFormData({ ...formData, category: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descripción del protocolo..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <Button onClick={handleSave} disabled={isSaving} className="flex-1">
-                  {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  {editingProtocol ? "Guardar Cambios" : "Crear Protocolo"}
-                </Button>
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancelar
-                </Button>
-              </div>
+        <ResponsiveDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          title={editingProtocol ? "Editar Protocolo" : "Nuevo Protocolo"}
+          description={editingProtocol
+            ? "Modifica los datos del protocolo"
+            : "Ingresa los datos del nuevo protocolo"}
+        >
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre *</Label>
+              <Input
+                id="name"
+                placeholder="Ej: Protocolo Floración"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
             </div>
-          </DialogContent>
-        </Dialog>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoría</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value: ProtocolCategory) =>
+                  setFormData({ ...formData, category: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción</Label>
+              <Textarea
+                id="description"
+                placeholder="Descripción del protocolo..."
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                rows={3}
+              />
+            </div>
+
+            <ResponsiveDialogFooter>
+              <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
+                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {editingProtocol ? "Guardar Cambios" : "Crear Protocolo"}
+              </Button>
+              <Button variant="outline" onClick={() => setDialogOpen(false)} className="w-full sm:w-auto">
+                Cancelar
+              </Button>
+            </ResponsiveDialogFooter>
+          </div>
+        </ResponsiveDialog>
 
         {versionsProtocol && (
           <ProtocolVersionsManager
