@@ -1,23 +1,9 @@
-import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Bug, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import "leaflet/dist/leaflet.css";
-
-// Workaround for react-leaflet StrictMode compatibility
-const MapContainerNoSSR = MapContainer;
-
-// Fix for default marker icons in Leaflet with bundlers
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
 
 interface PestReport {
   id: string;
@@ -34,113 +20,88 @@ interface PestReport {
   } | null;
 }
 
-// Custom marker icons based on severity
-const createSeverityIcon = (severity: number) => {
-  const colors = {
-    1: "#22c55e", // green
-    2: "#84cc16", // lime
-    3: "#eab308", // yellow
-    4: "#f97316", // orange
-    5: "#ef4444", // red
-  };
-  const color = colors[severity as keyof typeof colors] || colors[3];
-
-  return L.divIcon({
-    className: "custom-marker",
-    html: `
-      <div style="
-        background-color: ${color};
-        width: 32px;
-        height: 32px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <span style="
-          transform: rotate(45deg);
-          font-size: 14px;
-        ">🐛</span>
-      </div>
-    `,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
-  });
-};
-
-// Component to fit bounds when reports change
-function FitBounds({ reports }: { reports: PestReport[] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (reports.length > 0) {
-      const bounds = L.latLngBounds(
-        reports.map((r) => [r.gps_lat, r.gps_lng] as [number, number])
-      );
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    }
-  }, [reports, map]);
-
-  return null;
-}
-
 interface PestReportsMapProps {
   lotId?: string;
   showResolved?: boolean;
 }
 
-export function PestReportsMap({ lotId, showResolved = false }: PestReportsMapProps) {
-  const [reports, setReports] = useState<PestReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mapKey, setMapKey] = useState(0);
+// Lazy load the actual map component to avoid SSR/context issues
+const LazyMapContent = ({ reports }: { reports: PestReport[] }) => {
+  const [MapComponents, setMapComponents] = useState<any>(null);
 
   useEffect(() => {
-    fetchReports();
-  }, [lotId, showResolved]);
+    // Dynamic import to avoid SSR issues and context problems
+    Promise.all([
+      import("react-leaflet"),
+      import("leaflet"),
+    ]).then(([reactLeaflet, L]) => {
+      // Fix for default marker icons
+      delete (L.default.Icon.Default.prototype as any)._getIconUrl;
+      L.default.Icon.Default.mergeOptions({
+        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+      });
+      
+      setMapComponents({
+        MapContainer: reactLeaflet.MapContainer,
+        TileLayer: reactLeaflet.TileLayer,
+        Marker: reactLeaflet.Marker,
+        Popup: reactLeaflet.Popup,
+        useMap: reactLeaflet.useMap,
+        L: L.default,
+      });
+    });
+  }, []);
 
-  // Force map remount when reports change to avoid context issues
-  useEffect(() => {
-    setMapKey(prev => prev + 1);
-  }, [reports.length]);
+  if (!MapComponents) {
+    return (
+      <div className="h-[400px] rounded-xl bg-muted flex items-center justify-center">
+        <div className="text-center text-muted-foreground">
+          <MapPin className="w-8 h-8 mx-auto mb-2 animate-pulse" />
+          <p>Cargando mapa...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const fetchReports = async () => {
-    setLoading(true);
-    
-    let query = supabase
-      .from("pest_reports")
-      .select(`
-        id,
-        pest_type,
-        severity,
-        gps_lat,
-        gps_lng,
-        created_at,
-        incidence_percent,
-        is_resolved,
-        photo_url,
-        lot:lots(name)
-      `)
-      .not("gps_lat", "is", null)
-      .not("gps_lng", "is", null);
+  const { MapContainer, TileLayer, Marker, Popup, useMap, L } = MapComponents;
 
-    if (lotId) {
-      query = query.eq("lot_id", lotId);
-    }
+  const createSeverityIcon = (severity: number) => {
+    const colors: Record<number, string> = {
+      1: "#22c55e",
+      2: "#84cc16",
+      3: "#eab308",
+      4: "#f97316",
+      5: "#ef4444",
+    };
+    const color = colors[severity] || colors[3];
 
-    if (!showResolved) {
-      query = query.eq("is_resolved", false);
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false });
-
-    if (!error && data) {
-      setReports(data as PestReport[]);
-    }
-    setLoading(false);
+    return L.divIcon({
+      className: "custom-marker",
+      html: `
+        <div style="
+          background-color: ${color};
+          width: 32px;
+          height: 32px;
+          border-radius: 50% 50% 50% 0;
+          transform: rotate(-45deg);
+          border: 3px solid white;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <span style="
+            transform: rotate(45deg);
+            font-size: 14px;
+          ">🐛</span>
+        </div>
+      `,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32],
+    });
   };
 
   const getSeverityLabel = (value: number) => {
@@ -154,36 +115,27 @@ export function PestReportsMap({ lotId, showResolved = false }: PestReportsMapPr
     return "destructive";
   };
 
-  // Default center (Colombia)
+  // FitBounds component defined inside to use the dynamically loaded useMap
+  const FitBounds = ({ reports: reps }: { reports: PestReport[] }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+      if (reps.length > 0) {
+        const bounds = L.latLngBounds(
+          reps.map((r: PestReport) => [r.gps_lat, r.gps_lng] as [number, number])
+        );
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+      }
+    }, [reps, map]);
+
+    return null;
+  };
+
   const defaultCenter: [number, number] = [4.570868, -74.297333];
-
-  if (loading) {
-    return (
-      <div className="h-[400px] rounded-xl bg-muted flex items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <MapPin className="w-8 h-8 mx-auto mb-2 animate-pulse" />
-          <p>Cargando mapa...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (reports.length === 0) {
-    return (
-      <div className="h-[400px] rounded-xl bg-muted/50 border-2 border-dashed border-border flex items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
-          <p className="font-medium">Sin reportes geolocalizados</p>
-          <p className="text-sm">Los reportes con GPS aparecerán aquí</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-[400px] rounded-xl overflow-hidden border border-border">
-      <MapContainerNoSSR
-        key={mapKey}
+      <MapContainer
         center={defaultCenter}
         zoom={6}
         style={{ height: "100%", width: "100%" }}
@@ -247,7 +199,77 @@ export function PestReportsMap({ lotId, showResolved = false }: PestReportsMapPr
             </Popup>
           </Marker>
         ))}
-      </MapContainerNoSSR>
+      </MapContainer>
     </div>
   );
+};
+
+export function PestReportsMap({ lotId, showResolved = false }: PestReportsMapProps) {
+  const [reports, setReports] = useState<PestReport[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchReports = useCallback(async () => {
+    setLoading(true);
+    
+    let query = supabase
+      .from("pest_reports")
+      .select(`
+        id,
+        pest_type,
+        severity,
+        gps_lat,
+        gps_lng,
+        created_at,
+        incidence_percent,
+        is_resolved,
+        photo_url,
+        lot:lots(name)
+      `)
+      .not("gps_lat", "is", null)
+      .not("gps_lng", "is", null);
+
+    if (lotId) {
+      query = query.eq("lot_id", lotId);
+    }
+
+    if (!showResolved) {
+      query = query.eq("is_resolved", false);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setReports(data as PestReport[]);
+    }
+    setLoading(false);
+  }, [lotId, showResolved]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  if (loading) {
+    return (
+      <div className="h-[400px] rounded-xl bg-muted flex items-center justify-center">
+        <div className="text-center text-muted-foreground">
+          <MapPin className="w-8 h-8 mx-auto mb-2 animate-pulse" />
+          <p>Cargando mapa...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="h-[400px] rounded-xl bg-muted/50 border-2 border-dashed border-border flex items-center justify-center">
+        <div className="text-center text-muted-foreground">
+          <MapPin className="w-10 h-10 mx-auto mb-2 opacity-50" />
+          <p className="font-medium">Sin reportes geolocalizados</p>
+          <p className="text-sm">Los reportes con GPS aparecerán aquí</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <LazyMapContent reports={reports} />;
 }
