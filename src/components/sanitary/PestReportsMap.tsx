@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,9 @@ import { Bug, Calendar, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import "leaflet/dist/leaflet.css";
+
+// Workaround for react-leaflet StrictMode compatibility
+const MapContainerNoSSR = MapContainer;
 
 // Fix for default marker icons in Leaflet with bundlers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -93,10 +96,16 @@ interface PestReportsMapProps {
 export function PestReportsMap({ lotId, showResolved = false }: PestReportsMapProps) {
   const [reports, setReports] = useState<PestReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapKey, setMapKey] = useState(0);
 
   useEffect(() => {
     fetchReports();
   }, [lotId, showResolved]);
+
+  // Force map remount when reports change to avoid context issues
+  useEffect(() => {
+    setMapKey(prev => prev + 1);
+  }, [reports.length]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -173,7 +182,8 @@ export function PestReportsMap({ lotId, showResolved = false }: PestReportsMapPr
 
   return (
     <div className="h-[400px] rounded-xl overflow-hidden border border-border">
-      <MapContainer
+      <MapContainerNoSSR
+        key={mapKey}
         center={defaultCenter}
         zoom={6}
         style={{ height: "100%", width: "100%" }}
@@ -237,7 +247,7 @@ export function PestReportsMap({ lotId, showResolved = false }: PestReportsMapPr
             </Popup>
           </Marker>
         ))}
-      </MapContainer>
+      </MapContainerNoSSR>
     </div>
   );
 }
