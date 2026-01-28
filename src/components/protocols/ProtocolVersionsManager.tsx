@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -58,113 +59,120 @@ interface Props {
 
 export function ProtocolVersionsManager({ protocol, open, onOpenChange, canManage }: Props) {
   const { toast } = useToast();
-  const [versions, setVersions] = useState<ProtocolVersion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
+  const queryClient = useQueryClient();
   const [newVersionNotes, setNewVersionNotes] = useState("");
   const [showNewVersionForm, setShowNewVersionForm] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      fetchVersions();
-    }
-  }, [open, protocol.id]);
+  // Query for versions using React Query
+  const { data: versions = [], isLoading } = useQuery({
+    queryKey: ["protocol-versions", protocol.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("protocol_versions")
+        .select("*")
+        .eq("protocol_id", protocol.id)
+        .order("version_number", { ascending: false });
+      if (error) throw error;
+      return data as ProtocolVersion[];
+    },
+    enabled: open,
+  });
 
-  const fetchVersions = async () => {
-    setIsLoading(true);
-    const { data, error } = await supabase
-      .from("protocol_versions")
-      .select("*")
-      .eq("protocol_id", protocol.id)
-      .order("version_number", { ascending: false });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las versiones",
-        variant: "destructive",
+  // Create version mutation
+  const createVersionMutation = useMutation({
+    mutationFn: async () => {
+      const nextVersion = versions.length > 0 ? Math.max(...versions.map(v => v.version_number)) + 1 : 1;
+      const { error } = await supabase.from("protocol_versions").insert({
+        protocol_id: protocol.id,
+        version_number: nextVersion,
+        notes: newVersionNotes.trim() || null,
+        status: "draft",
       });
-    } else {
-      setVersions(data || []);
-    }
-    setIsLoading(false);
-  };
-
-  const handleCreateVersion = async () => {
-    setIsCreating(true);
-    const nextVersion = versions.length > 0 ? Math.max(...versions.map(v => v.version_number)) + 1 : 1;
-
-    const { error } = await supabase.from("protocol_versions").insert({
-      protocol_id: protocol.id,
-      version_number: nextVersion,
-      notes: newVersionNotes.trim() || null,
-      status: "draft",
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear la versión",
-        variant: "destructive",
-      });
-    } else {
+      if (error) throw error;
+      return nextVersion;
+    },
+    onSuccess: (nextVersion) => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions", protocol.id] });
+      queryClient.invalidateQueries({ queryKey: ["protocols"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-rules"] });
       toast({
         title: "Versión creada",
         description: `Versión ${nextVersion} creada como borrador`,
       });
       setNewVersionNotes("");
       setShowNewVersionForm(false);
-      fetchVersions();
-    }
-    setIsCreating(false);
-  };
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la versión",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handlePublish = async (version: ProtocolVersion) => {
-    const { error } = await supabase
-      .from("protocol_versions")
-      .update({
-        status: "published",
-        published_at: new Date().toISOString(),
-      })
-      .eq("id", version.id);
-
-    if (error) {
+  // Publish version mutation
+  const publishMutation = useMutation({
+    mutationFn: async (version: ProtocolVersion) => {
+      const { error } = await supabase
+        .from("protocol_versions")
+        .update({
+          status: "published",
+          published_at: new Date().toISOString(),
+        })
+        .eq("id", version.id);
+      if (error) throw error;
+      return version;
+    },
+    onSuccess: (version) => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions", protocol.id] });
+      queryClient.invalidateQueries({ queryKey: ["protocols"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-rules"] });
+      toast({
+        title: "Versión publicada",
+        description: `Versión ${version.version_number} ahora está activa`,
+      });
+    },
+    onError: () => {
       toast({
         title: "Error",
         description: "No se pudo publicar la versión",
         variant: "destructive",
       });
-    } else {
+    },
+  });
+
+  // Archive version mutation
+  const archiveMutation = useMutation({
+    mutationFn: async (version: ProtocolVersion) => {
+      const { error } = await supabase
+        .from("protocol_versions")
+        .update({ status: "archived" })
+        .eq("id", version.id);
+      if (error) throw error;
+      return version;
+    },
+    onSuccess: (version) => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions", protocol.id] });
+      queryClient.invalidateQueries({ queryKey: ["protocols"] });
+      queryClient.invalidateQueries({ queryKey: ["schedule-rules"] });
       toast({
-        title: "Versión publicada",
-        description: `Versión ${version.version_number} ahora está activa`,
+        title: "Versión archivada",
+        description: `Versión ${version.version_number} fue archivada`,
       });
-      fetchVersions();
-    }
-  };
-
-  const handleArchive = async (version: ProtocolVersion) => {
-    const { error } = await supabase
-      .from("protocol_versions")
-      .update({ status: "archived" })
-      .eq("id", version.id);
-
-    if (error) {
+    },
+    onError: () => {
       toast({
         title: "Error",
         description: "No se pudo archivar la versión",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Versión archivada",
-        description: `Versión ${version.version_number} fue archivada`,
-      });
-      fetchVersions();
-    }
-  };
+    },
+  });
 
   const isMobile = useIsMobile();
+  const isCreating = createVersionMutation.isPending;
+
 
   const content = (
     <div className="space-y-4">
@@ -182,7 +190,7 @@ export function ProtocolVersionsManager({ protocol, open, onOpenChange, canManag
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleCreateVersion} disabled={isCreating} className="flex-1 sm:flex-none">
+                <Button onClick={() => createVersionMutation.mutate()} disabled={isCreating} className="flex-1 sm:flex-none">
                   {isCreating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Crear
                 </Button>
@@ -229,18 +237,18 @@ export function ProtocolVersionsManager({ protocol, open, onOpenChange, canManag
                 <div className="space-y-4 pt-4">
                   {canManage && version.status === "draft" && (
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" onClick={() => handlePublish(version)}>
+                      <Button size="sm" onClick={() => publishMutation.mutate(version)} disabled={publishMutation.isPending}>
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Publicar
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleArchive(version)}>
+                      <Button size="sm" variant="outline" onClick={() => archiveMutation.mutate(version)} disabled={archiveMutation.isPending}>
                         <Archive className="w-4 h-4 mr-1" />
                         Archivar
                       </Button>
                     </div>
                   )}
                   {canManage && version.status === "published" && (
-                    <Button size="sm" variant="outline" onClick={() => handleArchive(version)}>
+                    <Button size="sm" variant="outline" onClick={() => archiveMutation.mutate(version)} disabled={archiveMutation.isPending}>
                       <Archive className="w-4 h-4 mr-1" />
                       Archivar
                     </Button>

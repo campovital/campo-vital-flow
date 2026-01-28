@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,10 +33,7 @@ const DOSE_BASES = ["bomba", "hectárea", "planta", "litro"];
 
 export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
   const { toast } = useToast();
-  const [components, setComponents] = useState<ComponentWithProduct[]>([]);
-  const [products, setProducts] = useState<InventoryProduct[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [newComponent, setNewComponent] = useState({
     product_id: "",
     dose_amount: 0,
@@ -44,43 +42,112 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
     withdrawal_days: 0,
   });
 
-  useEffect(() => {
-    fetchData();
-  }, [versionId]);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    
-    const [componentsRes, productsRes] = await Promise.all([
-      supabase
+  // Query for components
+  const { data: components = [], isLoading: isLoadingComponents } = useQuery({
+    queryKey: ["protocol-components", versionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("protocol_components")
         .select("*, product:inventory_products(*)")
-        .eq("protocol_version_id", versionId),
-      supabase
+        .eq("protocol_version_id", versionId);
+      if (error) throw error;
+      return data as ComponentWithProduct[];
+    },
+  });
+
+  // Query for products
+  const { data: products = [] } = useQuery({
+    queryKey: ["inventory-products-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("inventory_products")
         .select("*")
         .eq("is_active", true)
-        .order("name"),
-    ]);
+        .order("name");
+      if (error) throw error;
+      return data as InventoryProduct[];
+    },
+  });
 
-    if (componentsRes.error) {
+  // Add component mutation
+  const addComponentMutation = useMutation({
+    mutationFn: async (comp: typeof newComponent) => {
+      const { error } = await supabase.from("protocol_components").insert({
+        protocol_version_id: versionId,
+        product_id: comp.product_id,
+        dose_amount: comp.dose_amount,
+        dose_unit: comp.dose_unit,
+        dose_base: comp.dose_base,
+        withdrawal_days: comp.withdrawal_days,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-components", versionId] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions"] });
+      toast({ title: "Componente agregado" });
+      setNewComponent({
+        product_id: "",
+        dose_amount: 0,
+        dose_unit: "ml",
+        dose_base: "bomba",
+        withdrawal_days: 0,
+      });
+    },
+    onError: () => {
       toast({
         title: "Error",
-        description: "No se pudieron cargar los componentes",
+        description: "No se pudo agregar el componente",
         variant: "destructive",
       });
-    } else {
-      setComponents(componentsRes.data || []);
-    }
+    },
+  });
 
-    if (!productsRes.error) {
-      setProducts(productsRes.data || []);
-    }
+  // Update component mutation
+  const updateComponentMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<ProtocolComponent> }) => {
+      const { error } = await supabase
+        .from("protocol_components")
+        .update(updates)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-components", versionId] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el componente",
+        variant: "destructive",
+      });
+    },
+  });
 
-    setIsLoading(false);
-  };
+  // Delete component mutation
+  const deleteComponentMutation = useMutation({
+    mutationFn: async (componentId: string) => {
+      const { error } = await supabase
+        .from("protocol_components")
+        .delete()
+        .eq("id", componentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["protocol-components", versionId] });
+      queryClient.invalidateQueries({ queryKey: ["protocol-versions"] });
+      toast({ title: "Componente eliminado" });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el componente",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleAddComponent = async () => {
+  const handleAddComponent = () => {
     if (!newComponent.product_id) {
       toast({
         title: "Error",
@@ -99,78 +166,22 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
       return;
     }
 
-    setIsSaving(true);
-
-    const { error } = await supabase.from("protocol_components").insert({
-      protocol_version_id: versionId,
-      product_id: newComponent.product_id,
-      dose_amount: newComponent.dose_amount,
-      dose_unit: newComponent.dose_unit,
-      dose_base: newComponent.dose_base,
-      withdrawal_days: newComponent.withdrawal_days,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo agregar el componente",
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "Componente agregado" });
-      setNewComponent({
-        product_id: "",
-        dose_amount: 0,
-        dose_unit: "ml",
-        dose_base: "bomba",
-        withdrawal_days: 0,
-      });
-      fetchData();
-    }
-    setIsSaving(false);
+    addComponentMutation.mutate(newComponent);
   };
 
-  const handleDeleteComponent = async (componentId: string) => {
+  const handleDeleteComponent = (componentId: string) => {
     if (!confirm("¿Eliminar este componente?")) return;
-
-    const { error } = await supabase
-      .from("protocol_components")
-      .delete()
-      .eq("id", componentId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el componente",
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "Componente eliminado" });
-      fetchData();
-    }
+    deleteComponentMutation.mutate(componentId);
   };
 
-  const handleUpdateComponent = async (
+  const handleUpdateComponent = (
     component: ComponentWithProduct,
     updates: Partial<ProtocolComponent>
   ) => {
-    const { error } = await supabase
-      .from("protocol_components")
-      .update(updates)
-      .eq("id", component.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el componente",
-        variant: "destructive",
-      });
-    } else {
-      fetchData();
-    }
+    updateComponentMutation.mutate({ id: component.id, updates });
   };
 
-  if (isLoading) {
+  if (isLoadingComponents) {
     return (
       <div className="flex items-center justify-center py-4">
         <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -213,6 +224,7 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
                       size="icon"
                       className="h-8 w-8 shrink-0"
                       onClick={() => handleDeleteComponent(comp.id)}
+                      disabled={deleteComponentMutation.isPending}
                     >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
@@ -384,8 +396,8 @@ export function ProtocolComponentsEditor({ versionId, canEdit }: Props) {
                 />
               </div>
 
-              <Button onClick={handleAddComponent} disabled={isSaving} size="sm">
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              <Button onClick={handleAddComponent} disabled={addComponentMutation.isPending} size="sm">
+                {addComponentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               </Button>
             </div>
           </div>
