@@ -23,6 +23,7 @@ import { useMultiPhotoUpload } from "@/hooks/use-multi-photo-upload";
 import { GpsIndicator } from "@/components/sanitary/GpsIndicator";
 import { MultiPhotoCapture } from "@/components/sanitary/MultiPhotoCapture";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
+import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 import {
   Bug,
   MapPin,
@@ -37,6 +38,7 @@ import {
   Calculator,
   Leaf,
   Settings,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +66,7 @@ type Step = "lot" | "form" | "result";
 export default function ReporteSanitario() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isOnline, queueForSync } = useOfflineSubmit("pest_reports");
   const [currentStep, setCurrentStep] = useState<Step>("lot");
   const [lots, setLots] = useState<Lot[]>([]);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
@@ -128,29 +131,40 @@ export default function ReporteSanitario() {
   };
 
   const handleSubmitReport = async () => {
-    if (!selectedLot || !user || !pestType) return;
-
-    setIsLoading(true);
+    if (!selectedLot || !pestType) return;
 
     const uploadedPhotos = photos.getUploadedPhotos();
     const mainPhotoUrl = uploadedPhotos.length > 0 ? uploadedPhotos[0].url : null;
 
-    // Create the pest report with new fields
+    const payload = {
+      lot_id: selectedLot.id,
+      reported_by: user?.id || null,
+      pest_type: pestType,
+      severity: severity[0],
+      incidence_percent: finalIncidence,
+      plants_inspected: useAutoIncidence && plantsInspected ? parseInt(plantsInspected) : null,
+      plants_affected: useAutoIncidence && plantsAffected ? parseInt(plantsAffected) : null,
+      gps_lat: gps.latitude,
+      gps_lng: gps.longitude,
+      photo_url: mainPhotoUrl,
+      notes,
+    };
+
+    if (!isOnline) {
+      queueForSync(payload);
+      toast({
+        title: "Reporte guardado offline",
+        description: "Se sincronizará al recuperar conexión",
+      });
+      setCurrentStep("result");
+      return;
+    }
+
+    setIsLoading(true);
+
     const { data: reportData, error: reportError } = await supabase
       .from("pest_reports")
-      .insert({
-        lot_id: selectedLot.id,
-        reported_by: user.id,
-        pest_type: pestType,
-        severity: severity[0],
-        incidence_percent: finalIncidence,
-        plants_inspected: useAutoIncidence && plantsInspected ? parseInt(plantsInspected) : null,
-        plants_affected: useAutoIncidence && plantsAffected ? parseInt(plantsAffected) : null,
-        gps_lat: gps.latitude,
-        gps_lng: gps.longitude,
-        photo_url: mainPhotoUrl,
-        notes,
-      })
+      .insert(payload)
       .select("id")
       .single();
 
@@ -165,7 +179,7 @@ export default function ReporteSanitario() {
     }
 
     // Insert all photos into pest_report_photos table with captions
-    if (uploadedPhotos.length > 0) {
+    if (uploadedPhotos.length > 0 && user) {
       const photosToInsert = uploadedPhotos.map((photo) => ({
         pest_report_id: reportData.id,
         photo_url: photo.url,

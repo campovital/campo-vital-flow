@@ -25,12 +25,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Loader2 } from "lucide-react";
+import { CalendarIcon, Plus, Loader2, WifiOff } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 
 interface CreateTaskDialogProps {
   open: boolean;
@@ -88,13 +89,15 @@ export function CreateTaskDialog({ open, onOpenChange, onSuccess }: CreateTaskDi
 
   const selectedTaskType = taskTypes.find(t => t.id === taskTypeId);
 
+  const { isOnline, queueForSync } = useOfflineSubmit("tasks");
+
   const createMutation = useMutation({
     mutationFn: async () => {
       if (!taskTypeId || !scheduledDate) {
         throw new Error("Faltan campos requeridos");
       }
 
-      const { error } = await supabase.from("tasks").insert({
+      const payload = {
         task_type_id: taskTypeId,
         lot_id: lotId || null,
         assigned_to: operatorId || null,
@@ -102,21 +105,34 @@ export function CreateTaskDialog({ open, onOpenChange, onSuccess }: CreateTaskDi
         scheduled_date: format(scheduledDate, "yyyy-MM-dd"),
         priority: parseInt(priority),
         notes: notes || null,
-      });
+      };
 
+      if (!isOnline) {
+        // Queue for later sync
+        queueForSync(payload);
+        return;
+      }
+
+      const { error } = await supabase.from("tasks").insert(payload);
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Tarea creada", description: "La tarea ha sido asignada correctamente" });
+      toast({
+        title: isOnline ? "Tarea creada" : "Tarea guardada offline",
+        description: isOnline
+          ? "La tarea ha sido asignada correctamente"
+          : "Se sincronizará automáticamente al recuperar conexión",
+      });
       resetForm();
       onOpenChange(false);
       onSuccess();
     },
     onError: (error) => {
-      toast({ 
-        title: "Error", 
-        description: error instanceof Error ? error.message : "No se pudo crear la tarea", 
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "No se pudo crear la tarea",
+        variant: "destructive",
       });
     },
   });

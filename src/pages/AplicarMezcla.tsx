@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
+import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 import {
   MapPin,
   User,
@@ -24,6 +25,7 @@ import {
   Droplet,
   Clock,
   Settings,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +69,7 @@ type Step = "operator" | "lot" | "confirm" | "result";
 
 export default function AplicarMezcla() {
   const { toast } = useToast();
+  const { isOnline, queueForSync } = useOfflineSubmit("applications");
   const [currentStep, setCurrentStep] = useState<Step>("operator");
   const [operators, setOperators] = useState<Operator[]>([]);
   const [lots, setLots] = useState<Lot[]>([]);
@@ -147,10 +150,7 @@ export default function AplicarMezcla() {
   const handleSubmitApplication = async (status: "ejecutada" | "no_ejecutada" | "ejecutada_con_novedad") => {
     if (!selectedOperator || !selectedLot || !suggestedMix?.protocol_version_id) return;
 
-    setIsLoading(true);
-    setApplicationStatus(status);
-
-    const { data, error } = await supabase.from("applications").insert({
+    const payload = {
       lot_id: selectedLot.id,
       operator_id: selectedOperator.id,
       protocol_version_id: suggestedMix.protocol_version_id,
@@ -162,7 +162,23 @@ export default function AplicarMezcla() {
       notes,
       issue_reason: status === "ejecutada_con_novedad" ? issueReason : null,
       reason_explanation: suggestedMix.reason,
-    }).select().single();
+    };
+
+    if (!isOnline) {
+      queueForSync(payload);
+      toast({
+        title: "Aplicación guardada offline",
+        description: "Se sincronizará al recuperar conexión",
+      });
+      setCurrentStep("result");
+      setApplicationStatus(status);
+      return;
+    }
+
+    setIsLoading(true);
+    setApplicationStatus(status);
+
+    const { data, error } = await supabase.from("applications").insert(payload).select().single();
 
     if (error) {
       toast({

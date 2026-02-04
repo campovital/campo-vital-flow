@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
+import { OfflineProvider } from "@/contexts/OfflineContext";
 import { OverdueAlertsProvider } from "@/components/sanitary/OverdueAlertsProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { Button } from "@/components/ui/button";
@@ -66,37 +67,39 @@ const App = () => (
   <ErrorBoundary fallback={<GlobalErrorFallback />}>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <OverdueAlertsProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/aplicar" element={<AplicarMezcla />} />
-                <Route path="/cosecha" element={<Cosecha />} />
-                <Route path="/plagas" element={<ReporteSanitario />} />
-                <Route path="/mapa-plagas" element={<MapaPlagas />} />
-                <Route path="/seguimiento-sanitario" element={<SeguimientoSanitario />} />
-                <Route path="/historial" element={<Historial />} />
-                <Route path="/roles" element={<Roles />} />
-                <Route path="/tareas" element={<Tareas />} />
-                <Route path="/costos" element={<Costos />} />
-                <Route path="/protocolos" element={<Protocolos />} />
-                <Route path="/protocolos/programador" element={<ProgramadorProtocolos />} />
-                <Route path="/inventario" element={<Inventario />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/operarios" element={<Operarios />} />
-                <Route path="/configuracion" element={<Configuracion />} />
-                <Route path="/informes" element={<Informes />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </OverdueAlertsProvider>
-          </BrowserRouter>
-        </TooltipProvider>
+        <OfflineProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <OverdueAlertsProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/aplicar" element={<AplicarMezcla />} />
+                  <Route path="/cosecha" element={<Cosecha />} />
+                  <Route path="/plagas" element={<ReporteSanitario />} />
+                  <Route path="/mapa-plagas" element={<MapaPlagas />} />
+                  <Route path="/seguimiento-sanitario" element={<SeguimientoSanitario />} />
+                  <Route path="/historial" element={<Historial />} />
+                  <Route path="/roles" element={<Roles />} />
+                  <Route path="/tareas" element={<Tareas />} />
+                  <Route path="/costos" element={<Costos />} />
+                  <Route path="/protocolos" element={<Protocolos />} />
+                  <Route path="/protocolos/programador" element={<ProgramadorProtocolos />} />
+                  <Route path="/inventario" element={<Inventario />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/operarios" element={<Operarios />} />
+                  <Route path="/configuracion" element={<Configuracion />} />
+                  <Route path="/informes" element={<Informes />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </OverdueAlertsProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </OfflineProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
