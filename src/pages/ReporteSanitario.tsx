@@ -116,11 +116,15 @@ export default function ReporteSanitario() {
   }, []);
 
   const fetchLots = async () => {
-    const { data } = await supabase
-      .from("lots")
-      .select("id, name")
-      .order("name");
-    if (data) setLots(data);
+    try {
+      const { data } = await supabase
+        .from("lots")
+        .select("id, name")
+        .order("name");
+      if (data) setLots(data);
+    } catch (error) {
+      console.error("Error fetching lots:", error);
+    }
   };
 
   const handleSelectLot = (lot: Lot) => {

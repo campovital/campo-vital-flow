@@ -10,6 +10,7 @@ import { useNetworkStatus } from "@/hooks/use-network-status";
 import { getAllRecords, getPendingRecords } from "@/lib/offline/storage";
 import { flushPendingRecords } from "@/lib/offline/syncEngine";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface OfflineContextValue {
   isOnline: boolean;
@@ -28,11 +29,20 @@ export function useOffline() {
   return ctx;
 }
 
+// Map module names to React Query cache keys that need to be invalidated
+const moduleQueryKeyMap: Record<string, string[]> = {
+  tasks: ["tasks"],
+  harvests: ["harvests", "dashboard"],
+  applications: ["applications", "dashboard"],
+  pest_reports: ["pest-reports", "pest_reports", "dashboard"],
+};
+
 export function OfflineProvider({ children }: { children: ReactNode }) {
   const { isOnline } = useNetworkStatus();
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Keep count updated
   const refreshCount = useCallback(() => {
@@ -57,6 +67,16 @@ export function OfflineProvider({ children }: { children: ReactNode }) {
     setIsSyncing(false);
     refreshCount();
 
+    // Invalidate React Query caches for synced modules
+    if (result.modules && result.modules.length > 0) {
+      result.modules.forEach((module) => {
+        const queryKeys = moduleQueryKeyMap[module] || [module];
+        queryKeys.forEach((key) => {
+          queryClient.invalidateQueries({ queryKey: [key] });
+        });
+      });
+    }
+
     if (result.synced > 0) {
       toast({
         title: "Sincronización completada",
@@ -70,7 +90,7 @@ export function OfflineProvider({ children }: { children: ReactNode }) {
         variant: "destructive",
       });
     }
-  }, [isSyncing, refreshCount, toast]);
+  }, [isSyncing, refreshCount, toast, queryClient]);
 
   // Auto-sync on reconnect
   useEffect(() => {

@@ -33,9 +33,21 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      retry: (failureCount, error: any) => {
+        // Don't retry on network errors - allow offline mode to work
+        if (!navigator.onLine) return false;
+        // Retry up to 2 times for other errors
+        return failureCount < 2;
+      },
       staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
+      // Don't throw on network errors
+      throwOnError: false,
+      // Keep showing cached data while refetching
+      placeholderData: (previousData: unknown) => previousData,
+    },
+    mutations: {
+      retry: false, // Don't retry mutations - use offline queue instead
     },
   },
 });

@@ -1,6 +1,7 @@
 import { useOffline } from "@/contexts/OfflineContext";
-import { WifiOff, RefreshCw, Loader2 } from "lucide-react";
+import { WifiOff, RefreshCw, Loader2, CloudOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export function OfflineBanner() {
   const { isOnline, isSyncing, pendingCount, triggerSync } = useOffline();
@@ -13,23 +14,33 @@ export function OfflineBanner() {
       {!isOnline && (
         <>
           <WifiOff className="w-4 h-4" />
-          <span className="font-medium">Trabajando sin conexión</span>
+          <span className="font-medium">Modo offline activo</span>
         </>
       )}
+      
+      {pendingCount > 0 && (
+        <Badge 
+          variant="secondary" 
+          className="bg-warning-foreground/20 text-warning-foreground"
+        >
+          {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
+        </Badge>
+      )}
+
       {isOnline && pendingCount > 0 && (
         <>
-          <span className="font-medium">
-            {pendingCount} registro(s) pendiente(s)
-          </span>
+          <CloudOff className="w-4 h-4" />
+          <span className="font-medium">Registros por sincronizar</span>
         </>
       )}
-      {pendingCount > 0 && (
+
+      {pendingCount > 0 && isOnline && (
         <Button
           size="sm"
           variant="secondary"
           className="h-7"
           onClick={triggerSync}
-          disabled={isSyncing || !isOnline}
+          disabled={isSyncing}
         >
           {isSyncing ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -37,9 +48,15 @@ export function OfflineBanner() {
             <RefreshCw className="w-4 h-4" />
           )}
           <span className="ml-1 hidden sm:inline">
-            {isSyncing ? "Sincronizando…" : "Sincronizar"}
+            {isSyncing ? "Sincronizando…" : "Sincronizar ahora"}
           </span>
         </Button>
+      )}
+
+      {!isOnline && pendingCount > 0 && (
+        <span className="text-xs opacity-80">
+          Se sincronizará al recuperar conexión
+        </span>
       )}
     </div>
   );

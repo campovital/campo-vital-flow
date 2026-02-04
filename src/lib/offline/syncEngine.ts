@@ -63,10 +63,11 @@ async function syncRecord(record: OfflineRecord): Promise<SyncResult> {
 
 export async function flushPendingRecords(
   onProgress?: (current: number, total: number) => void
-): Promise<{ synced: number; failed: number }> {
+): Promise<{ synced: number; failed: number; modules: string[] }> {
   const pending = getPendingRecords();
   let synced = 0;
   let failed = 0;
+  const syncedModules = new Set<string>();
 
   for (let i = 0; i < pending.length; i++) {
     const rec = pending[i];
@@ -75,6 +76,7 @@ export async function flushPendingRecords(
     if (result.success) {
       removeRecord(rec.localId);
       synced++;
+      syncedModules.add(rec.module);
     } else {
       updateRecordStatus(rec.localId, "error", { lastError: result.error });
       failed++;
@@ -82,5 +84,5 @@ export async function flushPendingRecords(
     onProgress?.(i + 1, pending.length);
   }
 
-  return { synced, failed };
+  return { synced, failed, modules: Array.from(syncedModules) };
 }

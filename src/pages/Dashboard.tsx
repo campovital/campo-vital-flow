@@ -94,13 +94,19 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
-    await Promise.all([
-      fetchStats(),
-      fetchHarvestTrend(),
-      fetchCostBreakdown(),
-      fetchSanitaryStatus(),
-    ]);
-    setIsLoading(false);
+    try {
+      await Promise.all([
+        fetchStats(),
+        fetchHarvestTrend(),
+        fetchCostBreakdown(),
+        fetchSanitaryStatus(),
+      ]);
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+      // Continue with whatever data we have - don't block the UI
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fetchStats = async () => {

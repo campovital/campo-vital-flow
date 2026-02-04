@@ -97,40 +97,67 @@ export default function Cosecha() {
   }, []);
 
   const fetchOperators = async () => {
-    const { data } = await supabase
-      .from("operators")
-      .select("id, full_name")
-      .eq("is_active", true)
-      .order("full_name");
-    if (data) setOperators(data);
+    try {
+      const { data } = await supabase
+        .from("operators")
+        .select("id, full_name")
+        .eq("is_active", true)
+        .order("full_name");
+      if (data) setOperators(data);
+    } catch (error) {
+      console.error("Error fetching operators:", error);
+    }
   };
 
   const fetchLots = async () => {
-    const { data } = await supabase
-      .from("lots")
-      .select("id, name, hectares, plant_count")
-      .order("name");
-    if (data) setLots(data);
+    try {
+      const { data } = await supabase
+        .from("lots")
+        .select("id, name, hectares, plant_count")
+        .order("name");
+      if (data) setLots(data);
+    } catch (error) {
+      console.error("Error fetching lots:", error);
+    }
   };
 
   const checkHarvestAllowed = async (lotId: string) => {
+    // In offline mode, skip the check and allow harvest
+    if (!isOnline) {
+      setHarvestCheck({ 
+        allowed: true, 
+        message: "Modo offline: verificación de carencias omitida. Se validará al sincronizar." 
+      } as HarvestCheck);
+      setIsLoading(false);
+      setCurrentStep("check");
+      return;
+    }
+
     setIsLoading(true);
     const today = format(new Date(), "yyyy-MM-dd");
     
-    const { data, error } = await supabase.rpc("can_harvest", {
-      p_lot_id: lotId,
-      p_date: today,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo verificar el estado de carencias",
-        variant: "destructive",
+    try {
+      const { data, error } = await supabase.rpc("can_harvest", {
+        p_lot_id: lotId,
+        p_date: today,
       });
-      setHarvestCheck({ allowed: false, message: error.message } as HarvestCheck);
-    } else {
-      setHarvestCheck(data as unknown as HarvestCheck);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo verificar el estado de carencias",
+          variant: "destructive",
+        });
+        setHarvestCheck({ allowed: false, message: error.message } as HarvestCheck);
+      } else {
+        setHarvestCheck(data as unknown as HarvestCheck);
+      }
+    } catch (error) {
+      // Network error - allow harvest in offline mode
+      setHarvestCheck({ 
+        allowed: true, 
+        message: "Sin conexión: verificación de carencias omitida. Se validará al sincronizar." 
+      } as HarvestCheck);
     }
     setIsLoading(false);
     setCurrentStep("check");

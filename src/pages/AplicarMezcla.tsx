@@ -90,40 +90,65 @@ export default function AplicarMezcla() {
   }, []);
 
   const fetchOperators = async () => {
-    const { data } = await supabase
-      .from("operators")
-      .select("id, full_name")
-      .eq("is_active", true)
-      .order("full_name");
-    if (data) setOperators(data);
+    try {
+      const { data } = await supabase
+        .from("operators")
+        .select("id, full_name")
+        .eq("is_active", true)
+        .order("full_name");
+      if (data) setOperators(data);
+    } catch (error) {
+      console.error("Error fetching operators:", error);
+    }
   };
 
   const fetchLots = async () => {
-    const { data } = await supabase
-      .from("lots")
-      .select("id, name, hectares, plant_count, farm_id")
-      .order("name");
-    if (data) setLots(data);
+    try {
+      const { data } = await supabase
+        .from("lots")
+        .select("id, name, hectares, plant_count, farm_id")
+        .order("name");
+      if (data) setLots(data);
+    } catch (error) {
+      console.error("Error fetching lots:", error);
+    }
   };
 
   const fetchSuggestedMix = async (lotId: string) => {
+    // In offline mode, show message that protocol can't be loaded
+    if (!isOnline) {
+      setSuggestedMix({ 
+        success: false, 
+        error: "Modo offline: no se puede cargar el protocolo sin conexión. Registre la aplicación manualmente cuando tenga conexión." 
+      } as SuggestedMix);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     const today = new Date().toISOString().split("T")[0];
     
-    const { data, error } = await supabase.rpc("get_suggested_mix", {
-      p_lot_id: lotId,
-      p_date: today,
-    });
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo obtener la mezcla sugerida",
-        variant: "destructive",
+    try {
+      const { data, error } = await supabase.rpc("get_suggested_mix", {
+        p_lot_id: lotId,
+        p_date: today,
       });
-      setSuggestedMix({ success: false, error: error.message } as SuggestedMix);
-    } else {
-      setSuggestedMix(data as unknown as SuggestedMix);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo obtener la mezcla sugerida",
+          variant: "destructive",
+        });
+        setSuggestedMix({ success: false, error: error.message } as SuggestedMix);
+      } else {
+        setSuggestedMix(data as unknown as SuggestedMix);
+      }
+    } catch (error) {
+      setSuggestedMix({ 
+        success: false, 
+        error: "Sin conexión: no se puede cargar el protocolo." 
+      } as SuggestedMix);
     }
     setIsLoading(false);
   };
