@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,6 +17,8 @@ interface AuthContextType {
   profile: Profile | null;
   roles: AppRole[];
   isLoading: boolean;
+  /** True when auth failed due to network/backend unavailability */
+  isOfflineMode: boolean;
   isAdmin: boolean;
   isAgronoma: boolean;
   isOperario: boolean;
@@ -29,12 +31,46 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const AUTH_TIMEOUT_MS = 2000; // 2s max wait for getSession
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!error && data) {
+        setProfile(data as Profile);
+      }
+    } catch {
+      // Network failure – ignore
+    }
+  }, []);
+
+  const fetchRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      if (!error && data) {
+        setRoles(data.map((r) => r.role as AppRole));
+      }
+    } catch {
+      // Network failure – ignore
+    }
+  }, []);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -42,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setIsOfflineMode(false);
 
         // Defer profile fetch to avoid deadlock
         if (session?.user) {
@@ -56,8 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session with timeout
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), AUTH_TIMEOUT_MS);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -65,33 +106,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchRoles(session.user.id);
       }
       setIsLoading(false);
+    }).catch(() => {
+      // Network/backend unreachable → enter offline mode
+      clearTimeout(timeout);
+      setIsOfflineMode(true);
+      setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // Fallback: if timeout triggers before promise settles, enter offline mode
+    const fallbackTimeout = setTimeout(() => {
+      setIsLoading((prev) => {
+        if (prev) {
+          setIsOfflineMode(true);
+          return false;
+        }
+        return prev;
+      });
+    }, AUTH_TIMEOUT_MS + 100);
 
-  const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+      clearTimeout(fallbackTimeout);
+    };
+  }, [fetchProfile, fetchRoles]);
 
-    if (!error && data) {
-      setProfile(data as Profile);
-    }
-  };
-
-  const fetchRoles = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
-
-    if (!error && data) {
-      setRoles(data.map((r) => r.role as AppRole));
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -137,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         profile,
         roles,
         isLoading,
+        isOfflineMode,
         isAdmin,
         isAgronoma,
         isOperario,

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePhotoUpload } from "@/hooks/use-photo-upload";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
+import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 import {
   MapPin,
   Sprout,
@@ -28,6 +29,7 @@ import {
   Star,
   Users,
   Settings,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -69,6 +71,7 @@ const CLASSIFICATION_OPTIONS: { value: Classification; label: string; descriptio
 export default function Cosecha() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isOnline, queueForSync } = useOfflineSubmit("harvests");
   const [currentStep, setCurrentStep] = useState<Step>("operator");
   const [operators, setOperators] = useState<Operator[]>([]);
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
@@ -151,7 +154,7 @@ export default function Cosecha() {
   };
 
   const handleSubmitHarvest = async () => {
-    if (!selectedLot || !user) return;
+    if (!selectedLot) return;
 
     const total = parseFloat(totalKg);
     const exportable = parseFloat(exportableKg) || 0;
@@ -166,9 +169,7 @@ export default function Cosecha() {
       return;
     }
 
-    setIsLoading(true);
-
-    const { error } = await supabase.from("harvests").insert({
+    const payload = {
       lot_id: selectedLot.id,
       harvest_date: harvestDate,
       total_kg: total,
@@ -176,10 +177,23 @@ export default function Cosecha() {
       rejected_kg: rejected,
       classification,
       photo_url: photo.photoUrl,
-      recorded_by: user.id,
+      recorded_by: user?.id || null,
       operator_id: selectedOperator?.id || null,
       notes,
-    });
+    };
+
+    if (!isOnline) {
+      queueForSync(payload);
+      toast({
+        title: "Cosecha guardada offline",
+        description: "Se sincronizará al recuperar conexión",
+      });
+      setCurrentStep("result");
+      return;
+    }
+
+    setIsLoading(true);
+    const { error } = await supabase.from("harvests").insert(payload);
 
     if (error) {
       toast({
