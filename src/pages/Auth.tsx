@@ -6,14 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Leaf, Mail, Lock, User, AlertCircle } from "lucide-react";
+import { Leaf, Mail, Lock, User, AlertCircle, WifiOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
+import { useNetworkStatus } from "@/hooks/use-network-status";
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, isOfflineMode } = useAuth();
+  const { isOnline } = useNetworkStatus();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,6 +24,29 @@ export default function Auth() {
     navigate("/", { replace: true });
     return null;
   }
+
+  // Check if there's a persisted session in localStorage (supabase stores tokens)
+  const hasPersistedSession = (() => {
+    try {
+      const storageKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (!storageKey) return false;
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return false;
+      const parsed = JSON.parse(raw);
+      return !!(parsed?.access_token || parsed?.refresh_token);
+    } catch {
+      return false;
+    }
+  })();
+
+  const handleOfflineEntry = () => {
+    // Navigate to home - AppLayout already allows access in offline mode
+    navigate("/", { replace: true });
+    toast({
+      title: "Modo sin conexión",
+      description: "Estás trabajando offline. Los datos se sincronizarán al recuperar conexión.",
+    });
+  };
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -91,6 +116,38 @@ export default function Auth() {
           <h1 className="text-3xl font-bold text-primary-foreground">Campovital</h1>
           <p className="text-primary-foreground/80 mt-1">Gestión de Cultivo de Gulupa</p>
         </div>
+        {/* Offline entry option */}
+        {!isOnline && hasPersistedSession && (
+          <Card className="shadow-strong border-0 mb-4 border-l-4 border-l-warning">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <WifiOff className="w-5 h-5 text-warning-foreground" />
+                <span className="font-medium text-sm">Sin conexión a internet</span>
+              </div>
+              <p className="text-muted-foreground text-sm mb-3">
+                Tienes una sesión previa guardada. Puedes entrar en modo offline y tus datos se sincronizarán cuando recuperes conexión.
+              </p>
+              <Button onClick={handleOfflineEntry} variant="outline" className="w-full gap-2">
+                <WifiOff className="w-4 h-4" />
+                Entrar sin conexión
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!isOnline && !hasPersistedSession && (
+          <Card className="shadow-strong border-0 mb-4">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-2">
+                <WifiOff className="w-5 h-5 text-destructive" />
+                <span className="font-medium text-sm">Sin conexión a internet</span>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Necesitas conexión para iniciar sesión por primera vez. Una vez autenticado, podrás acceder sin conexión.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="shadow-strong border-0">
           <CardHeader className="text-center pb-2">
