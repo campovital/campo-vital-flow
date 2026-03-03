@@ -497,7 +497,7 @@ export default function AplicarMezcla() {
                   </CardContent>
                 </Card>
 
-                {/* Manual protocol selector */}
+                {/* Manual protocol selector (fallback) */}
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">Seleccionar protocolo manualmente</CardTitle>
@@ -555,6 +555,46 @@ export default function AplicarMezcla() {
                     <Info className="w-4 h-4 text-info flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-info">{suggestedMix.reason}</p>
                   </div>
+                </Card>
+
+                {/* Manual override selector – always visible */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Cambiar protocolo</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Select
+                      value={manualProtocolId || suggestedMix.protocol_version_id || "__none__"}
+                      onValueChange={(val) => {
+                        if (val !== "__none__") {
+                          setManualProtocolId(val);
+                          loadManualProtocol(val);
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Elegir protocolo..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {publishedProtocols.length === 0 ? (
+                          <SelectItem value="__none__" disabled>No hay protocolos publicados</SelectItem>
+                        ) : (
+                          publishedProtocols.map((p) => (
+                            <SelectItem key={p.version_id} value={p.version_id}>
+                              {p.protocol_name} (v{p.version_number}) — {p.category}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    {isLoadingManual && (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        <span className="ml-2 text-sm text-muted-foreground">Cargando protocolo...</span>
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
 
                 {/* Steps Checklist */}
