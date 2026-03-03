@@ -241,11 +241,27 @@ export default function AplicarMezcla() {
     setCurrentStep("lot");
   };
 
-  const handleSelectLot = (lot: Lot) => {
+  const handleSelectLot = async (lot: Lot) => {
     setSelectedLot(lot);
-    fetchSuggestedMix(lot.id);
     setCurrentStep("confirm");
+    await fetchSuggestedMix(lot.id);
   };
+
+  // Auto-assign first published protocol when suggestion fails
+  useEffect(() => {
+    if (
+      currentStep === "confirm" &&
+      !isLoading &&
+      suggestedMix &&
+      !suggestedMix.success &&
+      publishedProtocols.length > 0 &&
+      !manualProtocolId
+    ) {
+      const first = publishedProtocols[0];
+      setManualProtocolId(first.version_id);
+      loadManualProtocol(first.version_id);
+    }
+  }, [currentStep, isLoading, suggestedMix?.success, publishedProtocols.length, manualProtocolId]);
 
   const toggleStep = (stepOrder: number) => {
     setCompletedSteps((prev) =>
