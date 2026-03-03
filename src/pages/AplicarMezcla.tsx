@@ -94,6 +94,7 @@ export default function AplicarMezcla() {
   const [pumpsUsed, setPumpsUsed] = useState("");
   const [laborHours, setLaborHours] = useState("");
   const [notes, setNotes] = useState("");
+  const [showNovedadForm, setShowNovedadForm] = useState(false);
 
   useEffect(() => {
     fetchOperators();
@@ -346,6 +347,7 @@ export default function AplicarMezcla() {
     setLaborHours("");
     setNotes("");
     setManualProtocolId("");
+    setShowNovedadForm(false);
   };
 
   return (
@@ -673,20 +675,46 @@ export default function AplicarMezcla() {
                     Ejecutada
                   </Button>
                   
-                  <Button
-                    variant="confirm-warning"
-                    onClick={() => {
-                      const reason = prompt("Describa la novedad:");
-                      if (reason) {
-                        setIssueReason(reason);
-                        handleSubmitApplication("ejecutada_con_novedad");
-                      }
-                    }}
-                    disabled={isLoading}
-                  >
-                    <AlertTriangle className="w-5 h-5 mr-2" />
-                    Ejecutada con Novedad
-                  </Button>
+                  {!showNovedadForm ? (
+                    <Button
+                      variant="confirm-warning"
+                      onClick={() => setShowNovedadForm(true)}
+                      disabled={isLoading}
+                    >
+                      <AlertTriangle className="w-5 h-5 mr-2" />
+                      Ejecutada con Novedad
+                    </Button>
+                  ) : (
+                    <Card className="border-warning/50">
+                      <CardContent className="p-4 space-y-3">
+                        <Label htmlFor="issueReason" className="font-semibold">Describa la novedad:</Label>
+                        <Textarea
+                          id="issueReason"
+                          placeholder="Detalle qué ocurrió..."
+                          value={issueReason}
+                          onChange={(e) => setIssueReason(e.target.value)}
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            variant="confirm-warning"
+                            className="flex-1"
+                            onClick={() => handleSubmitApplication("ejecutada_con_novedad")}
+                            disabled={isLoading || !issueReason.trim()}
+                          >
+                            <Check className="w-4 h-4 mr-2" />
+                            Confirmar Novedad
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => { setShowNovedadForm(false); setIssueReason(""); }}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                   
                   <Button
                     variant="confirm-danger"
