@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
@@ -65,6 +66,13 @@ interface SuggestedMix {
   }>;
 }
 
+interface PublishedProtocol {
+  version_id: string;
+  version_number: number;
+  protocol_name: string;
+  category: string;
+}
+
 type Step = "operator" | "lot" | "confirm" | "result";
 
 export default function AplicarMezcla() {
@@ -76,6 +84,9 @@ export default function AplicarMezcla() {
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null);
   const [selectedLot, setSelectedLot] = useState<Lot | null>(null);
   const [suggestedMix, setSuggestedMix] = useState<SuggestedMix | null>(null);
+  const [publishedProtocols, setPublishedProtocols] = useState<PublishedProtocol[]>([]);
+  const [manualProtocolId, setManualProtocolId] = useState<string>("");
+  const [isLoadingManual, setIsLoadingManual] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<"ejecutada" | "no_ejecutada" | "ejecutada_con_novedad" | null>(null);
@@ -87,6 +98,7 @@ export default function AplicarMezcla() {
   useEffect(() => {
     fetchOperators();
     fetchLots();
+    fetchPublishedProtocols();
   }, []);
 
   const fetchOperators = async () => {
@@ -112,6 +124,77 @@ export default function AplicarMezcla() {
     } catch (error) {
       console.error("Error fetching lots:", error);
     }
+  };
+
+  const fetchPublishedProtocols = async () => {
+    try {
+      const { data } = await supabase
+        .from("protocol_versions")
+        .select("id, version_number, status, protocols(name, category)")
+        .eq("status", "published")
+        .order("version_number", { ascending: false });
+      if (data) {
+        setPublishedProtocols(
+          data.map((pv: any) => ({
+            version_id: pv.id,
+            version_number: pv.version_number,
+            protocol_name: pv.protocols?.name || "Sin nombre",
+            category: pv.protocols?.category || "otro",
+          }))
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching published protocols:", error);
+    }
+  };
+
+  const loadManualProtocol = async (versionId: string) => {
+    setIsLoadingManual(true);
+    try {
+      const { data: pv } = await supabase
+        .from("protocol_versions")
+        .select("id, version_number, protocols(name, category)")
+        .eq("id", versionId)
+        .single();
+
+      const { data: steps } = await supabase
+        .from("protocol_steps")
+        .select("step_order, instruction, is_required")
+        .eq("protocol_version_id", versionId)
+        .order("step_order");
+
+      const { data: components } = await supabase
+        .from("protocol_components")
+        .select("product_id, dose_amount, dose_unit, dose_base, withdrawal_days, inventory_products(name)")
+        .eq("protocol_version_id", versionId);
+
+      if (pv) {
+        setSuggestedMix({
+          success: true,
+          protocol_version_id: pv.id,
+          protocol_name: (pv.protocols as any)?.name,
+          protocol_category: (pv.protocols as any)?.category,
+          version_number: pv.version_number,
+          reason: "Selección manual del operario",
+          steps: steps?.map((s: any) => ({
+            order: s.step_order,
+            instruction: s.instruction,
+            is_required: s.is_required,
+          })) || [],
+          components: components?.map((c: any) => ({
+            product_id: c.product_id,
+            product_name: c.inventory_products?.name || "Producto",
+            dose_amount: c.dose_amount,
+            dose_unit: c.dose_unit,
+            dose_base: c.dose_base,
+            withdrawal_days: c.withdrawal_days,
+          })) || [],
+        });
+      }
+    } catch (error) {
+      console.error("Error loading manual protocol:", error);
+    }
+    setIsLoadingManual(false);
   };
 
   const fetchSuggestedMix = async (lotId: string) => {
@@ -179,7 +262,7 @@ export default function AplicarMezcla() {
       lot_id: selectedLot.id,
       operator_id: selectedOperator.id,
       protocol_version_id: suggestedMix.protocol_version_id,
-      schedule_rule_id: suggestedMix.rule_id,
+      schedule_rule_id: suggestedMix.rule_id || null,
       status,
       device_time: new Date().toISOString(),
       pumps_used: pumpsUsed ? parseFloat(pumpsUsed) : null,
@@ -246,6 +329,7 @@ export default function AplicarMezcla() {
     setPumpsUsed("");
     setLaborHours("");
     setNotes("");
+    setManualProtocolId("");
   };
 
   return (
@@ -384,15 +468,54 @@ export default function AplicarMezcla() {
                 </CardContent>
               </Card>
             ) : suggestedMix?.error || !suggestedMix?.success ? (
-              <Card className="border-destructive/50 bg-destructive/5">
-                <CardContent className="p-6 text-center">
-                  <AlertTriangle className="w-10 h-10 mx-auto text-destructive mb-2" />
-                  <p className="font-medium text-destructive">No hay protocolo disponible</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {suggestedMix?.error || "No se encontró una regla aplicable para este lote y fecha"}
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="space-y-4">
+                <Card className="border-warning/50 bg-warning/5">
+                  <CardContent className="p-6 text-center">
+                    <AlertTriangle className="w-10 h-10 mx-auto text-warning mb-2" />
+                    <p className="font-medium text-warning">No hay protocolo automático</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {suggestedMix?.error || "No se encontró una regla aplicable para este lote y fecha"}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Manual protocol selector */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Seleccionar protocolo manualmente</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Select value={manualProtocolId} onValueChange={(val) => {
+                      if (val !== "__none__") {
+                        setManualProtocolId(val);
+                        loadManualProtocol(val);
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Elegir protocolo..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {publishedProtocols.length === 0 ? (
+                          <SelectItem value="__none__" disabled>No hay protocolos publicados</SelectItem>
+                        ) : (
+                          publishedProtocols.map((p) => (
+                            <SelectItem key={p.version_id} value={p.version_id}>
+                              {p.protocol_name} (v{p.version_number}) — {p.category}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    {isLoadingManual && (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        <span className="ml-2 text-sm text-muted-foreground">Cargando protocolo...</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             ) : (
               <>
                 {/* Protocol Info */}
