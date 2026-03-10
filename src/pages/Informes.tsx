@@ -158,7 +158,7 @@ export default function Informes() {
             Informes
           </h1>
           <p className="text-muted-foreground">
-            Genera y exporta reportes del cultivo en formato Excel o PDF
+            Genera y exporta reportes del cultivo en formato Excel, PDF o Word
           </p>
         </div>
 
