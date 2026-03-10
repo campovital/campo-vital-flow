@@ -120,45 +120,32 @@ export default function Informes() {
 
   const handleExportExcel = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
-
     switch (reportId) {
-      case "production":
-        await exportProductionReport(reportFilters);
-        break;
-      case "productivity":
-        await exportProductivityReport(reportFilters);
-        break;
-      case "costs":
-        await exportCostsReport(reportFilters);
-        break;
-      case "inventory":
-        await exportInventoryReport();
-        break;
-      case "sanitary":
-        await exportSanitaryReport(reportFilters);
-        break;
+      case "phytosanitary": await exportPhytosanitaryExcel(reportFilters); break;
+      case "production": await exportProductionReport(reportFilters); break;
+      case "productivity": await exportProductivityReport(reportFilters); break;
+      case "costs": await exportCostsReport(reportFilters); break;
+      case "inventory": await exportInventoryReport(); break;
+      case "sanitary": await exportSanitaryReport(reportFilters); break;
     }
   };
 
   const handleExportPDF = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
-
     switch (reportId) {
-      case "production":
-        await exportProductionPDF(reportFilters);
-        break;
-      case "productivity":
-        await exportProductivityPDF(reportFilters);
-        break;
-      case "costs":
-        await exportCostsPDF(reportFilters);
-        break;
-      case "inventory":
-        await exportInventoryPDF();
-        break;
-      case "sanitary":
-        await exportSanitaryPDF(reportFilters);
-        break;
+      case "phytosanitary": await exportPhytosanitaryPDF(reportFilters); break;
+      case "production": await exportProductionPDF(reportFilters); break;
+      case "productivity": await exportProductivityPDF(reportFilters); break;
+      case "costs": await exportCostsPDF(reportFilters); break;
+      case "inventory": await exportInventoryPDF(); break;
+      case "sanitary": await exportSanitaryPDF(reportFilters); break;
+    }
+  };
+
+  const handleExportWord = async (reportId: string) => {
+    const reportFilters = getFilters(reportId);
+    switch (reportId) {
+      case "phytosanitary": await exportPhytosanitaryWord(reportFilters); break;
     }
   };
 
