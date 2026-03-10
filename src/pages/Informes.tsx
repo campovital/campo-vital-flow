@@ -34,6 +34,13 @@ import {
   exportPhytosanitaryPDF,
   exportPhytosanitaryWord,
 } from "@/lib/phytosanitary-report-export";
+import {
+  exportProductionWord,
+  exportProductivityWord,
+  exportCostsWord,
+  exportInventoryWord,
+  exportSanitaryWord,
+} from "@/lib/reports-word-export";
 
 interface ReportConfig {
   id: string;
@@ -63,6 +70,7 @@ const reportConfigs: ReportConfig[] = [
     icon: <Sprout className="w-6 h-6 text-success" />,
     showLotFilter: true,
     showOperatorFilter: true,
+    hasWordExport: true,
   },
   {
     id: "productivity",
@@ -71,6 +79,7 @@ const reportConfigs: ReportConfig[] = [
     icon: <Users className="w-6 h-6 text-primary" />,
     showLotFilter: false,
     showOperatorFilter: true,
+    hasWordExport: true,
   },
   {
     id: "costs",
@@ -80,6 +89,7 @@ const reportConfigs: ReportConfig[] = [
     showLotFilter: true,
     showOperatorFilter: false,
     requiresCostPermission: true,
+    hasWordExport: true,
   },
   {
     id: "inventory",
@@ -89,6 +99,7 @@ const reportConfigs: ReportConfig[] = [
     showLotFilter: false,
     showOperatorFilter: false,
     requiresCostPermission: true,
+    hasWordExport: true,
   },
   {
     id: "sanitary",
@@ -97,6 +108,7 @@ const reportConfigs: ReportConfig[] = [
     icon: <Bug className="w-6 h-6 text-destructive" />,
     showLotFilter: true,
     showOperatorFilter: false,
+    hasWordExport: true,
   },
 ];
 
@@ -146,6 +158,11 @@ export default function Informes() {
     const reportFilters = getFilters(reportId);
     switch (reportId) {
       case "phytosanitary": await exportPhytosanitaryWord(reportFilters); break;
+      case "production": await exportProductionWord(reportFilters); break;
+      case "productivity": await exportProductivityWord(reportFilters); break;
+      case "costs": await exportCostsWord(reportFilters); break;
+      case "inventory": await exportInventoryWord(); break;
+      case "sanitary": await exportSanitaryWord(reportFilters); break;
     }
   };
 

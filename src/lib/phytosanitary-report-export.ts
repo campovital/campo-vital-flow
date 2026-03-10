@@ -3,9 +3,8 @@ import { es } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, WidthType, AlignmentType, BorderStyle, HeadingLevel } from "docx";
-import { saveAs } from "file-saver";
 import { supabase } from "@/integrations/supabase/client";
+import { generateWordFromHtml, buildHtmlTable } from "@/lib/word-export-utils";
 
 interface ReportFilters {
   dateFrom?: Date;
@@ -89,13 +88,6 @@ async function fetchPhytosanitaryData(filters: ReportFilters) {
 
   let records = (data || []) as unknown as PhytosanitaryRecord[];
 
-  if (filters.lotId) {
-    records = records.filter((r) => {
-      const lotData = r.lot as any;
-      return lotData?.id === filters.lotId || true; // lot only has name in select
-    });
-  }
-
   // Fetch products for all applications
   const appIds = records.map((r) => r.id);
   let products: ProductDetail[] = [];
@@ -167,7 +159,6 @@ export async function exportPhytosanitaryExcel(filters: ReportFilters): Promise<
 
   const workbook = XLSX.utils.book_new();
 
-  // Build header rows
   const headerRows = [
     ["", "", "", "REGISTRO DE APLICACIONES FITOSANITARIAS", "", "", "", "", "", "", "", "", "", "", "", "", "FO-17-DA"],
     ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "VERSION: 3"],
@@ -189,7 +180,6 @@ export async function exportPhytosanitaryExcel(filters: ReportFilters): Promise<
     ],
   ];
 
-  // Build data rows – one row per product per application
   const dataRows: any[][] = [];
   for (const record of records) {
     const appProducts = getProductsForApp(products, record.id);
@@ -242,11 +232,9 @@ export async function exportPhytosanitaryExcel(filters: ReportFilters): Promise<
         ]);
       }
     }
-    // Empty separator row
     dataRows.push([]);
   }
 
-  // Footer notes
   const footerRows = [
     [],
     ["LOS CALDOS SOBRANTES SERÁN DESECHADOS EN LA ZONA DE BARBECHO AL IGUAL QUE LAS AGUAS RESULTANTES DE EL LAVADO DE MAQUINARIAS Y EPPs."],
@@ -257,30 +245,13 @@ export async function exportPhytosanitaryExcel(filters: ReportFilters): Promise<
   ];
 
   const allRows = [...headerRows, ...dataRows, ...footerRows];
-
   const worksheet = XLSX.utils.aoa_to_sheet(allRows);
 
-  // Set column widths
   worksheet["!cols"] = [
-    { wch: 8 },  // Lote
-    { wch: 12 }, // Fecha
-    { wch: 18 }, // Nombre Comercial
-    { wch: 25 }, // Ingrediente Activo
-    { wch: 14 }, // Dosis
-    { wch: 18 }, // Vol Aplicado
-    { wch: 14 }, // Producto Total
-    { wch: 16 }, // Periodo Carencia
-    { wch: 16 }, // Periodo Reentrada
-    { wch: 18 }, // Condiciones Climaticas
-    { wch: 16 }, // Blanco Biologico
-    { wch: 18 }, // Equipo Aplicacion
-    { wch: 16 }, // Tipo Aplicacion
-    { wch: 22 }, // Hora Inicio-Fin
-    { wch: 30 }, // Gestion Aguas
-    { wch: 14 }, // Caldos Sobrantes
-    { wch: 18 }, // Nombre Colaborador
-    { wch: 16 }, // Firma
-    { wch: 25 }, // Observaciones
+    { wch: 8 }, { wch: 12 }, { wch: 18 }, { wch: 25 }, { wch: 14 },
+    { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 18 },
+    { wch: 16 }, { wch: 18 }, { wch: 16 }, { wch: 22 }, { wch: 30 },
+    { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 25 },
   ];
 
   XLSX.utils.book_append_sheet(workbook, worksheet, "Registro Fitosanitario");
@@ -300,7 +271,6 @@ export async function exportPhytosanitaryPDF(filters: ReportFilters): Promise<vo
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
-  // Header
   doc.setFillColor(34, 100, 34);
   doc.rect(0, 0, 297, 30, "F");
   doc.setTextColor(255);
@@ -312,14 +282,12 @@ export async function exportPhytosanitaryPDF(filters: ReportFilters): Promise<vo
   doc.text("FO-17-DA | VERSION: 3", 250, 8);
   doc.text(`Generado: ${format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es })}`, 250, 14);
 
-  // Farm info
   doc.setTextColor(0);
   doc.setFontSize(10);
   doc.text(`CULTIVO: GULUPA`, 14, 37);
   doc.text(`FINCA: ${farm.name}${farm.location ? ` (${farm.location})` : ""}`, 14, 43);
   doc.text(`ING. AGRÓNOMO: ${agronomist}`, 14, 49);
 
-  // Build table data
   const tableData: string[][] = [];
   for (const record of records) {
     const appProducts = getProductsForApp(products, record.id);
@@ -327,8 +295,7 @@ export async function exportPhytosanitaryPDF(filters: ReportFilters): Promise<vo
     const dateStr = format(new Date(record.device_time), "dd/MM/yy");
     const operatorName = (record.operator as any)?.full_name || "—";
     const timeRange = record.start_time && record.end_time
-      ? `${record.start_time} - ${record.end_time}`
-      : "—";
+      ? `${record.start_time} - ${record.end_time}` : "—";
 
     if (appProducts.length === 0) {
       tableData.push([
@@ -386,29 +353,16 @@ export async function exportPhytosanitaryPDF(filters: ReportFilters): Promise<vo
     headStyles: { fillColor: [34, 100, 34], textColor: 255, fontStyle: "bold", fontSize: 6 },
     bodyStyles: { fontSize: 6 },
     columnStyles: {
-      0: { cellWidth: 10 },
-      1: { cellWidth: 14 },
-      2: { cellWidth: 16 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 12 },
-      5: { cellWidth: 12 },
-      6: { cellWidth: 14 },
-      7: { cellWidth: 12 },
-      8: { cellWidth: 14 },
-      9: { cellWidth: 12 },
-      10: { cellWidth: 14 },
-      11: { cellWidth: 14 },
-      12: { cellWidth: 12 },
-      13: { cellWidth: 18 },
-      14: { cellWidth: 14 },
-      15: { cellWidth: 12 },
-      16: { cellWidth: 16 },
-      17: { cellWidth: 22 },
+      0: { cellWidth: 10 }, 1: { cellWidth: 14 }, 2: { cellWidth: 16 },
+      3: { cellWidth: 20 }, 4: { cellWidth: 12 }, 5: { cellWidth: 12 },
+      6: { cellWidth: 14 }, 7: { cellWidth: 12 }, 8: { cellWidth: 14 },
+      9: { cellWidth: 12 }, 10: { cellWidth: 14 }, 11: { cellWidth: 14 },
+      12: { cellWidth: 12 }, 13: { cellWidth: 18 }, 14: { cellWidth: 14 },
+      15: { cellWidth: 12 }, 16: { cellWidth: 16 }, 17: { cellWidth: 22 },
     },
     alternateRowStyles: { fillColor: [245, 245, 245] },
   });
 
-  // Footer notes
   const finalY = (doc as any).lastAutoTable?.finalY || 180;
   doc.setFontSize(7);
   doc.setTextColor(80);
@@ -417,7 +371,6 @@ export async function exportPhytosanitaryPDF(filters: ReportFilters): Promise<vo
   doc.text("* CONDICIONES CLIMÁTICAS: Nublado, Soleado, Lluvioso.", 14, finalY + 14);
   doc.text("Los caldos sobrantes serán desechados en zona de barbecho. Agua de lavado: máx 100 litros.", 14, finalY + 18);
 
-  // Page numbers
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -430,7 +383,7 @@ export async function exportPhytosanitaryPDF(filters: ReportFilters): Promise<vo
 }
 
 // ==========================================
-// WORD EXPORT – FO-17-DA format
+// WORD EXPORT – FO-17-DA format (HTML-based)
 // ==========================================
 
 export async function exportPhytosanitaryWord(filters: ReportFilters): Promise<void> {
@@ -439,16 +392,6 @@ export async function exportPhytosanitaryWord(filters: ReportFilters): Promise<v
   if (records.length === 0) {
     throw new Error("No hay registros de aplicaciones fitosanitarias para exportar");
   }
-
-  const headerCellProps = {
-    shading: { fill: "226422" },
-    borders: {
-      top: { style: BorderStyle.SINGLE, size: 1 },
-      bottom: { style: BorderStyle.SINGLE, size: 1 },
-      left: { style: BorderStyle.SINGLE, size: 1 },
-      right: { style: BorderStyle.SINGLE, size: 1 },
-    },
-  };
 
   const columns = [
     "Lote", "Fecha", "Nombre Comercial", "Ingrediente Activo",
@@ -459,22 +402,7 @@ export async function exportPhytosanitaryWord(filters: ReportFilters): Promise<v
     "Colaborador", "Observaciones"
   ];
 
-  // Header row
-  const headerRow = new TableRow({
-    children: columns.map((col) =>
-      new TableCell({
-        ...headerCellProps,
-        children: [new Paragraph({
-          children: [new TextRun({ text: col, bold: true, color: "FFFFFF", size: 14 })],
-          alignment: AlignmentType.CENTER,
-        })],
-        width: { size: 100 / columns.length, type: WidthType.PERCENTAGE },
-      })
-    ),
-  });
-
-  // Data rows
-  const dataRows: TableRow[] = [];
+  const rows: string[][] = [];
   for (const record of records) {
     const appProducts = getProductsForApp(products, record.id);
     const lotName = (record.lot as any)?.name || "—";
@@ -483,13 +411,13 @@ export async function exportPhytosanitaryWord(filters: ReportFilters): Promise<v
     const timeRange = record.start_time && record.end_time
       ? `${record.start_time} - ${record.end_time}` : "—";
 
-    const makeRow = (prod: ProductDetail | null) => {
+    const makeRow = (prod: ProductDetail | null): string[] => {
       const dosePerLt = prod && prod.quantity_used && record.water_volume_liters
         ? `${(prod.quantity_used / record.water_volume_liters).toFixed(2)} ${prod?.product?.unit || ""}`
         : "—";
       const totalProduct = prod ? `${prod.quantity_used} ${prod?.product?.unit || ""}` : "—";
 
-      const vals = [
+      return [
         lotName, dateStr,
         prod?.product?.name || "—",
         prod?.product?.active_ingredient || "—",
@@ -507,104 +435,36 @@ export async function exportPhytosanitaryWord(filters: ReportFilters): Promise<v
         operatorName,
         record.notes || "",
       ];
-
-      return new TableRow({
-        children: vals.map((v) =>
-          new TableCell({
-            borders: {
-              top: { style: BorderStyle.SINGLE, size: 1 },
-              bottom: { style: BorderStyle.SINGLE, size: 1 },
-              left: { style: BorderStyle.SINGLE, size: 1 },
-              right: { style: BorderStyle.SINGLE, size: 1 },
-            },
-            children: [new Paragraph({
-              children: [new TextRun({ text: v, size: 14 })],
-            })],
-            width: { size: 100 / columns.length, type: WidthType.PERCENTAGE },
-          })
-        ),
-      });
     };
 
     if (appProducts.length === 0) {
-      dataRows.push(makeRow(null));
+      rows.push(makeRow(null));
     } else {
       for (const prod of appProducts) {
-        dataRows.push(makeRow(prod));
+        rows.push(makeRow(prod));
       }
     }
   }
 
-  const table = new Table({
-    rows: [headerRow, ...dataRows],
-    width: { size: 100, type: WidthType.PERCENTAGE },
-  });
+  const tableHtml = buildHtmlTable(columns, rows);
 
-  const doc = new Document({
-    sections: [{
-      properties: {
-        page: { size: { orientation: "landscape" as any } },
-      },
-      children: [
-        new Paragraph({
-          children: [new TextRun({ text: "REGISTRO DE APLICACIONES FITOSANITARIAS", bold: true, size: 28 })],
-          heading: HeadingLevel.HEADING_1,
-          alignment: AlignmentType.CENTER,
-        }),
-        new Paragraph({
-          children: [new TextRun({ text: "FO-17-DA | VERSION: 3", size: 18 })],
-          alignment: AlignmentType.RIGHT,
-        }),
-        new Paragraph({ children: [] }),
-        new Paragraph({
-          children: [new TextRun({ text: "CULTIVO: GULUPA", bold: true, size: 20 })],
-        }),
-        new Paragraph({
-          children: [new TextRun({
-            text: `NOMBRE DE LA FINCA: ${farm.name}${farm.location ? ` (${farm.location})` : ""}`,
-            bold: true, size: 20,
-          })],
-        }),
-        new Paragraph({
-          children: [new TextRun({ text: `INGENIERO AGRÓNOMO: ${agronomist}`, bold: true, size: 20 })],
-        }),
-        new Paragraph({ children: [] }),
-        table,
-        new Paragraph({ children: [] }),
-        new Paragraph({
-          children: [new TextRun({
-            text: "Los caldos sobrantes serán desechados en la zona de barbecho al igual que las aguas resultantes del lavado de maquinarias y EPPs.",
-            size: 16, italics: true,
-          })],
-        }),
-        new Paragraph({
-          children: [new TextRun({
-            text: "La cantidad de agua utilizada para el lavado de maquinarias, equipos y EPPs será siempre de no más de 100 litros.",
-            size: 16, italics: true,
-          })],
-        }),
-        new Paragraph({
-          children: [new TextRun({
-            text: "PERIODO DE CARENCIA: Días que deben transcurrir entre la última aplicación y la cosecha.",
-            size: 16, italics: true,
-          })],
-        }),
-        new Paragraph({
-          children: [new TextRun({
-            text: "PERIODO DE REENTRADA: Intervalo que debe transcurrir entre la aplicación y el reingreso de personas y animales al área o cultivo tratado.",
-            size: 16, italics: true,
-          })],
-        }),
-        new Paragraph({
-          children: [new TextRun({
-            text: "CONDICIONES CLIMÁTICAS: Nublado, Soleado, Lluvioso.",
-            size: 16, italics: true,
-          })],
-        }),
-      ],
-    }],
-  });
+  const htmlContent = `
+    <h1 style="text-align:center;">REGISTRO DE APLICACIONES FITOSANITARIAS</h1>
+    <p style="text-align:right;"><strong>FO-17-DA | VERSION: 3</strong></p>
+    <p style="text-align:right;">Fecha: ${format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es })}</p>
+    <div class="header-info">
+      <p><strong>CULTIVO:</strong> GULUPA</p>
+      <p><strong>NOMBRE DE LA FINCA:</strong> ${farm.name}${farm.location ? ` (${farm.location})` : ""}</p>
+      <p><strong>INGENIERO AGRÓNOMO:</strong> ${agronomist}</p>
+    </div>
+    ${tableHtml}
+    <br/>
+    <p class="italic-note">Los caldos sobrantes serán desechados en la zona de barbecho al igual que las aguas resultantes del lavado de maquinarias y EPPs.</p>
+    <p class="italic-note">La cantidad de agua utilizada para el lavado de maquinarias, equipos y EPPs será siempre de no más de 100 litros.</p>
+    <p class="italic-note">PERIODO DE CARENCIA: Días que deben transcurrir entre la última aplicación y la cosecha.</p>
+    <p class="italic-note">PERIODO DE REENTRADA: Intervalo que debe transcurrir entre la aplicación y el reingreso de personas y animales al área o cultivo tratado.</p>
+    <p class="italic-note">CONDICIONES CLIMÁTICAS: Nublado, Soleado, Lluvioso.</p>
+  `;
 
-  const blob = await Packer.toBlob(doc);
-  saveAs(blob, `FO-17-DA_registro_fitosanitario_${format(new Date(), "yyyyMMdd")}.docx`);
+  generateWordFromHtml(htmlContent, `FO-17-DA_registro_fitosanitario_${format(new Date(), "yyyyMMdd")}.doc`);
 }
