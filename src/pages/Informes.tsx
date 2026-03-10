@@ -99,6 +99,7 @@ const reportConfigs: ReportConfig[] = [
     showLotFilter: false,
     showOperatorFilter: false,
     requiresCostPermission: true,
+    hasWordExport: true,
   },
   {
     id: "sanitary",
