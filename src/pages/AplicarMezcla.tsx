@@ -371,6 +371,17 @@ export default function AplicarMezcla() {
     setNotes("");
     setManualProtocolId("");
     setShowNovedadForm(false);
+    // Reset FO-17-DA fields
+    setWeatherConditions("");
+    setBiologicalTarget("");
+    setEquipmentType("Estacionaria");
+    setApplicationType("foliar");
+    setStartTime("");
+    setEndTime("");
+    setWaterVolumeLiters("");
+    setTankWashManagement("");
+    setLeftoverBrothLiters("0");
+    setReentryHours("");
   };
 
   return (
