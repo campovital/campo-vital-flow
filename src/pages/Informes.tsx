@@ -11,6 +11,7 @@ import {
   Bug,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
 } from "lucide-react";
 import { ReportFilters, ReportFiltersState } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
@@ -28,6 +29,11 @@ import {
   exportInventoryPDF,
   exportSanitaryPDF,
 } from "@/lib/reports-pdf-export";
+import {
+  exportPhytosanitaryExcel,
+  exportPhytosanitaryPDF,
+  exportPhytosanitaryWord,
+} from "@/lib/phytosanitary-report-export";
 
 interface ReportConfig {
   id: string;
@@ -37,9 +43,19 @@ interface ReportConfig {
   showLotFilter: boolean;
   showOperatorFilter: boolean;
   requiresCostPermission?: boolean;
+  hasWordExport?: boolean;
 }
 
 const reportConfigs: ReportConfig[] = [
+  {
+    id: "phytosanitary",
+    title: "Registro Fitosanitario (FO-17-DA)",
+    description: "Informe formal de aplicaciones fitosanitarias con todos los campos del formato FO-17-DA V3",
+    icon: <ClipboardList className="w-6 h-6 text-primary" />,
+    showLotFilter: true,
+    showOperatorFilter: true,
+    hasWordExport: true,
+  },
   {
     id: "production",
     title: "Producción",
@@ -104,45 +120,32 @@ export default function Informes() {
 
   const handleExportExcel = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
-
     switch (reportId) {
-      case "production":
-        await exportProductionReport(reportFilters);
-        break;
-      case "productivity":
-        await exportProductivityReport(reportFilters);
-        break;
-      case "costs":
-        await exportCostsReport(reportFilters);
-        break;
-      case "inventory":
-        await exportInventoryReport();
-        break;
-      case "sanitary":
-        await exportSanitaryReport(reportFilters);
-        break;
+      case "phytosanitary": await exportPhytosanitaryExcel(reportFilters); break;
+      case "production": await exportProductionReport(reportFilters); break;
+      case "productivity": await exportProductivityReport(reportFilters); break;
+      case "costs": await exportCostsReport(reportFilters); break;
+      case "inventory": await exportInventoryReport(); break;
+      case "sanitary": await exportSanitaryReport(reportFilters); break;
     }
   };
 
   const handleExportPDF = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
-
     switch (reportId) {
-      case "production":
-        await exportProductionPDF(reportFilters);
-        break;
-      case "productivity":
-        await exportProductivityPDF(reportFilters);
-        break;
-      case "costs":
-        await exportCostsPDF(reportFilters);
-        break;
-      case "inventory":
-        await exportInventoryPDF();
-        break;
-      case "sanitary":
-        await exportSanitaryPDF(reportFilters);
-        break;
+      case "phytosanitary": await exportPhytosanitaryPDF(reportFilters); break;
+      case "production": await exportProductionPDF(reportFilters); break;
+      case "productivity": await exportProductivityPDF(reportFilters); break;
+      case "costs": await exportCostsPDF(reportFilters); break;
+      case "inventory": await exportInventoryPDF(); break;
+      case "sanitary": await exportSanitaryPDF(reportFilters); break;
+    }
+  };
+
+  const handleExportWord = async (reportId: string) => {
+    const reportFilters = getFilters(reportId);
+    switch (reportId) {
+      case "phytosanitary": await exportPhytosanitaryWord(reportFilters); break;
     }
   };
 
@@ -155,7 +158,7 @@ export default function Informes() {
             Informes
           </h1>
           <p className="text-muted-foreground">
-            Genera y exporta reportes del cultivo en formato Excel o PDF
+            Genera y exporta reportes del cultivo en formato Excel, PDF o Word
           </p>
         </div>
 
@@ -183,6 +186,7 @@ export default function Informes() {
                         <ReportExportButtons
                           onExportExcel={() => handleExportExcel(report.id)}
                           onExportPDF={() => handleExportPDF(report.id)}
+                          onExportWord={report.hasWordExport ? () => handleExportWord(report.id) : undefined}
                         />
                       )}
                       {isExpanded ? (
@@ -206,6 +210,7 @@ export default function Informes() {
                       <ReportExportButtons
                         onExportExcel={() => handleExportExcel(report.id)}
                         onExportPDF={() => handleExportPDF(report.id)}
+                        onExportWord={report.hasWordExport ? () => handleExportWord(report.id) : undefined}
                       />
                     </div>
                   </CardContent>
@@ -223,7 +228,7 @@ export default function Informes() {
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">Sobre los informes</p>
                 <ul className="mt-2 space-y-1 list-disc list-inside">
-                  <li>Exporta en Excel (.xlsx) o PDF para compartir fácilmente</li>
+                  <li>Exporta en Excel (.xlsx), PDF o Word (.docx) para compartir fácilmente</li>
                   <li>Usa los filtros para obtener datos específicos por fecha, lote u operario</li>
                   <li>Los informes de costos solo están disponibles para administradores y agrónomos</li>
                   <li>Los totales y promedios se calculan automáticamente</li>

@@ -96,6 +96,18 @@ export default function AplicarMezcla() {
   const [notes, setNotes] = useState("");
   const [showNovedadForm, setShowNovedadForm] = useState(false);
 
+  // FO-17-DA phytosanitary report fields
+  const [weatherConditions, setWeatherConditions] = useState("");
+  const [biologicalTarget, setBiologicalTarget] = useState("");
+  const [equipmentType, setEquipmentType] = useState("Estacionaria");
+  const [applicationType, setApplicationType] = useState("foliar");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [waterVolumeLiters, setWaterVolumeLiters] = useState("");
+  const [tankWashManagement, setTankWashManagement] = useState("");
+  const [leftoverBrothLiters, setLeftoverBrothLiters] = useState("0");
+  const [reentryHours, setReentryHours] = useState("");
+
   useEffect(() => {
     fetchOperators();
     fetchLots();
@@ -287,6 +299,17 @@ export default function AplicarMezcla() {
       notes,
       issue_reason: status === "ejecutada_con_novedad" ? issueReason : null,
       reason_explanation: suggestedMix.reason,
+      // FO-17-DA fields
+      weather_conditions: weatherConditions || null,
+      biological_target: biologicalTarget || null,
+      equipment_type: equipmentType || null,
+      application_type: applicationType || null,
+      start_time: startTime || null,
+      end_time: endTime || null,
+      water_volume_liters: waterVolumeLiters ? parseFloat(waterVolumeLiters) : null,
+      tank_wash_management: tankWashManagement || null,
+      leftover_broth_liters: leftoverBrothLiters ? parseFloat(leftoverBrothLiters) : 0,
+      reentry_hours: reentryHours || null,
     };
 
     if (!isOnline) {
@@ -348,6 +371,17 @@ export default function AplicarMezcla() {
     setNotes("");
     setManualProtocolId("");
     setShowNovedadForm(false);
+    // Reset FO-17-DA fields
+    setWeatherConditions("");
+    setBiologicalTarget("");
+    setEquipmentType("Estacionaria");
+    setApplicationType("foliar");
+    setStartTime("");
+    setEndTime("");
+    setWaterVolumeLiters("");
+    setTankWashManagement("");
+    setLeftoverBrothLiters("0");
+    setReentryHours("");
   };
 
   return (
@@ -662,44 +696,127 @@ export default function AplicarMezcla() {
                   </Card>
                 )}
 
-                {/* Additional Info */}
+                {/* Datos de Operación (FO-17-DA) */}
                 <Card>
-                  <CardContent className="p-4 space-y-4">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Datos de Operación</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="pumps">Bombas utilizadas</Label>
-                        <Input
-                          id="pumps"
-                          type="number"
-                          step="0.5"
-                          placeholder="Ej: 2.5"
-                          value={pumpsUsed}
-                          onChange={(e) => setPumpsUsed(e.target.value)}
-                          className="mt-1"
-                        />
+                        <Input id="pumps" type="number" step="0.5" placeholder="Ej: 2.5"
+                          value={pumpsUsed} onChange={(e) => setPumpsUsed(e.target.value)} className="mt-1" />
                       </div>
                       <div>
-                        <Label htmlFor="laborHours">Horas de trabajo</Label>
-                        <Input
-                          id="laborHours"
-                          type="number"
-                          step="0.5"
-                          placeholder="Ej: 2"
-                          value={laborHours}
-                          onChange={(e) => setLaborHours(e.target.value)}
-                          className="mt-1"
-                        />
+                        <Label htmlFor="waterVolume">Vol. agua (Lts)</Label>
+                        <Input id="waterVolume" type="number" step="1" placeholder="Ej: 180"
+                          value={waterVolumeLiters} onChange={(e) => setWaterVolumeLiters(e.target.value)} className="mt-1" />
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="startTime">Hora inicio</Label>
+                        <Input id="startTime" type="time" value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)} className="mt-1" />
+                      </div>
+                      <div>
+                        <Label htmlFor="endTime">Hora finalización</Label>
+                        <Input id="endTime" type="time" value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)} className="mt-1" />
+                      </div>
+                    </div>
+
                     <div>
-                      <Label htmlFor="notes">Notas (opcional)</Label>
-                      <Textarea
-                        id="notes"
-                        placeholder="Observaciones adicionales..."
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="mt-1"
-                      />
+                      <Label htmlFor="laborHours">Horas de trabajo</Label>
+                      <Input id="laborHours" type="number" step="0.5" placeholder="Ej: 2"
+                        value={laborHours} onChange={(e) => setLaborHours(e.target.value)} className="mt-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Datos Técnicos (FO-17-DA) */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Datos Técnicos</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="weatherConditions">Condiciones climáticas</Label>
+                        <Select value={weatherConditions} onValueChange={setWeatherConditions}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="soleado">Soleado</SelectItem>
+                            <SelectItem value="nublado">Nublado</SelectItem>
+                            <SelectItem value="lluvioso">Lluvioso</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="biologicalTarget">Blanco biológico</Label>
+                        <Input id="biologicalTarget" placeholder="Ej: Cladosporium, Thrips"
+                          value={biologicalTarget} onChange={(e) => setBiologicalTarget(e.target.value)} className="mt-1" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="equipmentType">Equipo de aplicación</Label>
+                        <Select value={equipmentType} onValueChange={setEquipmentType}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Estacionaria">Estacionaria</SelectItem>
+                            <SelectItem value="Espalda">Espalda</SelectItem>
+                            <SelectItem value="Dron">Dron</SelectItem>
+                            <SelectItem value="Tractor">Tractor</SelectItem>
+                            <SelectItem value="Otro">Otro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="applicationType">Tipo de aplicación</Label>
+                        <Select value={applicationType} onValueChange={setApplicationType}>
+                          <SelectTrigger className="mt-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="foliar">Foliar</SelectItem>
+                            <SelectItem value="drench">Drench</SelectItem>
+                            <SelectItem value="inmersion">Inmersión</SelectItem>
+                            <SelectItem value="otro">Otro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="reentryHours">Período de reentrada</Label>
+                        <Input id="reentryHours" placeholder="Ej: 3 horas"
+                          value={reentryHours} onChange={(e) => setReentryHours(e.target.value)} className="mt-1" />
+                      </div>
+                      <div>
+                        <Label htmlFor="leftoverBroth">Caldos sobrantes (Lts)</Label>
+                        <Input id="leftoverBroth" type="number" step="0.1" placeholder="0"
+                          value={leftoverBrothLiters} onChange={(e) => setLeftoverBrothLiters(e.target.value)} className="mt-1" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="tankWash">Gestión aguas de lavado</Label>
+                      <Select value={tankWashManagement} onValueChange={setTankWashManagement}>
+                        <SelectTrigger className="mt-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="si">Sí - Desechados en zona de barbecho</SelectItem>
+                          <SelectItem value="no">No aplica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="notes">Observaciones (opcional)</Label>
+                      <Textarea id="notes" placeholder="Observaciones adicionales..."
+                        value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1" />
                     </div>
                   </CardContent>
                 </Card>
