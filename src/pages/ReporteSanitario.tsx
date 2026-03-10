@@ -511,6 +511,28 @@ export default function ReporteSanitario() {
               </div>
             </div>
 
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Generar Informe</p>
+              <RecordReportExporter
+                moduleName="Reporte Sanitario"
+                filename={`sanitario_${selectedLot?.name || "registro"}_${format(new Date(), "yyyyMMdd")}`}
+                data={{
+                  modulo: "Reporte Sanitario",
+                  fecha: format(new Date(), "d/MM/yyyy HH:mm"),
+                  lote: selectedLot?.name || "",
+                  plaga_tipo: pestType,
+                  severidad: `${severity[0]}/5`,
+                  incidencia: finalIncidence !== null ? `${finalIncidence}%` : "No registrada",
+                  plantas_inspeccionadas: plantsInspected || "N/A",
+                  plantas_afectadas: plantsAffected || "N/A",
+                  metodo_incidencia: useAutoIncidence ? "Cálculo automático" : "Manual",
+                  ubicacion_gps: gps.latitude && gps.longitude ? `${gps.latitude}, ${gps.longitude}` : "No capturada",
+                  fotos: photos.getUploadedPhotos().length > 0 ? `${photos.getUploadedPhotos().length} foto(s) adjunta(s)` : "Sin fotos",
+                  observaciones: notes,
+                }}
+              />
+            </div>
+
             <Button variant="field" onClick={resetFlow} className="mx-auto">
               Nuevo Reporte
             </Button>
