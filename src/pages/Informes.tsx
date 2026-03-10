@@ -228,7 +228,7 @@ export default function Informes() {
               <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">Sobre los informes</p>
                 <ul className="mt-2 space-y-1 list-disc list-inside">
-                  <li>Exporta en Excel (.xlsx) o PDF para compartir fácilmente</li>
+                  <li>Exporta en Excel (.xlsx), PDF o Word (.docx) para compartir fácilmente</li>
                   <li>Usa los filtros para obtener datos específicos por fecha, lote u operario</li>
                   <li>Los informes de costos solo están disponibles para administradores y agrónomos</li>
                   <li>Los totales y promedios se calculan automáticamente</li>
