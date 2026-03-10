@@ -43,6 +43,7 @@ interface ReportConfig {
   showLotFilter: boolean;
   showOperatorFilter: boolean;
   requiresCostPermission?: boolean;
+  hasWordExport?: boolean;
 }
 
 const reportConfigs: ReportConfig[] = [
