@@ -21,5 +21,6 @@ export default defineConfig(({ mode }) => ({
   },
   optimizeDeps: {
     force: true,
+    include: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query", "file-saver", "xlsx", "jspdf", "jspdf-autotable"],
   },
 }));
