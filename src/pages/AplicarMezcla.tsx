@@ -96,6 +96,18 @@ export default function AplicarMezcla() {
   const [notes, setNotes] = useState("");
   const [showNovedadForm, setShowNovedadForm] = useState(false);
 
+  // FO-17-DA phytosanitary report fields
+  const [weatherConditions, setWeatherConditions] = useState("");
+  const [biologicalTarget, setBiologicalTarget] = useState("");
+  const [equipmentType, setEquipmentType] = useState("Estacionaria");
+  const [applicationType, setApplicationType] = useState("foliar");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [waterVolumeLiters, setWaterVolumeLiters] = useState("");
+  const [tankWashManagement, setTankWashManagement] = useState("");
+  const [leftoverBrothLiters, setLeftoverBrothLiters] = useState("0");
+  const [reentryHours, setReentryHours] = useState("");
+
   useEffect(() => {
     fetchOperators();
     fetchLots();
