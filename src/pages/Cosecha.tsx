@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePhotoUpload } from "@/hooks/use-photo-upload";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
+import { RecordReportExporter } from "@/components/common/RecordReportExporter";
 import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 import {
   MapPin,
@@ -657,6 +658,26 @@ export default function Cosecha() {
               >
                 {classificationLabel?.label} - {classificationLabel?.description}
               </Badge>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Generar Informe</p>
+              <RecordReportExporter
+                moduleName="Registro de Cosecha"
+                filename={`cosecha_${selectedLot?.name || "registro"}_${format(new Date(), "yyyyMMdd")}`}
+                data={{
+                  modulo: "Cosecha",
+                  fecha: format(new Date(harvestDate), "d/MM/yyyy"),
+                  lote: selectedLot?.name || "",
+                  operario: selectedOperator?.full_name || "",
+                  total_kg: totalKg,
+                  exportable_kg: exportableKg || "N/A",
+                  porcentaje_exportable: exportablePercent ? `${exportablePercent}%` : "N/A",
+                  rechazado_kg: rejectedKg || "N/A",
+                  clasificacion: `${classificationLabel?.label} - ${classificationLabel?.description}`,
+                  observaciones: notes,
+                }}
+              />
             </div>
 
             <Button variant="field" onClick={resetFlow} className="mx-auto">

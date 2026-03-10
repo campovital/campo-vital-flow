@@ -23,6 +23,8 @@ import { useMultiPhotoUpload } from "@/hooks/use-multi-photo-upload";
 import { GpsIndicator } from "@/components/sanitary/GpsIndicator";
 import { MultiPhotoCapture } from "@/components/sanitary/MultiPhotoCapture";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
+import { RecordReportExporter } from "@/components/common/RecordReportExporter";
+import { format } from "date-fns";
 import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 import {
   Bug,
@@ -509,6 +511,28 @@ export default function ReporteSanitario() {
                   </Badge>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Generar Informe</p>
+              <RecordReportExporter
+                moduleName="Reporte Sanitario"
+                filename={`sanitario_${selectedLot?.name || "registro"}_${format(new Date(), "yyyyMMdd")}`}
+                data={{
+                  modulo: "Reporte Sanitario",
+                  fecha: format(new Date(), "d/MM/yyyy HH:mm"),
+                  lote: selectedLot?.name || "",
+                  plaga_tipo: pestType,
+                  severidad: `${severity[0]}/5`,
+                  incidencia: finalIncidence !== null ? `${finalIncidence}%` : "No registrada",
+                  plantas_inspeccionadas: plantsInspected || "N/A",
+                  plantas_afectadas: plantsAffected || "N/A",
+                  metodo_incidencia: useAutoIncidence ? "Cálculo automático" : "Manual",
+                  ubicacion_gps: gps.latitude && gps.longitude ? `${gps.latitude}, ${gps.longitude}` : "No capturada",
+                  fotos: photos.getUploadedPhotos().length > 0 ? `${photos.getUploadedPhotos().length} foto(s) adjunta(s)` : "Sin fotos",
+                  observaciones: notes,
+                }}
+              />
             </div>
 
             <Button variant="field" onClick={resetFlow} className="mx-auto">

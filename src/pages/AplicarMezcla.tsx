@@ -29,6 +29,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { RecordReportExporter } from "@/components/common/RecordReportExporter";
 
 interface Lot {
   id: string;
@@ -918,6 +920,50 @@ export default function AplicarMezcla() {
               }>
                 {applicationStatus?.replace(/_/g, " ").toUpperCase()}
               </Badge>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-muted-foreground">Generar Informe</p>
+              <RecordReportExporter
+                moduleName="Registro de Aplicación Fitosanitaria"
+                filename={`aplicacion_${selectedLot?.name || "registro"}_${format(new Date(), "yyyyMMdd")}`}
+                data={{
+                  modulo: "Aplicar Mezcla",
+                  fecha: format(new Date(), "d/MM/yyyy HH:mm"),
+                  operario: selectedOperator?.full_name || "",
+                  lote: selectedLot?.name || "",
+                  estado: applicationStatus?.replace(/_/g, " ") || "",
+                  protocolo: suggestedMix?.protocol_name || "",
+                  version: suggestedMix?.version_number || "",
+                  categoria: suggestedMix?.protocol_category || "",
+                  regla: suggestedMix?.reason || "",
+                  tipo_aplicacion: applicationType,
+                  equipo: equipmentType,
+                  blanco_biologico: biologicalTarget,
+                  condiciones_clima: weatherConditions,
+                  hora_inicio: startTime,
+                  hora_fin: endTime,
+                  volumen_agua_litros: waterVolumeLiters,
+                  bombas_utilizadas: pumpsUsed,
+                  horas_labor: laborHours,
+                  caldo_sobrante_litros: leftoverBrothLiters,
+                  gestion_aguas_lavado: tankWashManagement,
+                  periodo_reentrada: reentryHours,
+                  observaciones: notes,
+                  novedad: issueReason,
+                  productos: suggestedMix?.components?.map(c => ({
+                    producto: c.product_name,
+                    dosis: `${c.dose_amount} ${c.dose_unit}/${c.dose_base}`,
+                    carencia_dias: c.withdrawal_days,
+                  })) || [],
+                  pasos: suggestedMix?.steps?.map(s => ({
+                    orden: s.order,
+                    instruccion: s.instruction,
+                    requerido: s.is_required ? "Sí" : "No",
+                    completado: completedSteps.includes(s.order) ? "Sí" : "No",
+                  })) || [],
+                }}
+              />
             </div>
 
             <Button variant="field" onClick={resetFlow} className="mx-auto">
