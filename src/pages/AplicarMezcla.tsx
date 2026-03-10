@@ -299,6 +299,17 @@ export default function AplicarMezcla() {
       notes,
       issue_reason: status === "ejecutada_con_novedad" ? issueReason : null,
       reason_explanation: suggestedMix.reason,
+      // FO-17-DA fields
+      weather_conditions: weatherConditions || null,
+      biological_target: biologicalTarget || null,
+      equipment_type: equipmentType || null,
+      application_type: applicationType || null,
+      start_time: startTime || null,
+      end_time: endTime || null,
+      water_volume_liters: waterVolumeLiters ? parseFloat(waterVolumeLiters) : null,
+      tank_wash_management: tankWashManagement || null,
+      leftover_broth_liters: leftoverBrothLiters ? parseFloat(leftoverBrothLiters) : 0,
+      reentry_hours: reentryHours || null,
     };
 
     if (!isOnline) {
