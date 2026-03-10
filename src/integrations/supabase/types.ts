@@ -75,11 +75,16 @@ export type Database = {
       }
       applications: {
         Row: {
+          application_type: string | null
+          biological_target: string | null
           created_at: string
           device_time: string
+          end_time: string | null
+          equipment_type: string | null
           id: string
           issue_reason: string | null
           labor_hours: number | null
+          leftover_broth_liters: number | null
           lot_id: string
           notes: string | null
           operator_id: string
@@ -89,19 +94,29 @@ export type Database = {
           protocol_version_id: string
           pumps_used: number | null
           reason_explanation: string | null
+          reentry_hours: string | null
           schedule_rule_id: string | null
           server_time: string
+          start_time: string | null
           status: Database["public"]["Enums"]["application_status"]
+          tank_wash_management: string | null
           total_cost: number | null
           total_labor_cost: number | null
           total_product_cost: number | null
+          water_volume_liters: number | null
+          weather_conditions: string | null
         }
         Insert: {
+          application_type?: string | null
+          biological_target?: string | null
           created_at?: string
           device_time: string
+          end_time?: string | null
+          equipment_type?: string | null
           id?: string
           issue_reason?: string | null
           labor_hours?: number | null
+          leftover_broth_liters?: number | null
           lot_id: string
           notes?: string | null
           operator_id: string
@@ -111,19 +126,29 @@ export type Database = {
           protocol_version_id: string
           pumps_used?: number | null
           reason_explanation?: string | null
+          reentry_hours?: string | null
           schedule_rule_id?: string | null
           server_time?: string
+          start_time?: string | null
           status: Database["public"]["Enums"]["application_status"]
+          tank_wash_management?: string | null
           total_cost?: number | null
           total_labor_cost?: number | null
           total_product_cost?: number | null
+          water_volume_liters?: number | null
+          weather_conditions?: string | null
         }
         Update: {
+          application_type?: string | null
+          biological_target?: string | null
           created_at?: string
           device_time?: string
+          end_time?: string | null
+          equipment_type?: string | null
           id?: string
           issue_reason?: string | null
           labor_hours?: number | null
+          leftover_broth_liters?: number | null
           lot_id?: string
           notes?: string | null
           operator_id?: string
@@ -133,12 +158,17 @@ export type Database = {
           protocol_version_id?: string
           pumps_used?: number | null
           reason_explanation?: string | null
+          reentry_hours?: string | null
           schedule_rule_id?: string | null
           server_time?: string
+          start_time?: string | null
           status?: Database["public"]["Enums"]["application_status"]
+          tank_wash_management?: string | null
           total_cost?: number | null
           total_labor_cost?: number | null
           total_product_cost?: number | null
+          water_volume_liters?: number | null
+          weather_conditions?: string | null
         }
         Relationships: [
           {
