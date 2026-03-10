@@ -210,6 +210,7 @@ export default function Informes() {
                       <ReportExportButtons
                         onExportExcel={() => handleExportExcel(report.id)}
                         onExportPDF={() => handleExportPDF(report.id)}
+                        onExportWord={report.hasWordExport ? () => handleExportWord(report.id) : undefined}
                       />
                     </div>
                   </CardContent>
