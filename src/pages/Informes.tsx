@@ -108,6 +108,7 @@ const reportConfigs: ReportConfig[] = [
     icon: <Bug className="w-6 h-6 text-destructive" />,
     showLotFilter: true,
     showOperatorFilter: false,
+    hasWordExport: true,
   },
 ];
 
