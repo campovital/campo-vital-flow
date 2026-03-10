@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { usePhotoUpload } from "@/hooks/use-photo-upload";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
+import { RecordReportExporter } from "@/components/common/RecordReportExporter";
 import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 import {
   MapPin,

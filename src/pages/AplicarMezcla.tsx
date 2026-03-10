@@ -29,6 +29,8 @@ import {
   WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { RecordReportExporter } from "@/components/common/RecordReportExporter";
 
 interface Lot {
   id: string;

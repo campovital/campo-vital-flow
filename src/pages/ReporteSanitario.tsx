@@ -23,6 +23,8 @@ import { useMultiPhotoUpload } from "@/hooks/use-multi-photo-upload";
 import { GpsIndicator } from "@/components/sanitary/GpsIndicator";
 import { MultiPhotoCapture } from "@/components/sanitary/MultiPhotoCapture";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
+import { RecordReportExporter } from "@/components/common/RecordReportExporter";
+import { format } from "date-fns";
 import { useOfflineSubmit } from "@/hooks/use-offline-submit";
 import {
   Bug,
