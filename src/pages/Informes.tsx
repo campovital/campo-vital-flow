@@ -11,6 +11,7 @@ import {
   Bug,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
 } from "lucide-react";
 import { ReportFilters, ReportFiltersState } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
@@ -28,6 +29,11 @@ import {
   exportInventoryPDF,
   exportSanitaryPDF,
 } from "@/lib/reports-pdf-export";
+import {
+  exportPhytosanitaryExcel,
+  exportPhytosanitaryPDF,
+  exportPhytosanitaryWord,
+} from "@/lib/phytosanitary-report-export";
 
 interface ReportConfig {
   id: string;
