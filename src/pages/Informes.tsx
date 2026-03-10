@@ -158,6 +158,11 @@ export default function Informes() {
     const reportFilters = getFilters(reportId);
     switch (reportId) {
       case "phytosanitary": await exportPhytosanitaryWord(reportFilters); break;
+      case "production": await exportProductionWord(reportFilters); break;
+      case "productivity": await exportProductivityWord(reportFilters); break;
+      case "costs": await exportCostsWord(reportFilters); break;
+      case "inventory": await exportInventoryWord(); break;
+      case "sanitary": await exportSanitaryWord(reportFilters); break;
     }
   };
 
