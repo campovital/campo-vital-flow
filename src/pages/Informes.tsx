@@ -79,6 +79,7 @@ const reportConfigs: ReportConfig[] = [
     icon: <Users className="w-6 h-6 text-primary" />,
     showLotFilter: false,
     showOperatorFilter: true,
+    hasWordExport: true,
   },
   {
     id: "costs",
