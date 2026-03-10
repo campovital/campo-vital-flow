@@ -70,6 +70,7 @@ const reportConfigs: ReportConfig[] = [
     icon: <Sprout className="w-6 h-6 text-success" />,
     showLotFilter: true,
     showOperatorFilter: true,
+    hasWordExport: true,
   },
   {
     id: "productivity",
