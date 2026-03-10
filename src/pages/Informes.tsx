@@ -34,6 +34,13 @@ import {
   exportPhytosanitaryPDF,
   exportPhytosanitaryWord,
 } from "@/lib/phytosanitary-report-export";
+import {
+  exportProductionWord,
+  exportProductivityWord,
+  exportCostsWord,
+  exportInventoryWord,
+  exportSanitaryWord,
+} from "@/lib/reports-word-export";
 
 interface ReportConfig {
   id: string;
