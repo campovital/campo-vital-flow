@@ -16,11 +16,17 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "react": path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
   },
   optimizeDeps: {
     force: true,
     include: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query", "file-saver", "xlsx", "jspdf", "jspdf-autotable"],
+    // Force new cache hash
+    esbuildOptions: {
+      define: { "__CACHE_BUST__": `"${Date.now()}"` },
+    },
   },
 }));
