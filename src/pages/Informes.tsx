@@ -89,6 +89,7 @@ const reportConfigs: ReportConfig[] = [
     showLotFilter: true,
     showOperatorFilter: false,
     requiresCostPermission: true,
+    hasWordExport: true,
   },
   {
     id: "inventory",
