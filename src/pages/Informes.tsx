@@ -48,6 +48,15 @@ interface ReportConfig {
 
 const reportConfigs: ReportConfig[] = [
   {
+    id: "phytosanitary",
+    title: "Registro Fitosanitario (FO-17-DA)",
+    description: "Informe formal de aplicaciones fitosanitarias con todos los campos del formato FO-17-DA V3",
+    icon: <ClipboardList className="w-6 h-6 text-primary" />,
+    showLotFilter: true,
+    showOperatorFilter: true,
+    hasWordExport: true,
+  },
+  {
     id: "production",
     title: "Producción",
     description: "Registro de cosechas por día, lote y operario con totales y porcentajes de exportación",
