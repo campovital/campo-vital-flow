@@ -258,13 +258,29 @@ export default function Informes() {
                       showLotFilter={report.showLotFilter}
                       showOperatorFilter={report.showOperatorFilter}
                     />
-                    <div className="flex justify-end">
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleConsult(report.id)}
+                        disabled={loadingReportId === report.id}
+                      >
+                        {loadingReportId === report.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Consultar
+                      </Button>
+
                       <ReportExportButtons
                         onExportExcel={() => handleExportExcel(report.id)}
                         onExportPDF={() => handleExportPDF(report.id)}
                         onExportWord={report.hasWordExport ? () => handleExportWord(report.id) : undefined}
+                        disabled={loadingReportId === report.id}
                       />
                     </div>
+
+                    <ReportPreviewTable
+                      preview={previews[report.id]}
+                      isLoading={loadingReportId === report.id}
+                    />
                   </CardContent>
                 )}
               </Card>

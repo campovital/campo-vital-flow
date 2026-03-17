@@ -58,24 +58,26 @@ export function ReportPreviewTable({ preview, isLoading = false }: ReportPreview
             {preview.emptyMessage}
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {preview.columns.map((column) => (
-                  <TableHead key={column}>{column}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {preview.rows.map((row, index) => (
-                <TableRow key={`${index}-${preview.columns[0] ?? "row"}`}>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
                   {preview.columns.map((column) => (
-                    <TableCell key={`${index}-${column}`}>{row[column] ?? "—"}</TableCell>
+                    <TableHead key={column}>{column}</TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {preview.rows.map((row, index) => (
+                  <TableRow key={`${index}-${preview.columns[0] ?? "row"}`}>
+                    {preview.columns.map((column) => (
+                      <TableCell key={`${index}-${column}`}>{row[column] ?? "—"}</TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>
