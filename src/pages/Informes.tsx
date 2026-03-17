@@ -12,18 +12,17 @@ import {
   ChevronDown,
   ChevronUp,
   ClipboardList,
+  Leaf,
 } from "lucide-react";
 import { ReportFilters, ReportFiltersState } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import {
-  exportProductionReport,
   exportProductivityReport,
   exportCostsReport,
   exportInventoryReport,
   exportSanitaryReport,
 } from "@/lib/reports-export";
 import {
-  exportProductionPDF,
   exportProductivityPDF,
   exportCostsPDF,
   exportInventoryPDF,
@@ -35,7 +34,16 @@ import {
   exportPhytosanitaryWord,
 } from "@/lib/phytosanitary-report-export";
 import {
-  exportProductionWord,
+  exportHarvestExcel,
+  exportHarvestPDF,
+  exportHarvestWord,
+} from "@/lib/harvest-report-export";
+import {
+  exportFertilizationExcel,
+  exportFertilizationPDF,
+  exportFertilizationWord,
+} from "@/lib/fertilization-report-export";
+import {
   exportProductivityWord,
   exportCostsWord,
   exportInventoryWord,
@@ -55,6 +63,15 @@ interface ReportConfig {
 
 const reportConfigs: ReportConfig[] = [
   {
+    id: "harvest",
+    title: "Registro de Cosechas (FO-09-DA)",
+    description: "Informe formal de cosechas con estructura del formato FO-09-DA-0: lote, operario, kg totales, exportable, rechazo y clasificación",
+    icon: <Sprout className="w-6 h-6 text-success" />,
+    showLotFilter: true,
+    showOperatorFilter: true,
+    hasWordExport: true,
+  },
+  {
     id: "phytosanitary",
     title: "Registro Fitosanitario (FO-17-DA)",
     description: "Informe formal de aplicaciones fitosanitarias con todos los campos del formato FO-17-DA V3",
@@ -64,12 +81,12 @@ const reportConfigs: ReportConfig[] = [
     hasWordExport: true,
   },
   {
-    id: "production",
-    title: "Producción",
-    description: "Registro de cosechas por día, lote y operario con totales y porcentajes de exportación",
-    icon: <Sprout className="w-6 h-6 text-success" />,
+    id: "fertilization",
+    title: "Registro de Fertilización (FO-12-DA)",
+    description: "Informe formal de aplicaciones de fertilizantes con estructura del formato FO-12-DA-1: producto, dosis, equipo y condiciones",
+    icon: <Leaf className="w-6 h-6 text-success" />,
     showLotFilter: true,
-    showOperatorFilter: true,
+    showOperatorFilter: false,
     hasWordExport: true,
   },
   {
@@ -111,7 +128,6 @@ const reportConfigs: ReportConfig[] = [
     hasWordExport: true,
   },
 ];
-
 export default function Informes() {
   const { canManage } = useAuth();
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
