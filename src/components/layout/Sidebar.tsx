@@ -21,6 +21,7 @@ import {
   Shield,
   ListTodo,
   DollarSign,
+  FileBarChart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -173,6 +174,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({ 
             <NavLink to="/dashboard" className={navLinkClass}>
               <BarChart3 className="w-5 h-5" />
               Dashboard
+            </NavLink>
+
+            <NavLink to="/informes" className={navLinkClass}>
+              <FileBarChart className="w-5 h-5" />
+              Informes
             </NavLink>
 
             <NavLink to="/configuracion" className={navLinkClass}>
