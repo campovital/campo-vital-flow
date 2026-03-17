@@ -7,7 +7,11 @@ import {
   ReactNode,
 } from "react";
 import { useNetworkStatus } from "@/hooks/use-network-status";
-import { getAllRecords, getPendingRecords } from "@/lib/offline/storage";
+import {
+  OFFLINE_OUTBOX_EVENT,
+  getAllRecords,
+  getPendingRecords,
+} from "@/lib/offline/storage";
 import { flushPendingRecords } from "@/lib/offline/syncEngine";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +20,8 @@ interface OfflineContextValue {
   isOnline: boolean;
   isSyncing: boolean;
   pendingCount: number;
+  errorCount: number;
+  networkStatus: "online" | "slow" | "reconnecting" | "offline";
   triggerSync: () => Promise<void>;
 }
 
@@ -38,27 +44,41 @@ const moduleQueryKeyMap: Record<string, string[]> = {
 };
 
 export function OfflineProvider({ children }: { children: ReactNode }) {
-  const { isOnline } = useNetworkStatus();
+  const { isOnline, status: networkStatus } = useNetworkStatus();
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [errorCount, setErrorCount] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Keep count updated
   const refreshCount = useCallback(() => {
-    setPendingCount(getPendingRecords().length);
+    const records = getAllRecords();
+    setPendingCount(records.filter((r) => r.status !== "synced").length);
+    setErrorCount(records.filter((r) => r.status === "error").length);
   }, []);
 
   useEffect(() => {
     refreshCount();
-    // Poll every second to reflect new pending items quickly
-    const id = setInterval(refreshCount, 1000);
-    return () => clearInterval(id);
+
+    const handleRefresh = () => refreshCount();
+    window.addEventListener(OFFLINE_OUTBOX_EVENT, handleRefresh as EventListener);
+    window.addEventListener("storage", handleRefresh);
+
+    const fallbackInterval = setInterval(refreshCount, 10000);
+
+    return () => {
+      window.removeEventListener(
+        OFFLINE_OUTBOX_EVENT,
+        handleRefresh as EventListener
+      );
+      window.removeEventListener("storage", handleRefresh);
+      clearInterval(fallbackInterval);
+    };
   }, [refreshCount]);
 
-  // Sync when coming online
   const triggerSync = useCallback(async () => {
-    if (isSyncing) return;
+    if (!isOnline || isSyncing) return;
+
     const pending = getPendingRecords();
     if (pending.length === 0) return;
 
@@ -67,7 +87,6 @@ export function OfflineProvider({ children }: { children: ReactNode }) {
     setIsSyncing(false);
     refreshCount();
 
-    // Invalidate React Query caches for synced modules
     if (result.modules && result.modules.length > 0) {
       result.modules.forEach((module) => {
         const queryKeys = moduleQueryKeyMap[module] || [module];
@@ -83,26 +102,44 @@ export function OfflineProvider({ children }: { children: ReactNode }) {
         description: `${result.synced} registro(s) sincronizado(s)`,
       });
     }
+
     if (result.failed > 0) {
       toast({
-        title: "Error de sincronización",
-        description: `${result.failed} registro(s) fallaron`,
+        title: "Algunos registros siguen pendientes",
+        description: `${result.failed} registro(s) no pudieron sincronizarse`,
         variant: "destructive",
       });
     }
-  }, [isSyncing, refreshCount, toast, queryClient]);
+  }, [isOnline, isSyncing, refreshCount, toast, queryClient]);
 
-  // Auto-sync on reconnect
   useEffect(() => {
-    if (isOnline) {
+    if (isOnline && pendingCount > 0) {
       triggerSync();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOnline]);
+  }, [isOnline, pendingCount, triggerSync]);
+
+  useEffect(() => {
+    if (!isOnline || pendingCount === 0) return;
+
+    const intervalId = setInterval(() => {
+      if (!isSyncing) {
+        triggerSync();
+      }
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [isOnline, pendingCount, isSyncing, triggerSync]);
 
   return (
     <OfflineContext.Provider
-      value={{ isOnline, isSyncing, pendingCount, triggerSync }}
+      value={{
+        isOnline,
+        isSyncing,
+        pendingCount,
+        errorCount,
+        networkStatus,
+        triggerSync,
+      }}
     >
       {children}
     </OfflineContext.Provider>
