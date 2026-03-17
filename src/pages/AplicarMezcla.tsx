@@ -258,6 +258,11 @@ export default function AplicarMezcla() {
 
   const handleSelectLot = async (lot: Lot) => {
     setSelectedLot(lot);
+    setManualProtocolId("");
+    setSuggestedMix(null);
+    setCompletedSteps([]);
+    setShowNovedadForm(false);
+    setIssueReason("");
     setCurrentStep("confirm");
     await fetchSuggestedMix(lot.id);
   };

@@ -179,11 +179,14 @@ export function ReportFilters({
       )}
 
       {/* Clear Filters */}
-      {hasActiveFilters && (
-        <Button variant="ghost" size="sm" onClick={handleClearFilters}>
-          Limpiar filtros
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleClearFilters}
+        disabled={!hasActiveFilters}
+      >
+        Limpiar filtros
+      </Button>
     </div>
   );
 }

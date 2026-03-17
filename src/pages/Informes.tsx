@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import {
   FileSpreadsheet,
@@ -13,9 +14,12 @@ import {
   ChevronUp,
   ClipboardList,
   Leaf,
+  Loader2,
 } from "lucide-react";
 import { ReportFilters, ReportFiltersState } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
+import { ReportPreviewTable } from "@/components/reports/ReportPreviewTable";
+import { fetchReportPreview, type ReportPreviewData, type ReportId } from "@/lib/report-previews";
 import {
   exportProductivityReport,
   exportCostsReport,
@@ -130,8 +134,10 @@ const reportConfigs: ReportConfig[] = [
 ];
 export default function Informes() {
   const { canManage } = useAuth();
-  const [expandedReport, setExpandedReport] = useState<string | null>(null);
+  const [expandedReport, setExpandedReport] = useState<string | null>("harvest");
   const [filters, setFilters] = useState<Record<string, ReportFiltersState>>({});
+  const [previews, setPreviews] = useState<Record<string, ReportPreviewData>>({});
+  const [loadingReportId, setLoadingReportId] = useState<string | null>(null);
 
   const visibleReports = reportConfigs.filter((report) => {
     if (report.requiresCostPermission && !canManage) {
@@ -144,6 +150,16 @@ export default function Informes() {
 
   const updateFilters = (reportId: string, newFilters: ReportFiltersState) => {
     setFilters((prev) => ({ ...prev, [reportId]: newFilters }));
+  };
+
+  const handleConsult = async (reportId: string) => {
+    setLoadingReportId(reportId);
+    try {
+      const preview = await fetchReportPreview(reportId as ReportId, getFilters(reportId));
+      setPreviews((prev) => ({ ...prev, [reportId]: preview }));
+    } finally {
+      setLoadingReportId(null);
+    }
   };
 
   const handleExportExcel = async (reportId: string) => {
@@ -242,13 +258,29 @@ export default function Informes() {
                       showLotFilter={report.showLotFilter}
                       showOperatorFilter={report.showOperatorFilter}
                     />
-                    <div className="flex justify-end">
+
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleConsult(report.id)}
+                        disabled={loadingReportId === report.id}
+                      >
+                        {loadingReportId === report.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Consultar
+                      </Button>
+
                       <ReportExportButtons
                         onExportExcel={() => handleExportExcel(report.id)}
                         onExportPDF={() => handleExportPDF(report.id)}
                         onExportWord={report.hasWordExport ? () => handleExportWord(report.id) : undefined}
+                        disabled={loadingReportId === report.id}
                       />
                     </div>
+
+                    <ReportPreviewTable
+                      preview={previews[report.id]}
+                      isLoading={loadingReportId === report.id}
+                    />
                   </CardContent>
                 )}
               </Card>

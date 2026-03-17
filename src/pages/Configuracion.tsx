@@ -718,17 +718,18 @@ export default function Configuracion() {
         </div>
 
         <Tabs defaultValue="farms" className="w-full">
-          <TabsList className="w-full justify-start overflow-x-auto">
-            <TabsTrigger value="farms" className="flex items-center gap-1.5">
+          <TabsList className="grid h-auto w-full grid-cols-3">
+            <TabsTrigger value="farms" className="flex flex-col gap-1.5 px-2 py-2 text-xs sm:flex-row sm:text-sm">
               <MapPin className="w-4 h-4" />
-              <span className="hidden sm:inline">Fincas</span>
+              <span>Fincas</span>
             </TabsTrigger>
-            <TabsTrigger value="lots" className="flex items-center gap-1.5">
+            <TabsTrigger value="lots" className="flex flex-col gap-1.5 px-2 py-2 text-xs sm:flex-row sm:text-sm">
               <Layers className="w-4 h-4" />
-              <span className="hidden sm:inline">Lotes</span>
+              <span>Lotes</span>
             </TabsTrigger>
-            <TabsTrigger value="task-types" className="flex items-center gap-1.5">
+            <TabsTrigger value="task-types" className="flex flex-col gap-1.5 px-2 py-2 text-xs sm:flex-row sm:text-sm">
               <ListTodo className="w-4 h-4" />
+              <span className="sm:hidden">Labores</span>
               <span className="hidden sm:inline">Tipos de Labor</span>
             </TabsTrigger>
           </TabsList>
