@@ -25,6 +25,14 @@ type PestReportSyncPayload = TablesInsert<"pest_reports"> & {
 
 type SyncResult = { success: boolean; remoteId?: string; error?: string };
 
+type SyncableTable =
+  | "tasks"
+  | "harvests"
+  | "applications"
+  | "pest_reports"
+  | "application_products"
+  | "pest_report_photos";
+
 function isDuplicateError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? "");
   const normalized = message.toLowerCase();
@@ -32,21 +40,21 @@ function isDuplicateError(error: unknown) {
   return normalized.includes("duplicate") || normalized.includes("unique");
 }
 
+async function runQuery<T>(query: PromiseLike<T>) {
+  return withTimeout(
+    Promise.resolve(query),
+    15000,
+    "Tiempo de espera agotado durante la sincronización"
+  );
+}
+
 async function insertOrConfirmExisting(
-  table:
-    | "tasks"
-    | "harvests"
-    | "applications"
-    | "pest_reports"
-    | "application_products"
-    | "pest_report_photos",
+  table: SyncableTable,
   payload: Record<string, unknown>,
   id: string
 ) {
-  const insertResult = await withTimeout(
-    supabase.from(table).insert(payload as never).select("id").maybeSingle(),
-    15000,
-    "Tiempo de espera agotado durante la sincronización"
+  const insertResult = await runQuery(
+    supabase.from(table).insert(payload as never).select("id").maybeSingle()
   );
 
   if (!insertResult.error) {
@@ -57,10 +65,8 @@ async function insertOrConfirmExisting(
     throw insertResult.error;
   }
 
-  const existingResult = await withTimeout(
-    supabase.from(table).select("id").eq("id", id).maybeSingle(),
-    15000,
-    "Tiempo de espera agotado verificando el registro sincronizado"
+  const existingResult = await runQuery(
+    supabase.from(table).select("id").eq("id", id).maybeSingle()
   );
 
   if (existingResult.error) throw existingResult.error;

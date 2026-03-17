@@ -45,6 +45,13 @@ type AuthCacheSnapshot = {
   cachedAt: number;
 };
 
+type StoredSessionPayload =
+  | Session
+  | {
+      currentSession?: Session | null;
+      session?: Session | null;
+    };
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_TIMEOUT_MS = 2000;
@@ -90,6 +97,16 @@ function clearAuthSnapshot() {
   }
 }
 
+function isSession(value: unknown): value is Session {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "access_token" in value &&
+      "refresh_token" in value &&
+      "user" in value
+  );
+}
+
 function readStoredSession(): Session | null {
   if (typeof window === "undefined") return null;
 
@@ -103,16 +120,16 @@ function readStoredSession(): Session | null {
     const raw = localStorage.getItem(key);
     if (!raw) return null;
 
-    const parsed = JSON.parse(raw) as
-      | { currentSession?: Session | null; session?: Session | null }
-      | Session;
+    const parsed = JSON.parse(raw) as StoredSessionPayload;
+    let session: Session | null = null;
 
-    const session =
-      "currentSession" in parsed
-        ? parsed.currentSession
-        : "session" in parsed
-          ? parsed.session
-          : parsed;
+    if (isSession(parsed)) {
+      session = parsed;
+    } else if (parsed && typeof parsed === "object" && "currentSession" in parsed) {
+      session = parsed.currentSession ?? null;
+    } else if (parsed && typeof parsed === "object" && "session" in parsed) {
+      session = parsed.session ?? null;
+    }
 
     return session?.user ? session : null;
   } catch {

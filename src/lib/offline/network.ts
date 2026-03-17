@@ -1,7 +1,7 @@
 const DEFAULT_TIMEOUT_MS = 12000;
 
 export async function withTimeout<T>(
-  promise: Promise<T>,
+  promise: PromiseLike<T>,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   message = "Tiempo de espera agotado"
 ): Promise<T> {
@@ -12,7 +12,7 @@ export async function withTimeout<T>(
   });
 
   try {
-    return await Promise.race([promise, timeoutPromise]);
+    return await Promise.race([Promise.resolve(promise), timeoutPromise]);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
