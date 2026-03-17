@@ -22,11 +22,6 @@ export default defineConfig(({ mode }) => ({
     dedupe: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
   },
   optimizeDeps: {
-    force: true,
-    include: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query", "file-saver", "xlsx", "jspdf", "jspdf-autotable"],
-    // Force new cache hash
-    esbuildOptions: {
-      define: { "__CACHE_BUST__": `"${Date.now()}"` },
-    },
+    include: ["react", "react-dom", "react/jsx-runtime", "@tanstack/react-query"],
   },
 }));
