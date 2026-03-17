@@ -3,8 +3,25 @@
 import { OfflineRecord, OfflineRecordStatus } from "./types";
 
 const OUTBOX_KEY = "gulupa_offline_outbox";
+const OUTBOX_EVENT = "offline-outbox-changed";
+
+function emitOutboxChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(OUTBOX_EVENT));
+}
+
+function inferRecordId(payload: unknown) {
+  if (payload && typeof payload === "object" && "id" in payload) {
+    const value = (payload as { id?: unknown }).id;
+    return typeof value === "string" ? value : undefined;
+  }
+
+  return undefined;
+}
 
 function getAll(): OfflineRecord[] {
+  if (typeof window === "undefined") return [];
+
   try {
     const raw = localStorage.getItem(OUTBOX_KEY);
     if (!raw) return [];
@@ -15,20 +32,31 @@ function getAll(): OfflineRecord[] {
 }
 
 function saveAll(records: OfflineRecord[]) {
+  if (typeof window === "undefined") return;
+
   localStorage.setItem(OUTBOX_KEY, JSON.stringify(records));
+  emitOutboxChange();
 }
 
 export function addToOutbox<T>(
   module: OfflineRecord["module"],
-  payload: T
+  payload: T,
+  meta?: { userId?: string | null; recordId?: string }
 ): OfflineRecord<T> {
+  const now = Date.now();
+
   const record: OfflineRecord<T> = {
     localId: crypto.randomUUID(),
+    recordId: meta?.recordId ?? inferRecordId(payload),
     module,
-    createdAt: Date.now(),
+    createdAt: now,
+    updatedAt: now,
     status: "pending",
+    userId: meta?.userId ?? null,
+    attempts: 0,
     payload,
   };
+
   const all = getAll();
   all.push(record as OfflineRecord);
   saveAll(all);
@@ -41,7 +69,7 @@ export function getPendingRecords(
   const all = getAll();
   return all.filter(
     (r) =>
-      (r.status === "pending" || r.status === "error") &&
+      ["draft", "pending", "error"].includes(r.status) &&
       (!module || r.module === module)
   );
 }
@@ -57,10 +85,32 @@ export function updateRecordStatus(
 ) {
   const all = getAll();
   const idx = all.findIndex((r) => r.localId === localId);
-  if (idx >= 0) {
-    all[idx] = { ...all[idx], status, ...extra };
-    saveAll(all);
-  }
+  if (idx < 0) return;
+
+  const current = all[idx];
+  const now = Date.now();
+  const nextAttempts =
+    status === "syncing"
+      ? Math.max((current.attempts ?? 0) + 1, extra?.attempts ?? 0)
+      : (extra?.attempts ?? current.attempts ?? 0);
+
+  all[idx] = {
+    ...current,
+    ...extra,
+    status,
+    attempts: nextAttempts,
+    updatedAt: now,
+    lastAttemptAt:
+      status === "syncing"
+        ? extra?.lastAttemptAt ?? now
+        : extra?.lastAttemptAt ?? current.lastAttemptAt,
+    syncedAt:
+      status === "synced"
+        ? extra?.syncedAt ?? now
+        : extra?.syncedAt ?? current.syncedAt,
+  };
+
+  saveAll(all);
 }
 
 export function removeRecord(localId: string) {
@@ -72,3 +122,5 @@ export function clearSynced() {
   const all = getAll();
   saveAll(all.filter((r) => r.status !== "synced"));
 }
+
+export const OFFLINE_OUTBOX_EVENT = OUTBOX_EVENT;

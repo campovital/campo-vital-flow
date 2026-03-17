@@ -15,8 +15,11 @@ export function useOfflineSubmit<T extends Payload = Payload>(
   /**
    * Queues the payload for later sync.
    */
-  const queueForSync = (payload: T): OfflineRecord<T> => {
-    return addToOutbox(module, payload);
+  const queueForSync = (
+    payload: T,
+    meta?: { userId?: string | null; recordId?: string }
+  ): OfflineRecord<T> => {
+    return addToOutbox(module, payload, meta);
   };
 
   return { isOnline, queueForSync };
