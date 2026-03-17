@@ -176,6 +176,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({ 
               Dashboard
             </NavLink>
 
+            <NavLink to="/informes" className={navLinkClass}>
+              <FileBarChart className="w-5 h-5" />
+              Informes
+            </NavLink>
+
             <NavLink to="/configuracion" className={navLinkClass}>
               <Settings className="w-5 h-5" />
               Configuración
