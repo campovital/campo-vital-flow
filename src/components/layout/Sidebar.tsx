@@ -21,6 +21,7 @@ import {
   Shield,
   ListTodo,
   DollarSign,
+  FileBarChart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
