@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import {
   FileSpreadsheet,
@@ -13,9 +14,12 @@ import {
   ChevronUp,
   ClipboardList,
   Leaf,
+  Loader2,
 } from "lucide-react";
 import { ReportFilters, ReportFiltersState } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
+import { ReportPreviewTable } from "@/components/reports/ReportPreviewTable";
+import { fetchReportPreview, type ReportPreviewData, type ReportId } from "@/lib/report-previews";
 import {
   exportProductivityReport,
   exportCostsReport,
