@@ -149,8 +149,9 @@ export default function Informes() {
   const handleExportExcel = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
     switch (reportId) {
+      case "harvest": await exportHarvestExcel(reportFilters); break;
       case "phytosanitary": await exportPhytosanitaryExcel(reportFilters); break;
-      case "production": await exportProductionReport(reportFilters); break;
+      case "fertilization": await exportFertilizationExcel(reportFilters); break;
       case "productivity": await exportProductivityReport(reportFilters); break;
       case "costs": await exportCostsReport(reportFilters); break;
       case "inventory": await exportInventoryReport(); break;
@@ -161,8 +162,9 @@ export default function Informes() {
   const handleExportPDF = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
     switch (reportId) {
+      case "harvest": await exportHarvestPDF(reportFilters); break;
       case "phytosanitary": await exportPhytosanitaryPDF(reportFilters); break;
-      case "production": await exportProductionPDF(reportFilters); break;
+      case "fertilization": await exportFertilizationPDF(reportFilters); break;
       case "productivity": await exportProductivityPDF(reportFilters); break;
       case "costs": await exportCostsPDF(reportFilters); break;
       case "inventory": await exportInventoryPDF(); break;
@@ -173,8 +175,9 @@ export default function Informes() {
   const handleExportWord = async (reportId: string) => {
     const reportFilters = getFilters(reportId);
     switch (reportId) {
+      case "harvest": await exportHarvestWord(reportFilters); break;
       case "phytosanitary": await exportPhytosanitaryWord(reportFilters); break;
-      case "production": await exportProductionWord(reportFilters); break;
+      case "fertilization": await exportFertilizationWord(reportFilters); break;
       case "productivity": await exportProductivityWord(reportFilters); break;
       case "costs": await exportCostsWord(reportFilters); break;
       case "inventory": await exportInventoryWord(); break;
