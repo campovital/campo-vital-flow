@@ -134,8 +134,10 @@ const reportConfigs: ReportConfig[] = [
 ];
 export default function Informes() {
   const { canManage } = useAuth();
-  const [expandedReport, setExpandedReport] = useState<string | null>(null);
+  const [expandedReport, setExpandedReport] = useState<string | null>("harvest");
   const [filters, setFilters] = useState<Record<string, ReportFiltersState>>({});
+  const [previews, setPreviews] = useState<Record<string, ReportPreviewData>>({});
+  const [loadingReportId, setLoadingReportId] = useState<string | null>(null);
 
   const visibleReports = reportConfigs.filter((report) => {
     if (report.requiresCostPermission && !canManage) {
@@ -148,6 +150,16 @@ export default function Informes() {
 
   const updateFilters = (reportId: string, newFilters: ReportFiltersState) => {
     setFilters((prev) => ({ ...prev, [reportId]: newFilters }));
+  };
+
+  const handleConsult = async (reportId: string) => {
+    setLoadingReportId(reportId);
+    try {
+      const preview = await fetchReportPreview(reportId as ReportId, getFilters(reportId));
+      setPreviews((prev) => ({ ...prev, [reportId]: preview }));
+    } finally {
+      setLoadingReportId(null);
+    }
   };
 
   const handleExportExcel = async (reportId: string) => {
