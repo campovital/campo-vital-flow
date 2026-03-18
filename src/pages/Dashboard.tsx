@@ -456,6 +456,19 @@ export default function Dashboard() {
             </Card>
           )}
 
+          {stats.topLotName && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Lote Más Productivo</CardTitle>
+                <TrendingUp className="h-4 w-4 text-success" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.topLotKg.toFixed(0)} kg</div>
+                <p className="text-xs text-muted-foreground">{stats.topLotName} — este mes</p>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className={stats.pendingSanitaryReports > 0 ? "border-warning" : ""}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Alertas Sanitarias</CardTitle>
