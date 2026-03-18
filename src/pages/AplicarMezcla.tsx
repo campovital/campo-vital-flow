@@ -224,7 +224,7 @@ export default function AplicarMezcla() {
     }
 
     setIsLoading(true);
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString('en-CA');
     
     try {
       const { data, error } = await supabase.rpc("get_suggested_mix", {
