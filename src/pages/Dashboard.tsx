@@ -110,6 +110,7 @@ export default function Dashboard() {
         fetchHarvestTrend(),
         fetchCostBreakdown(),
         fetchSanitaryStatus(),
+        fetchHarvestByLot(),
       ]);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
