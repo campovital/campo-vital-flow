@@ -682,7 +682,7 @@ export default function Dashboard() {
         </div>
 
         {/* Alerts Section */}
-        {(stats.pendingSanitaryReports > 0 || stats.lowStockProducts > 0) && (
+        {(stats.pendingSanitaryReports > 0 || stats.lowStockProducts > 0 || safeCostPerKg > 5000) && (
           <Card className="border-warning bg-warning/5">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
