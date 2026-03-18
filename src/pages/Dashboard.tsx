@@ -52,6 +52,8 @@ interface DashboardStats {
   pendingSanitaryReports: number;
   activeOperators: number;
   lowStockProducts: number;
+  topLotName: string;
+  topLotKg: number;
 }
 
 interface HarvestByDay {
@@ -70,6 +72,11 @@ interface SanitaryByStatus {
   count: number;
 }
 
+interface HarvestByLot {
+  lot: string;
+  kg: number;
+}
+
 export default function Dashboard() {
   const { canManage } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -83,10 +90,13 @@ export default function Dashboard() {
     pendingSanitaryReports: 0,
     activeOperators: 0,
     lowStockProducts: 0,
+    topLotName: "",
+    topLotKg: 0,
   });
   const [harvestData, setHarvestData] = useState<HarvestByDay[]>([]);
   const [costData, setCostData] = useState<CostByCategory[]>([]);
   const [sanitaryData, setSanitaryData] = useState<SanitaryByStatus[]>([]);
+  const [harvestByLot, setHarvestByLot] = useState<HarvestByLot[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -100,6 +110,7 @@ export default function Dashboard() {
         fetchHarvestTrend(),
         fetchCostBreakdown(),
         fetchSanitaryStatus(),
+        fetchHarvestByLot(),
       ]);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
@@ -178,6 +189,31 @@ export default function Dashboard() {
     });
     const lowStockProducts = Object.values(productQuantities).filter(q => q < 10).length;
 
+    // Top lot this month
+    const { data: harvestsByLot } = await supabase
+      .from("harvests")
+      .select("lot_id, total_kg, lots(name)")
+      .gte("harvest_date", thisMonthStart.split("T")[0])
+      .lte("harvest_date", thisMonthEnd.split("T")[0]);
+
+    const lotTotals: Record<string, { name: string; kg: number }> = {};
+    harvestsByLot?.forEach((h: any) => {
+      const lotName = h.lots?.name || "Sin lote";
+      if (!lotTotals[h.lot_id]) {
+        lotTotals[h.lot_id] = { name: lotName, kg: 0 };
+      }
+      lotTotals[h.lot_id].kg += h.total_kg || 0;
+    });
+
+    let topLotName = "";
+    let topLotKg = 0;
+    Object.values(lotTotals).forEach((lot) => {
+      if (lot.kg > topLotKg) {
+        topLotKg = lot.kg;
+        topLotName = lot.name;
+      }
+    });
+
     setStats({
       totalKgThisMonth,
       totalKgLastMonth,
@@ -187,6 +223,8 @@ export default function Dashboard() {
       pendingSanitaryReports: pendingSanitaryReports || 0,
       activeOperators: activeOperators || 0,
       lowStockProducts,
+      topLotName,
+      topLotKg,
     });
   };
 
@@ -257,6 +295,29 @@ export default function Dashboard() {
         status: statusLabels[status] || status,
         count,
       }))
+    );
+  };
+
+  const fetchHarvestByLot = async () => {
+    const days = dateRange === "week" ? 7 : 30;
+    const startDate = subDays(new Date(), days).toLocaleDateString("en-CA");
+
+    const { data } = await supabase
+      .from("harvests")
+      .select("lot_id, total_kg, lots(name)")
+      .gte("harvest_date", startDate);
+
+    const grouped: Record<string, { lot: string; kg: number }> = {};
+    data?.forEach((h: any) => {
+      const lotName = h.lots?.name || "Sin lote";
+      if (!grouped[h.lot_id]) grouped[h.lot_id] = { lot: lotName, kg: 0 };
+      grouped[h.lot_id].kg += h.total_kg || 0;
+    });
+
+    setHarvestByLot(
+      Object.values(grouped)
+        .sort((a, b) => b.kg - a.kg)
+        .slice(0, 10)
     );
   };
 
@@ -391,6 +452,19 @@ export default function Dashboard() {
               <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(safeCostPerKg)}</div>
                 <p className="text-xs text-muted-foreground">promedio este mes</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {stats.topLotName && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium">Lote Más Productivo</CardTitle>
+                <TrendingUp className="h-4 w-4 text-success" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.topLotKg.toFixed(0)} kg</div>
+                <p className="text-xs text-muted-foreground">{stats.topLotName} — este mes</p>
               </CardContent>
             </Card>
           )}
@@ -583,10 +657,45 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Harvest by Lot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Kg por Lote</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px]">
+                {harvestByLot.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <Sprout className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>Sin datos de cosecha por lote</p>
+                    </div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={harvestByLot}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="lot" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip
+                        formatter={(value) => [`${value} kg`, "Cosecha"]}
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                        }}
+                      />
+                      <Bar dataKey="kg" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Alerts Section */}
-        {(stats.pendingSanitaryReports > 0 || stats.lowStockProducts > 0) && (
+        {(stats.pendingSanitaryReports > 0 || stats.lowStockProducts > 0 || safeCostPerKg > 5000) && (
           <Card className="border-warning bg-warning/5">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -605,6 +714,12 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10">
                   <Package className="w-4 h-4 text-destructive" />
                   <span>{stats.lowStockProducts} productos con stock bajo (menos de 10 unidades)</span>
+                </div>
+              )}
+              {safeCostPerKg > 5000 && canManage && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-warning/10">
+                  <DollarSign className="w-4 h-4 text-warning" />
+                  <span>Costo por kilo elevado ({formatCurrency(safeCostPerKg)}): revise eficiencia de aplicaciones</span>
                 </div>
               )}
             </CardContent>
