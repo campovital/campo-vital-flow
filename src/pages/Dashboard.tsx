@@ -90,10 +90,13 @@ export default function Dashboard() {
     pendingSanitaryReports: 0,
     activeOperators: 0,
     lowStockProducts: 0,
+    topLotName: "",
+    topLotKg: 0,
   });
   const [harvestData, setHarvestData] = useState<HarvestByDay[]>([]);
   const [costData, setCostData] = useState<CostByCategory[]>([]);
   const [sanitaryData, setSanitaryData] = useState<SanitaryByStatus[]>([]);
+  const [harvestByLot, setHarvestByLot] = useState<HarvestByLot[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
