@@ -189,6 +189,31 @@ export default function Dashboard() {
     });
     const lowStockProducts = Object.values(productQuantities).filter(q => q < 10).length;
 
+    // Top lot this month
+    const { data: harvestsByLot } = await supabase
+      .from("harvests")
+      .select("lot_id, total_kg, lots(name)")
+      .gte("harvest_date", thisMonthStart.split("T")[0])
+      .lte("harvest_date", thisMonthEnd.split("T")[0]);
+
+    const lotTotals: Record<string, { name: string; kg: number }> = {};
+    harvestsByLot?.forEach((h: any) => {
+      const lotName = h.lots?.name || "Sin lote";
+      if (!lotTotals[h.lot_id]) {
+        lotTotals[h.lot_id] = { name: lotName, kg: 0 };
+      }
+      lotTotals[h.lot_id].kg += h.total_kg || 0;
+    });
+
+    let topLotName = "";
+    let topLotKg = 0;
+    Object.values(lotTotals).forEach((lot) => {
+      if (lot.kg > topLotKg) {
+        topLotKg = lot.kg;
+        topLotName = lot.name;
+      }
+    });
+
     setStats({
       totalKgThisMonth,
       totalKgLastMonth,
@@ -198,6 +223,8 @@ export default function Dashboard() {
       pendingSanitaryReports: pendingSanitaryReports || 0,
       activeOperators: activeOperators || 0,
       lowStockProducts,
+      topLotName,
+      topLotKg,
     });
   };
 
