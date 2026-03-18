@@ -644,6 +644,41 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Harvest by Lot */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Kg por Lote</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px]">
+                {harvestByLot.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <Sprout className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                      <p>Sin datos de cosecha por lote</p>
+                    </div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={harvestByLot}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis dataKey="lot" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip
+                        formatter={(value) => [`${value} kg`, "Cosecha"]}
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                        }}
+                      />
+                      <Bar dataKey="kg" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Alerts Section */}
