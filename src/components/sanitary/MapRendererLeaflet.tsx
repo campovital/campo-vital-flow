@@ -78,6 +78,37 @@ export default function MapRendererLeaflet({ reports }: MapRendererLeafletProps)
 
         mapInstanceRef.current = map;
 
+        // Geolocation with low-signal tolerance
+        const locateOptions = {
+          enableHighAccuracy: false,
+          timeout: 30000,
+          maximumAge: 60000,
+        };
+
+        map.locate(locateOptions);
+        map.on("locationfound", (e: any) => {
+          if (reports.length === 0) {
+            map.setView(e.latlng, 14);
+          }
+        });
+
+        // Manual locate button
+        const LocateControl = L.Control.extend({
+          options: { position: "topleft" as const },
+          onAdd() {
+            const btn = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+            btn.innerHTML = `<a href="#" title="Mi ubicación" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;font-size:18px;background:#fff;cursor:pointer;" aria-label="Mi ubicación">📍</a>`;
+            btn.onclick = (e: Event) => {
+              e.preventDefault();
+              e.stopPropagation();
+              map.locate(locateOptions);
+            };
+            L.DomEvent.disableClickPropagation(btn);
+            return btn;
+          },
+        });
+        new LocateControl().addTo(map);
+
         // Add tile layer
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
