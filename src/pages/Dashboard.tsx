@@ -52,6 +52,8 @@ interface DashboardStats {
   pendingSanitaryReports: number;
   activeOperators: number;
   lowStockProducts: number;
+  topLotName: string;
+  topLotKg: number;
 }
 
 interface HarvestByDay {
@@ -68,6 +70,11 @@ interface CostByCategory {
 interface SanitaryByStatus {
   status: string;
   count: number;
+}
+
+interface HarvestByLot {
+  lot: string;
+  kg: number;
 }
 
 export default function Dashboard() {
