@@ -298,6 +298,29 @@ export default function Dashboard() {
     );
   };
 
+  const fetchHarvestByLot = async () => {
+    const days = dateRange === "week" ? 7 : 30;
+    const startDate = subDays(new Date(), days).toLocaleDateString("en-CA");
+
+    const { data } = await supabase
+      .from("harvests")
+      .select("lot_id, total_kg, lots(name)")
+      .gte("harvest_date", startDate);
+
+    const grouped: Record<string, { lot: string; kg: number }> = {};
+    data?.forEach((h: any) => {
+      const lotName = h.lots?.name || "Sin lote";
+      if (!grouped[h.lot_id]) grouped[h.lot_id] = { lot: lotName, kg: 0 };
+      grouped[h.lot_id].kg += h.total_kg || 0;
+    });
+
+    setHarvestByLot(
+      Object.values(grouped)
+        .sort((a, b) => b.kg - a.kg)
+        .slice(0, 10)
+    );
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
