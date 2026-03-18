@@ -703,6 +703,12 @@ export default function Dashboard() {
                   <span>{stats.lowStockProducts} productos con stock bajo (menos de 10 unidades)</span>
                 </div>
               )}
+              {safeCostPerKg > 5000 && canManage && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-warning/10">
+                  <DollarSign className="w-4 h-4 text-warning" />
+                  <span>Costo por kilo elevado ({formatCurrency(safeCostPerKg)}): revise eficiencia de aplicaciones</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
