@@ -74,6 +74,7 @@ export function PestReportCard({
   selectable = false,
   isSelected = false,
   onSelectionChange,
+  readOnly = false,
 }: PestReportCardProps) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryStartIndex, setGalleryStartIndex] = useState(0);
