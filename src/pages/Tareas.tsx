@@ -54,6 +54,8 @@ export default function Tareas() {
   const { toast } = useToast();
   const { canManage } = useAuth();
   const { canCreate, canEdit } = usePermissions();
+  const { operatorId } = useCurrentOperator();
+  const { isOperario } = useAuth();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("pendientes");
