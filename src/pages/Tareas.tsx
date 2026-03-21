@@ -273,7 +273,7 @@ export default function Tareas() {
                       key={task.id} 
                       task={task} 
                       onStart={() => startTaskMutation.mutate(task.id)}
-                      canEdit={canEdit("tareas")}
+                      canEdit={canEditTask(task)}
                       isOverdue
                     />
                   ))}
@@ -293,7 +293,7 @@ export default function Tareas() {
                       key={task.id} 
                       task={task} 
                       onStart={() => startTaskMutation.mutate(task.id)}
-                      canEdit={canEdit("tareas")}
+                      canEdit={canEditTask(task)}
                     />
                   ))}
                 </div>
@@ -311,7 +311,7 @@ export default function Tareas() {
                       key={task.id} 
                       task={task} 
                       onStart={() => startTaskMutation.mutate(task.id)}
-                      canEdit={canEdit("tareas")}
+                      canEdit={canEditTask(task)}
                     />
                   ))}
                 </div>
@@ -334,7 +334,7 @@ export default function Tareas() {
                     key={task.id} 
                     task={task} 
                     onComplete={(notes) => completeTaskMutation.mutate({ taskId: task.id, completionNotes: notes })}
-                    canEdit={canEdit("tareas")}
+                    canEdit={canEditTask(task)}
                     showTimer
                   />
                 ))}
