@@ -96,16 +96,16 @@ const App = () => (
                   <Route path="/mapa-plagas" element={<MapaPlagas />} />
                   <Route path="/seguimiento-sanitario" element={<SeguimientoSanitario />} />
                   <Route path="/historial" element={<Historial />} />
-                  <Route path="/roles" element={<Roles />} />
+                  <Route path="/roles" element={<ProtectedRoute requireManage><Roles /></ProtectedRoute>} />
                   <Route path="/tareas" element={<Tareas />} />
-                  <Route path="/costos" element={<Costos />} />
-                  <Route path="/protocolos" element={<Protocolos />} />
-                  <Route path="/protocolos/programador" element={<ProgramadorProtocolos />} />
-                  <Route path="/inventario" element={<Inventario />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/operarios" element={<Operarios />} />
-                  <Route path="/configuracion" element={<Configuracion />} />
-                  <Route path="/informes" element={<Informes />} />
+                  <Route path="/costos" element={<ProtectedRoute module="costos"><Costos /></ProtectedRoute>} />
+                  <Route path="/protocolos" element={<ProtectedRoute requireManage><Protocolos /></ProtectedRoute>} />
+                  <Route path="/protocolos/programador" element={<ProtectedRoute requireManage><ProgramadorProtocolos /></ProtectedRoute>} />
+                  <Route path="/inventario" element={<ProtectedRoute module="costos"><Inventario /></ProtectedRoute>} />
+                  <Route path="/dashboard" element={<ProtectedRoute requireManage><Dashboard /></ProtectedRoute>} />
+                  <Route path="/operarios" element={<ProtectedRoute requireManage><Operarios /></ProtectedRoute>} />
+                  <Route path="/configuracion" element={<ProtectedRoute module="configuracion"><Configuracion /></ProtectedRoute>} />
+                  <Route path="/informes" element={<ProtectedRoute module="informes"><Informes /></ProtectedRoute>} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
