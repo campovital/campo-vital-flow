@@ -831,6 +831,13 @@ export default function AplicarMezcla() {
                 </Card>
 
                 {/* Action Buttons */}
+                {readOnly ? (
+                  <Card className="border-muted bg-muted/30">
+                    <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                      Tu rol es de solo consulta. No puedes registrar aplicaciones.
+                    </CardContent>
+                  </Card>
+                ) : (
                 <div className="space-y-3 pt-4">
                   <Button
                     variant="confirm"
