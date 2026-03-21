@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { startOfDay, endOfDay } from "date-fns";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
