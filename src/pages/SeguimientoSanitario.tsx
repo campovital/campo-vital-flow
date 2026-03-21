@@ -598,9 +598,10 @@ export default function SeguimientoSanitario() {
                     report={report}
                     onStatusChange={handleStatusChange}
                     isUpdating={updating === report.id}
-                    selectable={selectionMode}
+                    selectable={!readOnly && selectionMode}
                     isSelected={selectedReports.has(report.id)}
                     onSelectionChange={handleSelectionChange}
+                    readOnly={readOnly}
                   />
                 ))}
                 <PaginationControls
