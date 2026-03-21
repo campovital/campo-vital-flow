@@ -898,6 +898,7 @@ export default function AplicarMezcla() {
                     No Ejecutada
                   </Button>
                 </div>
+                )}
               </>
             )}
           </div>
