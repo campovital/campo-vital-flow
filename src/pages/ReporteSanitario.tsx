@@ -68,6 +68,7 @@ type Step = "lot" | "form" | "result";
 
 export default function ReporteSanitario() {
   const { user } = useAuth();
+  const readOnly = useReadOnly();
   const { toast } = useToast();
   const { isOnline, queueForSync } = useOfflineSubmit("pest_reports");
   const [currentStep, setCurrentStep] = useState<Step>("lot");

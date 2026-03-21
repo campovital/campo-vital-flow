@@ -383,7 +383,7 @@ export default function SeguimientoSanitario() {
                 <BarChart3 className="w-4 h-4" />
               </Button>
             </div>
-            {viewMode === "list" && (
+            {viewMode === "list" && !readOnly && (
               <Button
                 variant={selectionMode ? "secondary" : "outline"}
                 size="sm"

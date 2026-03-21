@@ -80,6 +80,7 @@ type Step = "operator" | "lot" | "confirm" | "result";
 
 export default function AplicarMezcla() {
   const { toast } = useToast();
+  const readOnly = useReadOnly();
   const { isOnline, queueForSync } = useOfflineSubmit("applications");
   const [currentStep, setCurrentStep] = useState<Step>("operator");
   const [operators, setOperators] = useState<Operator[]>([]);

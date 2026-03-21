@@ -72,6 +72,7 @@ const CLASSIFICATION_OPTIONS: { value: Classification; label: string; descriptio
 
 export default function Cosecha() {
   const { user } = useAuth();
+  const readOnly = useReadOnly();
   const { toast } = useToast();
   const { isOnline, queueForSync } = useOfflineSubmit("harvests");
   const [currentStep, setCurrentStep] = useState<Step>("operator");
