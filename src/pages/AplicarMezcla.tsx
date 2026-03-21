@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,7 @@ type Step = "operator" | "lot" | "confirm" | "result";
 
 export default function AplicarMezcla() {
   const { toast } = useToast();
+  const readOnly = useReadOnly();
   const { isOnline, queueForSync } = useOfflineSubmit("applications");
   const [currentStep, setCurrentStep] = useState<Step>("operator");
   const [operators, setOperators] = useState<Operator[]>([]);
@@ -829,6 +831,13 @@ export default function AplicarMezcla() {
                 </Card>
 
                 {/* Action Buttons */}
+                {readOnly ? (
+                  <Card className="border-muted bg-muted/30">
+                    <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                      Tu rol es de solo consulta. No puedes registrar aplicaciones.
+                    </CardContent>
+                  </Card>
+                ) : (
                 <div className="space-y-3 pt-4">
                   <Button
                     variant="confirm"
@@ -889,6 +898,7 @@ export default function AplicarMezcla() {
                     No Ejecutada
                   </Button>
                 </div>
+                )}
               </>
             )}
           </div>

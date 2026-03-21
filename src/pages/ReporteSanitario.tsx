@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -67,6 +68,7 @@ type Step = "lot" | "form" | "result";
 
 export default function ReporteSanitario() {
   const { user } = useAuth();
+  const readOnly = useReadOnly();
   const { toast } = useToast();
   const { isOnline, queueForSync } = useOfflineSubmit("pest_reports");
   const [currentStep, setCurrentStep] = useState<Step>("lot");
@@ -468,18 +470,26 @@ export default function ReporteSanitario() {
               </CardContent>
             </Card>
 
-            <Button
-              variant="confirm-warning"
-              onClick={handleSubmitReport}
-              disabled={isLoading || !pestType || photos.isUploading}
-            >
-              {isLoading || photos.isUploading ? (
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              ) : (
-                <AlertTriangle className="w-5 h-5 mr-2" />
-              )}
-              {photos.isUploading ? "Subiendo fotos..." : "Enviar Reporte"}
-            </Button>
+            {readOnly ? (
+              <Card className="border-muted bg-muted/30">
+                <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                  Tu rol es de solo consulta. No puedes enviar reportes.
+                </CardContent>
+              </Card>
+            ) : (
+              <Button
+                variant="confirm-warning"
+                onClick={handleSubmitReport}
+                disabled={isLoading || !pestType || photos.isUploading}
+              >
+                {isLoading || photos.isUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 mr-2" />
+                )}
+                {photos.isUploading ? "Subiendo fotos..." : "Enviar Reporte"}
+              </Button>
+            )}
           </div>
         )}
 

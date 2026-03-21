@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ const CLASSIFICATION_OPTIONS: { value: Classification; label: string; descriptio
 
 export default function Cosecha() {
   const { user } = useAuth();
+  const readOnly = useReadOnly();
   const { toast } = useToast();
   const { isOnline, queueForSync } = useOfflineSubmit("harvests");
   const [currentStep, setCurrentStep] = useState<Step>("operator");
@@ -613,18 +615,26 @@ export default function Cosecha() {
               </CardContent>
             </Card>
 
-            <Button
-              variant="confirm"
-              onClick={handleSubmitHarvest}
-              disabled={isLoading || !totalKg || photo.uploading}
-            >
-              {isLoading ? (
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              ) : (
-                <Check className="w-5 h-5 mr-2" />
-              )}
-              Registrar Cosecha
-            </Button>
+            {readOnly ? (
+              <Card className="border-muted bg-muted/30">
+                <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                  Tu rol es de solo consulta. No puedes registrar cosechas.
+                </CardContent>
+              </Card>
+            ) : (
+              <Button
+                variant="confirm"
+                onClick={handleSubmitHarvest}
+                disabled={isLoading || !totalKg || photo.uploading}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  <Check className="w-5 h-5 mr-2" />
+                )}
+                Registrar Cosecha
+              </Button>
+            )}
           </div>
         )}
 

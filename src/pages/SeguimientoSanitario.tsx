@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { startOfDay, endOfDay } from "date-fns";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,6 +58,7 @@ interface Lot {
 
 export default function SeguimientoSanitario() {
   const { toast } = useToast();
+  const readOnly = useReadOnly();
   const [reports, setReports] = useState<PestReport[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [lots, setLots] = useState<Lot[]>([]);
@@ -381,7 +383,7 @@ export default function SeguimientoSanitario() {
                 <BarChart3 className="w-4 h-4" />
               </Button>
             </div>
-            {viewMode === "list" && (
+            {viewMode === "list" && !readOnly && (
               <Button
                 variant={selectionMode ? "secondary" : "outline"}
                 size="sm"
@@ -525,9 +527,10 @@ export default function SeguimientoSanitario() {
                     onStatusChange={handleStatusChange}
                     onPhotosAdded={fetchReports}
                     isUpdating={updating === report.id}
-                    selectable={selectionMode}
+                    selectable={!readOnly && selectionMode}
                     isSelected={selectedReports.has(report.id)}
                     onSelectionChange={handleSelectionChange}
+                    readOnly={readOnly}
                   />
                 ))}
                 <PaginationControls
@@ -560,9 +563,10 @@ export default function SeguimientoSanitario() {
                     onStatusChange={handleStatusChange}
                     onPhotosAdded={fetchReports}
                     isUpdating={updating === report.id}
-                    selectable={selectionMode}
+                    selectable={!readOnly && selectionMode}
                     isSelected={selectedReports.has(report.id)}
                     onSelectionChange={handleSelectionChange}
+                    readOnly={readOnly}
                   />
                 ))}
                 <PaginationControls
@@ -594,9 +598,10 @@ export default function SeguimientoSanitario() {
                     report={report}
                     onStatusChange={handleStatusChange}
                     isUpdating={updating === report.id}
-                    selectable={selectionMode}
+                    selectable={!readOnly && selectionMode}
                     isSelected={selectedReports.has(report.id)}
                     onSelectionChange={handleSelectionChange}
+                    readOnly={readOnly}
                   />
                 ))}
                 <PaginationControls
