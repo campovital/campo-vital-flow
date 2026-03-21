@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useReadOnly } from "@/hooks/use-read-only";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
