@@ -238,31 +238,33 @@ export function PestReportCard({
       </div>
 
       {/* Actions row */}
-      <div className="flex gap-2">
-        {/* Add photos button - only for non-resolved reports */}
-        {report.status !== "resuelto" && onPhotosAdded && (
-          <AddPhotosDialog
-            reportId={report.id}
-            pestType={report.pest_type}
-            currentPhotoCount={currentPhotoCount}
-            onPhotosAdded={onPhotosAdded}
-          />
-        )}
-        
-        {/* Status change button */}
-        {nextStatus && (
-          <Button
-            variant={report.status === "en_tratamiento" ? "success" : "confirm-warning"}
-            size="sm"
-            className="flex-1"
-            onClick={() => onStatusChange(report.id, nextStatus)}
-            disabled={isUpdating}
-          >
-            {getActionLabel(report.status)}
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        )}
-      </div>
+      {!readOnly && (
+        <div className="flex gap-2">
+          {/* Add photos button - only for non-resolved reports */}
+          {report.status !== "resuelto" && onPhotosAdded && (
+            <AddPhotosDialog
+              reportId={report.id}
+              pestType={report.pest_type}
+              currentPhotoCount={currentPhotoCount}
+              onPhotosAdded={onPhotosAdded}
+            />
+          )}
+          
+          {/* Status change button */}
+          {nextStatus && (
+            <Button
+              variant={report.status === "en_tratamiento" ? "success" : "confirm-warning"}
+              size="sm"
+              className="flex-1"
+              onClick={() => onStatusChange(report.id, nextStatus)}
+              disabled={isUpdating}
+            >
+              {getActionLabel(report.status)}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
