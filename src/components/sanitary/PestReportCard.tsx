@@ -52,6 +52,7 @@ interface PestReportCardProps {
   selectable?: boolean;
   isSelected?: boolean;
   onSelectionChange?: (id: string, selected: boolean) => void;
+  readOnly?: boolean;
 }
 
 const getSeverityColor = (severity: number) => {
