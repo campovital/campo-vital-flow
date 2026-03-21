@@ -154,6 +154,13 @@ export default function Tareas() {
 
   const totalHoursWorked = completedTasks.reduce((acc, t) => acc + (t.hours_worked || 0), 0);
 
+  // Operario can only interact with tasks assigned to them
+  const canEditTask = (task: Task) => {
+    if (!canEdit("tareas")) return false;
+    if (!isOperario) return true; // admin/agronoma can edit all
+    return task.assigned_to === operatorId;
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
