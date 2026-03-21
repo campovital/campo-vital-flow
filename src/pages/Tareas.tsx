@@ -22,6 +22,7 @@ import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useCurrentOperator } from "@/hooks/use-current-operator";
 import { CreateTaskDialog } from "@/components/tasks/CreateTaskDialog";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskFilters } from "@/components/tasks/TaskFilters";
@@ -53,6 +54,8 @@ export default function Tareas() {
   const { toast } = useToast();
   const { canManage } = useAuth();
   const { canCreate, canEdit } = usePermissions();
+  const { operatorId } = useCurrentOperator();
+  const { isOperario } = useAuth();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("pendientes");
@@ -150,6 +153,13 @@ export default function Tareas() {
   const upcomingTasks = pendingTasks.filter(t => isFuture(new Date(t.scheduled_date)));
 
   const totalHoursWorked = completedTasks.reduce((acc, t) => acc + (t.hours_worked || 0), 0);
+
+  // Operario can only interact with tasks assigned to them
+  const canEditTask = (task: Task) => {
+    if (!canEdit("tareas")) return false;
+    if (!isOperario) return true; // admin/agronoma can edit all
+    return task.assigned_to === operatorId;
+  };
 
   return (
     <AppLayout>
@@ -263,7 +273,7 @@ export default function Tareas() {
                       key={task.id} 
                       task={task} 
                       onStart={() => startTaskMutation.mutate(task.id)}
-                      canEdit={canEdit("tareas")}
+                      canEdit={canEditTask(task)}
                       isOverdue
                     />
                   ))}
@@ -283,7 +293,7 @@ export default function Tareas() {
                       key={task.id} 
                       task={task} 
                       onStart={() => startTaskMutation.mutate(task.id)}
-                      canEdit={canEdit("tareas")}
+                      canEdit={canEditTask(task)}
                     />
                   ))}
                 </div>
@@ -301,7 +311,7 @@ export default function Tareas() {
                       key={task.id} 
                       task={task} 
                       onStart={() => startTaskMutation.mutate(task.id)}
-                      canEdit={canEdit("tareas")}
+                      canEdit={canEditTask(task)}
                     />
                   ))}
                 </div>
@@ -324,7 +334,7 @@ export default function Tareas() {
                     key={task.id} 
                     task={task} 
                     onComplete={(notes) => completeTaskMutation.mutate({ taskId: task.id, completionNotes: notes })}
-                    canEdit={canEdit("tareas")}
+                    canEdit={canEditTask(task)}
                     showTimer
                   />
                 ))}
