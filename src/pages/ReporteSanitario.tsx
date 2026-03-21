@@ -470,18 +470,26 @@ export default function ReporteSanitario() {
               </CardContent>
             </Card>
 
-            <Button
-              variant="confirm-warning"
-              onClick={handleSubmitReport}
-              disabled={isLoading || !pestType || photos.isUploading}
-            >
-              {isLoading || photos.isUploading ? (
-                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              ) : (
-                <AlertTriangle className="w-5 h-5 mr-2" />
-              )}
-              {photos.isUploading ? "Subiendo fotos..." : "Enviar Reporte"}
-            </Button>
+            {readOnly ? (
+              <Card className="border-muted bg-muted/30">
+                <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                  Tu rol es de solo consulta. No puedes enviar reportes.
+                </CardContent>
+              </Card>
+            ) : (
+              <Button
+                variant="confirm-warning"
+                onClick={handleSubmitReport}
+                disabled={isLoading || !pestType || photos.isUploading}
+              >
+                {isLoading || photos.isUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : (
+                  <AlertTriangle className="w-5 h-5 mr-2" />
+                )}
+                {photos.isUploading ? "Subiendo fotos..." : "Enviar Reporte"}
+              </Button>
+            )}
           </div>
         )}
 
