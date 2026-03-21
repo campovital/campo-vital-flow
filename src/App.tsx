@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { OfflineProvider } from "@/contexts/OfflineContext";
 import { OverdueAlertsProvider } from "@/components/sanitary/OverdueAlertsProvider";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
