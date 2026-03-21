@@ -58,6 +58,7 @@ interface Lot {
 
 export default function SeguimientoSanitario() {
   const { toast } = useToast();
+  const readOnly = useReadOnly();
   const [reports, setReports] = useState<PestReport[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [lots, setLots] = useState<Lot[]>([]);
