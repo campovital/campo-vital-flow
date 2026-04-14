@@ -262,9 +262,13 @@ export function useRegisterTrapEvent() {
       evidence_url?: string;
     }) => {
       // 1. Insert event
+      const insertPayload: any = { ...eventData };
+      if (insertPayload.physical_status) {
+        insertPayload.physical_status = insertPayload.physical_status as "buena" | "deteriorada" | "caida" | "perdida" | "requiere_reposicion";
+      }
       const { error: eventError } = await supabase
         .from("trap_events")
-        .insert(eventData);
+        .insert([insertPayload]);
       if (eventError) throw eventError;
 
       // 2. Update cycle status if linked to a cycle
