@@ -8,6 +8,7 @@ import {
   Sprout,
   Package,
   Bug,
+  Target,
   Calendar,
   BarChart3,
   Settings,
@@ -109,6 +110,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar({ 
             <OverdueBadge count={overdueCount} className="-top-2 -right-2" />
           </div>
           Seguimiento Sanitario
+        </NavLink>
+
+        <NavLink to="/control-trampas" className={navLinkClass}>
+          <Target className="w-5 h-5" />
+          Control de Trampas
         </NavLink>
 
         <NavLink to="/historial" className={navLinkClass}>
