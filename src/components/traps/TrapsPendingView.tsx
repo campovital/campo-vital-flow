@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTraps, useTrapCycleStatuses, useTrapTypes } from "@/hooks/use-traps";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
 import { AlertTriangle, CheckCircle, Clock, Filter, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,6 +20,23 @@ export function TrapsPendingView({ onRegister }: TrapsPendingViewProps) {
   const { data: trapTypes = [] } = useTrapTypes();
   const trapIds = useMemo(() => traps.filter(t => t.is_active).map(t => t.id), [traps]);
   const { data: statuses = [], isLoading: statusLoading } = useTrapCycleStatuses(trapIds);
+
+  // Fetch all trap cycles to map cycle_id -> cycle_name
+  const { data: allCycles = [] } = useQuery({
+    queryKey: ["trap-cycles-all", trapIds],
+    queryFn: async () => {
+      if (trapIds.length === 0) return [];
+      const { data } = await supabase.from("trap_cycles").select("id, trap_id, cycle_name").in("trap_id", trapIds);
+      return data || [];
+    },
+    enabled: trapIds.length > 0,
+  });
+
+  const cycleNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    allCycles.forEach(c => { map[c.id] = c.cycle_name; });
+    return map;
+  }, [allCycles]);
 
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -148,7 +167,7 @@ export function TrapsPendingView({ onRegister }: TrapsPendingViewProps) {
                   <div className="space-y-1.5">
                     {trapStatuses.map(cs => (
                       <div key={cs.id} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{getCycleName(cs.trap_cycle_id, trap.id, statuses)}</span>
+                        <span className="text-muted-foreground">{cycleNameMap[cs.trap_cycle_id] || cs.trap_cycle_id.slice(0, 8)}</span>
                         <div className="flex items-center gap-2">
                           <StatusBadge status={cs.status} size="sm" />
                           {cs.days_remaining !== null && (
