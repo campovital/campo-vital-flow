@@ -308,7 +308,7 @@ export function useRegisterTrapEvent() {
       if (eventData.physical_status) {
         await supabase
           .from("traps")
-          .update({ physical_status: eventData.physical_status })
+          .update({ physical_status: eventData.physical_status as "buena" | "deteriorada" | "caida" | "perdida" | "requiere_reposicion" })
           .eq("id", eventData.trap_id);
       }
     },
