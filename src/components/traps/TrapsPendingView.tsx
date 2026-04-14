@@ -196,11 +196,6 @@ export function TrapsPendingView({ onRegister }: TrapsPendingViewProps) {
   );
 }
 
-function getCycleName(cycleId: string, trapId: string, allStatuses: any[]) {
-  // We'll just show the cycle ID short form - the real name comes from trap_cycles
-  // For now return a placeholder that will be enhanced
-  return cycleId.slice(0, 8);
-}
 
 function StatusBadge({ status, size = "default" }: { status: string; size?: "default" | "sm" }) {
   const config = {
