@@ -1147,6 +1147,313 @@ export type Database = {
           },
         ]
       }
+      trap_cycle_status: {
+        Row: {
+          days_remaining: number | null
+          id: string
+          last_date: string | null
+          next_date: string | null
+          status: Database["public"]["Enums"]["trap_cycle_state"]
+          trap_cycle_id: string
+          trap_id: string
+          updated_at: string
+        }
+        Insert: {
+          days_remaining?: number | null
+          id?: string
+          last_date?: string | null
+          next_date?: string | null
+          status?: Database["public"]["Enums"]["trap_cycle_state"]
+          trap_cycle_id: string
+          trap_id: string
+          updated_at?: string
+        }
+        Update: {
+          days_remaining?: number | null
+          id?: string
+          last_date?: string | null
+          next_date?: string | null
+          status?: Database["public"]["Enums"]["trap_cycle_state"]
+          trap_cycle_id?: string
+          trap_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trap_cycle_status_trap_cycle_id_fkey"
+            columns: ["trap_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "trap_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trap_cycle_status_trap_id_fkey"
+            columns: ["trap_id"]
+            isOneToOne: false
+            referencedRelation: "traps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trap_cycles: {
+        Row: {
+          created_at: string
+          cycle_name: string
+          frequency_days: number
+          id: string
+          is_active: boolean
+          product_name: string | null
+          trap_id: string
+          trap_type_cycle_id: string | null
+          updated_at: string
+          uses_default: boolean
+        }
+        Insert: {
+          created_at?: string
+          cycle_name: string
+          frequency_days?: number
+          id?: string
+          is_active?: boolean
+          product_name?: string | null
+          trap_id: string
+          trap_type_cycle_id?: string | null
+          updated_at?: string
+          uses_default?: boolean
+        }
+        Update: {
+          created_at?: string
+          cycle_name?: string
+          frequency_days?: number
+          id?: string
+          is_active?: boolean
+          product_name?: string | null
+          trap_id?: string
+          trap_type_cycle_id?: string | null
+          updated_at?: string
+          uses_default?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trap_cycles_trap_id_fkey"
+            columns: ["trap_id"]
+            isOneToOne: false
+            referencedRelation: "traps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trap_cycles_trap_type_cycle_id_fkey"
+            columns: ["trap_type_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "trap_type_cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trap_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string
+          evidence_url: string | null
+          id: string
+          is_synced: boolean
+          observations: string | null
+          operator_id: string | null
+          operator_name: string | null
+          physical_status: Database["public"]["Enums"]["trap_status"] | null
+          product_applied: string | null
+          trap_cycle_id: string | null
+          trap_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string
+          event_type: string
+          evidence_url?: string | null
+          id?: string
+          is_synced?: boolean
+          observations?: string | null
+          operator_id?: string | null
+          operator_name?: string | null
+          physical_status?: Database["public"]["Enums"]["trap_status"] | null
+          product_applied?: string | null
+          trap_cycle_id?: string | null
+          trap_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          evidence_url?: string | null
+          id?: string
+          is_synced?: boolean
+          observations?: string | null
+          operator_id?: string | null
+          operator_name?: string | null
+          physical_status?: Database["public"]["Enums"]["trap_status"] | null
+          product_applied?: string | null
+          trap_cycle_id?: string | null
+          trap_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trap_events_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trap_events_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "operators_basic"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trap_events_trap_cycle_id_fkey"
+            columns: ["trap_cycle_id"]
+            isOneToOne: false
+            referencedRelation: "trap_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trap_events_trap_id_fkey"
+            columns: ["trap_id"]
+            isOneToOne: false
+            referencedRelation: "traps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trap_type_cycles: {
+        Row: {
+          created_at: string
+          cycle_name: string
+          frequency_days_default: number
+          id: string
+          is_active: boolean
+          is_mandatory: boolean
+          product_default: string | null
+          sort_order: number
+          trap_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_name: string
+          frequency_days_default?: number
+          id?: string
+          is_active?: boolean
+          is_mandatory?: boolean
+          product_default?: string | null
+          sort_order?: number
+          trap_type_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_name?: string
+          frequency_days_default?: number
+          id?: string
+          is_active?: boolean
+          is_mandatory?: boolean
+          product_default?: string | null
+          sort_order?: number
+          trap_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trap_type_cycles_trap_type_id_fkey"
+            columns: ["trap_type_id"]
+            isOneToOne: false
+            referencedRelation: "trap_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trap_types: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
+      traps: {
+        Row: {
+          code: string
+          created_at: string
+          general_notes: string | null
+          id: string
+          installation_date: string
+          is_active: boolean
+          location_detail: string | null
+          lot_id: string
+          municipality: string | null
+          physical_status: Database["public"]["Enums"]["trap_status"]
+          trap_type_id: string
+          village: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          general_notes?: string | null
+          id?: string
+          installation_date?: string
+          is_active?: boolean
+          location_detail?: string | null
+          lot_id: string
+          municipality?: string | null
+          physical_status?: Database["public"]["Enums"]["trap_status"]
+          trap_type_id: string
+          village?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          general_notes?: string | null
+          id?: string
+          installation_date?: string
+          is_active?: boolean
+          location_detail?: string | null
+          lot_id?: string
+          municipality?: string | null
+          physical_status?: Database["public"]["Enums"]["trap_status"]
+          trap_type_id?: string
+          village?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "traps_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "traps_trap_type_id_fkey"
+            columns: ["trap_type_id"]
+            isOneToOne: false
+            referencedRelation: "trap_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_farms: {
         Row: {
           created_at: string
@@ -1323,6 +1630,13 @@ export type Database = {
         | "DEFAULT"
       season_type: "lluvias" | "sequia" | "invierno" | "verano"
       task_status: "pendiente" | "en_progreso" | "completada" | "cancelada"
+      trap_cycle_state: "al_dia" | "proximo" | "vencido"
+      trap_status:
+        | "buena"
+        | "deteriorada"
+        | "caida"
+        | "perdida"
+        | "requiere_reposicion"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1486,6 +1800,14 @@ export const Constants = {
       ],
       season_type: ["lluvias", "sequia", "invierno", "verano"],
       task_status: ["pendiente", "en_progreso", "completada", "cancelada"],
+      trap_cycle_state: ["al_dia", "proximo", "vencido"],
+      trap_status: [
+        "buena",
+        "deteriorada",
+        "caida",
+        "perdida",
+        "requiere_reposicion",
+      ],
     },
   },
 } as const

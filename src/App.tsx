@@ -29,6 +29,7 @@ import Dashboard from "./pages/Dashboard";
 import Operarios from "./pages/Operarios";
 import Configuracion from "./pages/Configuracion";
 import Informes from "./pages/Informes";
+import ControlTrampas from "./pages/ControlTrampas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -95,6 +96,7 @@ const App = () => (
                   <Route path="/plagas" element={<ReporteSanitario />} />
                   <Route path="/mapa-plagas" element={<MapaPlagas />} />
                   <Route path="/seguimiento-sanitario" element={<SeguimientoSanitario />} />
+                  <Route path="/control-trampas" element={<ControlTrampas />} />
                   <Route path="/historial" element={<Historial />} />
                   <Route path="/roles" element={<ProtectedRoute requireManage><Roles /></ProtectedRoute>} />
                   <Route path="/tareas" element={<Tareas />} />
