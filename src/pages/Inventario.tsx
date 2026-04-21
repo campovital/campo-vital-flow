@@ -462,7 +462,7 @@ export default function Inventario() {
 
         {/* Product Dialog */}
         <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90vh] overflow-y-auto sm:w-full">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
               <DialogDescription>Ingresa los datos del producto</DialogDescription>
