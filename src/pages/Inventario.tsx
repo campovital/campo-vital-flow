@@ -462,7 +462,7 @@ export default function Inventario() {
 
         {/* Product Dialog */}
         <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90vh] overflow-y-auto sm:w-full">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
               <DialogDescription>Ingresa los datos del producto</DialogDescription>
@@ -476,7 +476,7 @@ export default function Inventario() {
                   placeholder="Ej: Mancozeb 80%"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Categoría</Label>
                   <Select
@@ -514,7 +514,7 @@ export default function Inventario() {
                   onChange={(e) => setProductForm({ ...productForm, active_ingredient: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Días de Carencia</Label>
                   <Input
@@ -531,12 +531,12 @@ export default function Inventario() {
                   />
                 </div>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+                <Button variant="outline" onClick={() => setProductDialogOpen(false)} className="sm:w-auto">Cancelar</Button>
                 <Button onClick={handleSaveProduct} disabled={isSaving} className="flex-1">
                   {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Guardar
                 </Button>
-                <Button variant="outline" onClick={() => setProductDialogOpen(false)}>Cancelar</Button>
               </div>
             </div>
           </DialogContent>
@@ -544,7 +544,7 @@ export default function Inventario() {
 
         {/* Batch Dialog */}
         <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90vh] overflow-y-auto sm:w-full">
             <DialogHeader>
               <DialogTitle>{editingBatch ? "Editar Lote" : "Nuevo Lote"}</DialogTitle>
               <DialogDescription>Registra un lote de inventario</DialogDescription>
@@ -568,7 +568,7 @@ export default function Inventario() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Número de Lote</Label>
                   <Input
@@ -585,7 +585,7 @@ export default function Inventario() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Costo Unitario (COP)</Label>
                   <Input
@@ -602,7 +602,7 @@ export default function Inventario() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Fecha de Compra</Label>
                   <Input
@@ -620,12 +620,12 @@ export default function Inventario() {
                   />
                 </div>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+                <Button variant="outline" onClick={() => setBatchDialogOpen(false)} className="sm:w-auto">Cancelar</Button>
                 <Button onClick={handleSaveBatch} disabled={isSaving} className="flex-1">
                   {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Guardar
                 </Button>
-                <Button variant="outline" onClick={() => setBatchDialogOpen(false)}>Cancelar</Button>
               </div>
             </div>
           </DialogContent>
