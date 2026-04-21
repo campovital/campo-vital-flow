@@ -400,34 +400,58 @@ export type Database = {
       inventory_products: {
         Row: {
           active_ingredient: string | null
+          categoria_toxicologica: string | null
           category: string | null
+          concentracion: string | null
+          contenido_neto: string | null
           created_at: string
           default_withdrawal_days: number | null
+          fecha_vencimiento: string | null
           id: string
+          ingrediente_activo: string | null
           is_active: boolean | null
           name: string
+          numero_lote: string | null
+          registro_ica: string | null
+          titular_registro: string | null
           unit: string
           updated_at: string
         }
         Insert: {
           active_ingredient?: string | null
+          categoria_toxicologica?: string | null
           category?: string | null
+          concentracion?: string | null
+          contenido_neto?: string | null
           created_at?: string
           default_withdrawal_days?: number | null
+          fecha_vencimiento?: string | null
           id?: string
+          ingrediente_activo?: string | null
           is_active?: boolean | null
           name: string
+          numero_lote?: string | null
+          registro_ica?: string | null
+          titular_registro?: string | null
           unit?: string
           updated_at?: string
         }
         Update: {
           active_ingredient?: string | null
+          categoria_toxicologica?: string | null
           category?: string | null
+          concentracion?: string | null
+          contenido_neto?: string | null
           created_at?: string
           default_withdrawal_days?: number | null
+          fecha_vencimiento?: string | null
           id?: string
+          ingrediente_activo?: string | null
           is_active?: boolean | null
           name?: string
+          numero_lote?: string | null
+          registro_ica?: string | null
+          titular_registro?: string | null
           unit?: string
           updated_at?: string
         }
