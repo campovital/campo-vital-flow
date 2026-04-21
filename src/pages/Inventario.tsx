@@ -531,7 +531,7 @@ export default function Inventario() {
 
         {/* Product Dialog */}
         <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-          <DialogContent className="left-4 right-4 top-1/2 w-auto max-w-[calc(100vw-2rem)] translate-x-0 -translate-y-1/2 overflow-y-auto overflow-x-hidden p-4 sm:left-[50%] sm:right-auto sm:w-full sm:max-w-lg sm:translate-x-[-50%] sm:p-6 max-h-[calc(100vh-2rem)] sm:max-h-[90vh]">
+          <DialogContent className="!left-4 !right-4 !top-1/2 !w-auto !max-w-[calc(100vw-2rem)] !translate-x-0 !-translate-y-1/2 overflow-y-auto overflow-x-hidden p-4 sm:!left-1/2 sm:!right-auto sm:!w-full sm:!max-w-lg sm:!translate-x-[-50%] sm:p-6 max-h-[calc(100vh-2rem)] sm:max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</DialogTitle>
               <DialogDescription>Ingresa los datos del producto</DialogDescription>
@@ -696,7 +696,7 @@ export default function Inventario() {
 
         {/* Batch Dialog */}
         <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
-          <DialogContent className="left-4 right-4 top-1/2 w-auto max-w-[calc(100vw-2rem)] translate-x-0 -translate-y-1/2 overflow-y-auto overflow-x-hidden p-4 sm:left-[50%] sm:right-auto sm:w-full sm:max-w-lg sm:translate-x-[-50%] sm:p-6 max-h-[calc(100vh-2rem)] sm:max-h-[90vh]">
+          <DialogContent className="!left-4 !right-4 !top-1/2 !w-auto !max-w-[calc(100vw-2rem)] !translate-x-0 !-translate-y-1/2 overflow-y-auto overflow-x-hidden p-4 sm:!left-1/2 sm:!right-auto sm:!w-full sm:!max-w-lg sm:!translate-x-[-50%] sm:p-6 max-h-[calc(100vh-2rem)] sm:max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>{editingBatch ? "Editar Lote" : "Nuevo Lote"}</DialogTitle>
               <DialogDescription>Registra un lote de inventario</DialogDescription>
