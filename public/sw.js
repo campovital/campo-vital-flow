@@ -1,5 +1,5 @@
 // Service Worker - App Shell Cache Only (no API caching)
-const CACHE_VERSION = 'campovital-v1';
+const CACHE_VERSION = 'campovital-v3';
 
 // Only cache the app shell - static assets
 const APP_SHELL = [
