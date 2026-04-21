@@ -132,6 +132,14 @@ export default function Inventario() {
         active_ingredient: product.active_ingredient || "",
         default_withdrawal_days: product.default_withdrawal_days || 0,
         is_active: product.is_active ?? true,
+        ingrediente_activo: (product as any).ingrediente_activo || "",
+        concentracion: (product as any).concentracion || "",
+        registro_ica: (product as any).registro_ica || "",
+        categoria_toxicologica: (product as any).categoria_toxicologica || "",
+        titular_registro: (product as any).titular_registro || "",
+        numero_lote: (product as any).numero_lote || "",
+        contenido_neto: (product as any).contenido_neto || "",
+        fecha_vencimiento: (product as any).fecha_vencimiento || "",
       });
     } else {
       setEditingProduct(null);
@@ -142,6 +150,14 @@ export default function Inventario() {
         active_ingredient: "",
         default_withdrawal_days: 0,
         is_active: true,
+        ingrediente_activo: "",
+        concentracion: "",
+        registro_ica: "",
+        categoria_toxicologica: "",
+        titular_registro: "",
+        numero_lote: "",
+        contenido_neto: "",
+        fecha_vencimiento: "",
       });
     }
     setProductDialogOpen(true);
