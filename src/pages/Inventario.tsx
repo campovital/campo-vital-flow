@@ -620,12 +620,12 @@ export default function Inventario() {
                   />
                 </div>
               </div>
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+                <Button variant="outline" onClick={() => setBatchDialogOpen(false)} className="sm:w-auto">Cancelar</Button>
                 <Button onClick={handleSaveBatch} disabled={isSaving} className="flex-1">
                   {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Guardar
                 </Button>
-                <Button variant="outline" onClick={() => setBatchDialogOpen(false)}>Cancelar</Button>
               </div>
             </div>
           </DialogContent>
