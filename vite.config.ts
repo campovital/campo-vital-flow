@@ -1,7 +1,15 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { createRequire } from "module";
 import { componentTagger } from "lovable-tagger";
+
+const require = createRequire(import.meta.url);
+const reactPath = require.resolve("react");
+const reactDomPath = require.resolve("react-dom");
+const reactDomClientPath = require.resolve("react-dom/client");
+const reactJsxRuntimePath = require.resolve("react/jsx-runtime");
+const reactJsxDevRuntimePath = require.resolve("react/jsx-dev-runtime");
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -16,10 +24,21 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      react: reactPath,
+      "react-dom": reactDomPath,
+      "react-dom/client": reactDomClientPath,
+      "react/jsx-runtime": reactJsxRuntimePath,
+      "react/jsx-dev-runtime": reactJsxDevRuntimePath,
     },
     dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
-    include: ["react", "react-dom"],
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+    ],
   },
 }));
