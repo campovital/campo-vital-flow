@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Package, Loader2, Boxes } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Package, Loader2, Boxes, ChevronDown, ChevronRight } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type InventoryProduct = Database["public"]["Tables"]["inventory_products"]["Row"];
@@ -72,7 +72,16 @@ export default function Inventario() {
     active_ingredient: "",
     default_withdrawal_days: 0,
     is_active: true,
+    ingrediente_activo: "",
+    concentracion: "",
+    registro_ica: "",
+    categoria_toxicologica: "",
+    titular_registro: "",
+    numero_lote: "",
+    contenido_neto: "",
+    fecha_vencimiento: "",
   });
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
 
   const [batchForm, setBatchForm] = useState({
     product_id: "",
@@ -123,6 +132,14 @@ export default function Inventario() {
         active_ingredient: product.active_ingredient || "",
         default_withdrawal_days: product.default_withdrawal_days || 0,
         is_active: product.is_active ?? true,
+        ingrediente_activo: (product as any).ingrediente_activo || "",
+        concentracion: (product as any).concentracion || "",
+        registro_ica: (product as any).registro_ica || "",
+        categoria_toxicologica: (product as any).categoria_toxicologica || "",
+        titular_registro: (product as any).titular_registro || "",
+        numero_lote: (product as any).numero_lote || "",
+        contenido_neto: (product as any).contenido_neto || "",
+        fecha_vencimiento: (product as any).fecha_vencimiento || "",
       });
     } else {
       setEditingProduct(null);
@@ -133,6 +150,14 @@ export default function Inventario() {
         active_ingredient: "",
         default_withdrawal_days: 0,
         is_active: true,
+        ingrediente_activo: "",
+        concentracion: "",
+        registro_ica: "",
+        categoria_toxicologica: "",
+        titular_registro: "",
+        numero_lote: "",
+        contenido_neto: "",
+        fecha_vencimiento: "",
       });
     }
     setProductDialogOpen(true);
@@ -153,6 +178,14 @@ export default function Inventario() {
       active_ingredient: productForm.active_ingredient.trim() || null,
       default_withdrawal_days: productForm.default_withdrawal_days,
       is_active: productForm.is_active,
+      ingrediente_activo: productForm.ingrediente_activo.trim() || null,
+      concentracion: productForm.concentracion.trim() || null,
+      registro_ica: productForm.registro_ica.trim() || null,
+      categoria_toxicologica: productForm.categoria_toxicologica.trim() || null,
+      titular_registro: productForm.titular_registro.trim() || null,
+      numero_lote: productForm.numero_lote.trim() || null,
+      contenido_neto: productForm.contenido_neto.trim() || null,
+      fecha_vencimiento: productForm.fecha_vencimiento || null,
     };
 
     if (editingProduct) {
@@ -352,6 +385,7 @@ export default function Inventario() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-8"></TableHead>
                         <TableHead>Nombre</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Unidad</TableHead>
@@ -361,31 +395,66 @@ export default function Inventario() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {products.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{product.category || "-"}</TableCell>
-                          <TableCell>{product.unit}</TableCell>
-                          <TableCell>{product.default_withdrawal_days || 0}</TableCell>
-                          <TableCell>
-                            <Badge variant={product.is_active ? "default" : "secondary"}>
-                              {product.is_active ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </TableCell>
-                          {canManage && (
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
+                      {products.map((product) => {
+                        const p = product as any;
+                        const hasDetails = p.ingrediente_activo || p.concentracion || p.registro_ica || p.categoria_toxicologica || p.titular_registro || p.numero_lote || p.contenido_neto || p.fecha_vencimiento;
+                        const isExpanded = expandedProductId === product.id;
+                        return (
+                          <>
+                            <TableRow key={product.id}>
+                              <TableCell className="p-1">
+                                {hasDetails && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                                    aria-label={isExpanded ? "Colapsar" : "Ver detalles"}
+                                  >
+                                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                  </Button>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">{product.name}</TableCell>
+                              <TableCell>{product.category || "-"}</TableCell>
+                              <TableCell>{product.unit}</TableCell>
+                              <TableCell>{product.default_withdrawal_days || 0}</TableCell>
+                              <TableCell>
+                                <Badge variant={product.is_active ? "default" : "secondary"}>
+                                  {product.is_active ? "Activo" : "Inactivo"}
+                                </Badge>
+                              </TableCell>
+                              {canManage && (
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
+                                      <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                            {isExpanded && hasDetails && (
+                              <TableRow key={`${product.id}-detail`} className="bg-muted/30">
+                                <TableCell colSpan={canManage ? 7 : 6} className="p-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                    {p.ingrediente_activo && <div><span className="font-semibold text-muted-foreground">Ingrediente activo:</span> {p.ingrediente_activo}</div>}
+                                    {p.concentracion && <div><span className="font-semibold text-muted-foreground">Concentración:</span> {p.concentracion}</div>}
+                                    {p.registro_ica && <div><span className="font-semibold text-muted-foreground">Registro ICA:</span> {p.registro_ica}</div>}
+                                    {p.titular_registro && <div><span className="font-semibold text-muted-foreground">Titular del registro:</span> {p.titular_registro}</div>}
+                                    {p.categoria_toxicologica && <div><span className="font-semibold text-muted-foreground">Categoría toxicológica:</span> {p.categoria_toxicologica}</div>}
+                                    {p.numero_lote && <div><span className="font-semibold text-muted-foreground">Número de lote:</span> {p.numero_lote}</div>}
+                                    {p.contenido_neto && <div><span className="font-semibold text-muted-foreground">Contenido neto:</span> {p.contenido_neto}</div>}
+                                    {p.fecha_vencimiento && <div><span className="font-semibold text-muted-foreground">Vence:</span> {p.fecha_vencimiento}</div>}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
@@ -531,6 +600,89 @@ export default function Inventario() {
                   />
                 </div>
               </div>
+
+              {/* Grupo 2: Información Técnica */}
+              <div className="pt-2 border-t space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Información Técnica</h4>
+                <div className="space-y-2">
+                  <Label>Ingrediente Activo (detallado)</Label>
+                  <Input
+                    value={productForm.ingrediente_activo}
+                    onChange={(e) => setProductForm({ ...productForm, ingrediente_activo: e.target.value })}
+                    placeholder="Ej: Abamectina"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
+                  <div className="space-y-2">
+                    <Label>Concentración</Label>
+                    <Input
+                      value={productForm.concentracion}
+                      onChange={(e) => setProductForm({ ...productForm, concentracion: e.target.value })}
+                      placeholder="Ej: 1.8% EC"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Registro ICA</Label>
+                    <Input
+                      value={productForm.registro_ica}
+                      onChange={(e) => setProductForm({ ...productForm, registro_ica: e.target.value })}
+                      placeholder="Ej: PL000884200"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Titular del Registro</Label>
+                  <Input
+                    value={productForm.titular_registro}
+                    onChange={(e) => setProductForm({ ...productForm, titular_registro: e.target.value })}
+                    placeholder="Ej: Syngenta S.A."
+                  />
+                </div>
+              </div>
+
+              {/* Grupo 3: Lote y Vencimiento */}
+              <div className="pt-2 border-t space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Lote y Vencimiento</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
+                  <div className="space-y-2">
+                    <Label>Número de Lote</Label>
+                    <Input
+                      value={productForm.numero_lote}
+                      onChange={(e) => setProductForm({ ...productForm, numero_lote: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contenido Neto</Label>
+                    <Input
+                      value={productForm.contenido_neto}
+                      onChange={(e) => setProductForm({ ...productForm, contenido_neto: e.target.value })}
+                      placeholder="Ej: 1 litro, 250 mL"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Fecha de Vencimiento</Label>
+                  <Input
+                    type="date"
+                    value={productForm.fecha_vencimiento}
+                    onChange={(e) => setProductForm({ ...productForm, fecha_vencimiento: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Grupo 4: Seguridad */}
+              <div className="pt-2 border-t space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Seguridad</h4>
+                <div className="space-y-2">
+                  <Label>Categoría Toxicológica</Label>
+                  <Input
+                    value={productForm.categoria_toxicologica}
+                    onChange={(e) => setProductForm({ ...productForm, categoria_toxicologica: e.target.value })}
+                    placeholder="Ej: II - Moderadamente peligroso"
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
                 <Button variant="outline" onClick={() => setProductDialogOpen(false)} className="sm:w-auto">Cancelar</Button>
                 <Button onClick={handleSaveProduct} disabled={isSaving} className="flex-1">
