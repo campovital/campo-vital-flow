@@ -600,6 +600,89 @@ export default function Inventario() {
                   />
                 </div>
               </div>
+
+              {/* Grupo 2: Información Técnica */}
+              <div className="pt-2 border-t space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Información Técnica</h4>
+                <div className="space-y-2">
+                  <Label>Ingrediente Activo (detallado)</Label>
+                  <Input
+                    value={productForm.ingrediente_activo}
+                    onChange={(e) => setProductForm({ ...productForm, ingrediente_activo: e.target.value })}
+                    placeholder="Ej: Abamectina"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
+                  <div className="space-y-2">
+                    <Label>Concentración</Label>
+                    <Input
+                      value={productForm.concentracion}
+                      onChange={(e) => setProductForm({ ...productForm, concentracion: e.target.value })}
+                      placeholder="Ej: 1.8% EC"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Registro ICA</Label>
+                    <Input
+                      value={productForm.registro_ica}
+                      onChange={(e) => setProductForm({ ...productForm, registro_ica: e.target.value })}
+                      placeholder="Ej: PL000884200"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Titular del Registro</Label>
+                  <Input
+                    value={productForm.titular_registro}
+                    onChange={(e) => setProductForm({ ...productForm, titular_registro: e.target.value })}
+                    placeholder="Ej: Syngenta S.A."
+                  />
+                </div>
+              </div>
+
+              {/* Grupo 3: Lote y Vencimiento */}
+              <div className="pt-2 border-t space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Lote y Vencimiento</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
+                  <div className="space-y-2">
+                    <Label>Número de Lote</Label>
+                    <Input
+                      value={productForm.numero_lote}
+                      onChange={(e) => setProductForm({ ...productForm, numero_lote: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contenido Neto</Label>
+                    <Input
+                      value={productForm.contenido_neto}
+                      onChange={(e) => setProductForm({ ...productForm, contenido_neto: e.target.value })}
+                      placeholder="Ej: 1 litro, 250 mL"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Fecha de Vencimiento</Label>
+                  <Input
+                    type="date"
+                    value={productForm.fecha_vencimiento}
+                    onChange={(e) => setProductForm({ ...productForm, fecha_vencimiento: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              {/* Grupo 4: Seguridad */}
+              <div className="pt-2 border-t space-y-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Seguridad</h4>
+                <div className="space-y-2">
+                  <Label>Categoría Toxicológica</Label>
+                  <Input
+                    value={productForm.categoria_toxicologica}
+                    onChange={(e) => setProductForm({ ...productForm, categoria_toxicologica: e.target.value })}
+                    placeholder="Ej: II - Moderadamente peligroso"
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
                 <Button variant="outline" onClick={() => setProductDialogOpen(false)} className="sm:w-auto">Cancelar</Button>
                 <Button onClick={handleSaveProduct} disabled={isSaving} className="flex-1">
