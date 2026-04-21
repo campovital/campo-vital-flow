@@ -178,6 +178,14 @@ export default function Inventario() {
       active_ingredient: productForm.active_ingredient.trim() || null,
       default_withdrawal_days: productForm.default_withdrawal_days,
       is_active: productForm.is_active,
+      ingrediente_activo: productForm.ingrediente_activo.trim() || null,
+      concentracion: productForm.concentracion.trim() || null,
+      registro_ica: productForm.registro_ica.trim() || null,
+      categoria_toxicologica: productForm.categoria_toxicologica.trim() || null,
+      titular_registro: productForm.titular_registro.trim() || null,
+      numero_lote: productForm.numero_lote.trim() || null,
+      contenido_neto: productForm.contenido_neto.trim() || null,
+      fecha_vencimiento: productForm.fecha_vencimiento || null,
     };
 
     if (editingProduct) {
