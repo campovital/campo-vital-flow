@@ -385,6 +385,7 @@ export default function Inventario() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-8"></TableHead>
                         <TableHead>Nombre</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Unidad</TableHead>
@@ -394,31 +395,66 @@ export default function Inventario() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {products.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{product.category || "-"}</TableCell>
-                          <TableCell>{product.unit}</TableCell>
-                          <TableCell>{product.default_withdrawal_days || 0}</TableCell>
-                          <TableCell>
-                            <Badge variant={product.is_active ? "default" : "secondary"}>
-                              {product.is_active ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </TableCell>
-                          {canManage && (
-                            <TableCell>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
+                      {products.map((product) => {
+                        const p = product as any;
+                        const hasDetails = p.ingrediente_activo || p.concentracion || p.registro_ica || p.categoria_toxicologica || p.titular_registro || p.numero_lote || p.contenido_neto || p.fecha_vencimiento;
+                        const isExpanded = expandedProductId === product.id;
+                        return (
+                          <>
+                            <TableRow key={product.id}>
+                              <TableCell className="p-1">
+                                {hasDetails && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={() => setExpandedProductId(isExpanded ? null : product.id)}
+                                    aria-label={isExpanded ? "Colapsar" : "Ver detalles"}
+                                  >
+                                    {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                  </Button>
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">{product.name}</TableCell>
+                              <TableCell>{product.category || "-"}</TableCell>
+                              <TableCell>{product.unit}</TableCell>
+                              <TableCell>{product.default_withdrawal_days || 0}</TableCell>
+                              <TableCell>
+                                <Badge variant={product.is_active ? "default" : "secondary"}>
+                                  {product.is_active ? "Activo" : "Inactivo"}
+                                </Badge>
+                              </TableCell>
+                              {canManage && (
+                                <TableCell>
+                                  <div className="flex gap-1">
+                                    <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
+                                      <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                            {isExpanded && hasDetails && (
+                              <TableRow key={`${product.id}-detail`} className="bg-muted/30">
+                                <TableCell colSpan={canManage ? 7 : 6} className="p-4">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                    {p.ingrediente_activo && <div><span className="font-semibold text-muted-foreground">Ingrediente activo:</span> {p.ingrediente_activo}</div>}
+                                    {p.concentracion && <div><span className="font-semibold text-muted-foreground">Concentración:</span> {p.concentracion}</div>}
+                                    {p.registro_ica && <div><span className="font-semibold text-muted-foreground">Registro ICA:</span> {p.registro_ica}</div>}
+                                    {p.titular_registro && <div><span className="font-semibold text-muted-foreground">Titular del registro:</span> {p.titular_registro}</div>}
+                                    {p.categoria_toxicologica && <div><span className="font-semibold text-muted-foreground">Categoría toxicológica:</span> {p.categoria_toxicologica}</div>}
+                                    {p.numero_lote && <div><span className="font-semibold text-muted-foreground">Número de lote:</span> {p.numero_lote}</div>}
+                                    {p.contenido_neto && <div><span className="font-semibold text-muted-foreground">Contenido neto:</span> {p.contenido_neto}</div>}
+                                    {p.fecha_vencimiento && <div><span className="font-semibold text-muted-foreground">Vence:</span> {p.fecha_vencimiento}</div>}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 )}
