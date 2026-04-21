@@ -33,7 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Plus, Pencil, Trash2, Package, Loader2, Boxes } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Package, Loader2, Boxes, ChevronDown, ChevronRight } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type InventoryProduct = Database["public"]["Tables"]["inventory_products"]["Row"];
