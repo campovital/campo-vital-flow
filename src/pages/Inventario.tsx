@@ -544,7 +544,7 @@ export default function Inventario() {
 
         {/* Batch Dialog */}
         <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
-          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[90vh] overflow-y-auto sm:w-full">
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6 sm:w-full">
             <DialogHeader>
               <DialogTitle>{editingBatch ? "Editar Lote" : "Nuevo Lote"}</DialogTitle>
               <DialogDescription>Registra un lote de inventario</DialogDescription>
