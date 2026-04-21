@@ -385,18 +385,6 @@ export default function Inventario() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-8"></TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Categoría</TableHead>
-                        <TableHead>Unidad</TableHead>
-                        <TableHead>Días Carencia</TableHead>
-                        <TableHead>Estado</TableHead>
-                        {canManage && <TableHead className="w-24">Acciones</TableHead>}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    <TableHeader>
-                      <TableRow>
                         <TableHead>Nombre</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Estado</TableHead>
