@@ -72,7 +72,16 @@ export default function Inventario() {
     active_ingredient: "",
     default_withdrawal_days: 0,
     is_active: true,
+    ingrediente_activo: "",
+    concentracion: "",
+    registro_ica: "",
+    categoria_toxicologica: "",
+    titular_registro: "",
+    numero_lote: "",
+    contenido_neto: "",
+    fecha_vencimiento: "",
   });
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
 
   const [batchForm, setBatchForm] = useState({
     product_id: "",
