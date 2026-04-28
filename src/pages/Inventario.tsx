@@ -462,9 +462,22 @@ export default function Inventario() {
                                           <div className="space-y-1.5">
                                             <div className="text-xs font-semibold text-muted-foreground">Lotes recientes</div>
                                             {recentBatches.map((b) => (
-                                              <div key={b.id} className="flex items-center justify-between text-xs border-t pt-1.5">
+                                              <div key={b.id} className="flex items-center justify-between gap-2 text-xs border-t pt-1.5">
                                                 <span className="font-medium truncate">{b.batch_number || "Sin n°"}</span>
-                                                <span className="text-muted-foreground">{Number(b.quantity || 0)} {product.unit || ""}{b.expiry_date ? ` · vence ${b.expiry_date}` : ""}</span>
+                                                <span className="text-muted-foreground flex-1 text-right truncate">{Number(b.quantity || 0)} {product.unit || ""}{b.expiry_date ? ` · vence ${b.expiry_date}` : ""}</span>
+                                                {canManage && (
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-7 px-2"
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      handleOpenBatchDialog(b);
+                                                    }}
+                                                  >
+                                                    <Pencil className="w-3 h-3 mr-1" /> Editar
+                                                  </Button>
+                                                )}
                                               </div>
                                             ))}
                                           </div>
