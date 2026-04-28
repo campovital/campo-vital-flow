@@ -428,22 +428,78 @@ export default function Inventario() {
                                 </TableCell>
                               )}
                             </TableRow>
-                            {isExpanded && (
-                              <TableRow key={`${product.id}-detail`} className="bg-muted/30 hover:bg-muted/30">
-                                <TableCell colSpan={canManage ? 4 : 3} className="p-4">
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                    <div><span className="font-semibold text-muted-foreground">Unidad:</span> {product.unit || dash}</div>
-                                    <div><span className="font-semibold text-muted-foreground">Días Carencia:</span> {product.default_withdrawal_days ?? 0} días</div>
-                                    <div><span className="font-semibold text-muted-foreground">Ingrediente Activo:</span> {p.ingrediente_activo || dash}</div>
-                                    <div><span className="font-semibold text-muted-foreground">Concentración:</span> {p.concentracion || dash}</div>
-                                    <div><span className="font-semibold text-muted-foreground">Registro ICA:</span> {p.registro_ica || dash}</div>
-                                    <div><span className="font-semibold text-muted-foreground">Titular del Registro:</span> {p.titular_registro || dash}</div>
-                                    <div><span className="font-semibold text-muted-foreground">Categoría Toxicológica:</span> {p.categoria_toxicologica || dash}</div>
-                                    <div><span className="font-semibold text-muted-foreground">Contenido Neto:</span> {p.contenido_neto || dash}</div>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
+                            {isExpanded && (() => {
+                              const productBatches = batches
+                                .filter((b) => b.product_id === product.id)
+                                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                              const totalStock = productBatches.reduce((sum, b) => sum + Number(b.quantity || 0), 0);
+                              const recentBatches = productBatches.slice(0, 3);
+                              return (
+                                <TableRow key={`${product.id}-detail`} className="bg-muted/30 hover:bg-muted/30">
+                                  <TableCell colSpan={canManage ? 4 : 3} className="p-4">
+                                    <div className="space-y-4">
+                                      {/* Highlighted core fields */}
+                                      <div className="grid grid-cols-2 gap-3">
+                                        <div className="rounded-lg border bg-background p-3">
+                                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Unidad</div>
+                                          <div className="text-lg font-bold text-foreground mt-1">{product.unit || dash}</div>
+                                        </div>
+                                        <div className="rounded-lg border bg-background p-3">
+                                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Días de Carencia</div>
+                                          <div className="text-lg font-bold text-foreground mt-1">{product.default_withdrawal_days ?? 0} <span className="text-sm font-normal text-muted-foreground">días</span></div>
+                                        </div>
+                                      </div>
+
+                                      {/* Mini ficha — stock & lotes recientes */}
+                                      <div className="rounded-lg border bg-background p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Stock total</div>
+                                          <div className="text-sm font-bold text-foreground">{totalStock} {product.unit || ""}</div>
+                                        </div>
+                                        {recentBatches.length === 0 ? (
+                                          <div className="text-xs text-muted-foreground italic">Sin lotes registrados</div>
+                                        ) : (
+                                          <div className="space-y-1.5">
+                                            <div className="text-xs font-semibold text-muted-foreground">Lotes recientes</div>
+                                            {recentBatches.map((b) => (
+                                              <div key={b.id} className="flex items-center justify-between text-xs border-t pt-1.5">
+                                                <span className="font-medium truncate">{b.batch_number || "Sin n°"}</span>
+                                                <span className="text-muted-foreground">{Number(b.quantity || 0)} {product.unit || ""}{b.expiry_date ? ` · vence ${b.expiry_date}` : ""}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Detalles técnicos */}
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                        <div><span className="font-semibold text-muted-foreground">Ingrediente Activo:</span> {p.ingrediente_activo || dash}</div>
+                                        <div><span className="font-semibold text-muted-foreground">Concentración:</span> {p.concentracion || dash}</div>
+                                        <div><span className="font-semibold text-muted-foreground">Registro ICA:</span> {p.registro_ica || dash}</div>
+                                        <div><span className="font-semibold text-muted-foreground">Titular del Registro:</span> {p.titular_registro || dash}</div>
+                                        <div><span className="font-semibold text-muted-foreground">Categoría Toxicológica:</span> {p.categoria_toxicologica || dash}</div>
+                                        <div><span className="font-semibold text-muted-foreground">Contenido Neto:</span> {p.contenido_neto || dash}</div>
+                                      </div>
+
+                                      {/* Acciones rápidas */}
+                                      {canManage && (
+                                        <div className="flex flex-wrap gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                                          <Button size="sm" variant="outline" onClick={() => handleOpenProductDialog(product)}>
+                                            <Pencil className="w-3.5 h-3.5 mr-1" /> Editar producto
+                                          </Button>
+                                          <Button size="sm" variant="outline" onClick={() => {
+                                            handleOpenBatchDialog();
+                                            setBatchForm((f) => ({ ...f, product_id: product.id }));
+                                          }}>
+                                            <Plus className="w-3.5 h-3.5 mr-1" /> Nuevo lote
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })()}
                           </>
                         );
                       })}
