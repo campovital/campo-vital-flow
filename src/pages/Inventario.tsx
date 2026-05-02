@@ -257,9 +257,38 @@ export default function Inventario() {
     setBatchDialogOpen(true);
   };
 
+  const batchErrors = (() => {
+    const errors: { batch_number?: string; quantity?: string; expiry_date?: string; product_id?: string } = {};
+    if (!batchForm.product_id) errors.product_id = "Selecciona un producto";
+    if (batchForm.batch_number && batchForm.batch_number.trim().length > 50) {
+      errors.batch_number = "Máximo 50 caracteres";
+    }
+    if (batchForm.batch_number && !/^[A-Za-z0-9\-_/.\s]+$/.test(batchForm.batch_number.trim())) {
+      errors.batch_number = "Solo letras, números y - _ / .";
+    }
+    if (!batchForm.quantity || batchForm.quantity <= 0) {
+      errors.quantity = "Debe ser mayor a 0";
+    } else if (batchForm.quantity > 1000000) {
+      errors.quantity = "Cantidad demasiado alta";
+    }
+    if (batchForm.expiry_date) {
+      const exp = new Date(batchForm.expiry_date);
+      if (isNaN(exp.getTime())) {
+        errors.expiry_date = "Fecha inválida";
+      } else if (batchForm.purchase_date) {
+        const pur = new Date(batchForm.purchase_date);
+        if (!isNaN(pur.getTime()) && exp < pur) {
+          errors.expiry_date = "Debe ser posterior a la fecha de compra";
+        }
+      }
+    }
+    return errors;
+  })();
+  const hasBatchErrors = Object.keys(batchErrors).length > 0;
+
   const handleSaveBatch = async () => {
-    if (!batchForm.product_id) {
-      toast({ title: "Error", description: "Selecciona un producto", variant: "destructive" });
+    if (hasBatchErrors) {
+      toast({ title: "Revisa los datos", description: "Hay campos con errores", variant: "destructive" });
       return;
     }
 
@@ -787,15 +816,27 @@ export default function Inventario() {
                   <Input
                     value={batchForm.batch_number}
                     onChange={(e) => setBatchForm({ ...batchForm, batch_number: e.target.value })}
+                    aria-invalid={!!batchErrors.batch_number}
+                    className={batchErrors.batch_number ? "border-destructive" : ""}
                   />
+                  {batchErrors.batch_number && (
+                    <p className="text-xs text-destructive">{batchErrors.batch_number}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Cantidad</Label>
+                  <Label>Cantidad *</Label>
                   <Input
                     type="number"
+                    min="0"
+                    step="any"
                     value={batchForm.quantity}
                     onChange={(e) => setBatchForm({ ...batchForm, quantity: parseFloat(e.target.value) || 0 })}
+                    aria-invalid={!!batchErrors.quantity}
+                    className={batchErrors.quantity ? "border-destructive" : ""}
                   />
+                  {batchErrors.quantity && (
+                    <p className="text-xs text-destructive">{batchErrors.quantity}</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
@@ -830,12 +871,17 @@ export default function Inventario() {
                     type="date"
                     value={batchForm.expiry_date}
                     onChange={(e) => setBatchForm({ ...batchForm, expiry_date: e.target.value })}
+                    aria-invalid={!!batchErrors.expiry_date}
+                    className={batchErrors.expiry_date ? "border-destructive" : ""}
                   />
+                  {batchErrors.expiry_date && (
+                    <p className="text-xs text-destructive">{batchErrors.expiry_date}</p>
+                  )}
                 </div>
               </div>
               <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
                 <Button variant="outline" onClick={() => setBatchDialogOpen(false)} className="sm:w-auto">Cancelar</Button>
-                <Button onClick={handleSaveBatch} disabled={isSaving} className="flex-1">
+                <Button onClick={handleSaveBatch} disabled={isSaving || hasBatchErrors} className="flex-1">
                   {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                   Guardar
                 </Button>
