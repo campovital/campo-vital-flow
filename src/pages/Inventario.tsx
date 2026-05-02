@@ -257,9 +257,38 @@ export default function Inventario() {
     setBatchDialogOpen(true);
   };
 
+  const batchErrors = (() => {
+    const errors: { batch_number?: string; quantity?: string; expiry_date?: string; product_id?: string } = {};
+    if (!batchForm.product_id) errors.product_id = "Selecciona un producto";
+    if (batchForm.batch_number && batchForm.batch_number.trim().length > 50) {
+      errors.batch_number = "Máximo 50 caracteres";
+    }
+    if (batchForm.batch_number && !/^[A-Za-z0-9\-_/.\s]+$/.test(batchForm.batch_number.trim())) {
+      errors.batch_number = "Solo letras, números y - _ / .";
+    }
+    if (!batchForm.quantity || batchForm.quantity <= 0) {
+      errors.quantity = "Debe ser mayor a 0";
+    } else if (batchForm.quantity > 1000000) {
+      errors.quantity = "Cantidad demasiado alta";
+    }
+    if (batchForm.expiry_date) {
+      const exp = new Date(batchForm.expiry_date);
+      if (isNaN(exp.getTime())) {
+        errors.expiry_date = "Fecha inválida";
+      } else if (batchForm.purchase_date) {
+        const pur = new Date(batchForm.purchase_date);
+        if (!isNaN(pur.getTime()) && exp < pur) {
+          errors.expiry_date = "Debe ser posterior a la fecha de compra";
+        }
+      }
+    }
+    return errors;
+  })();
+  const hasBatchErrors = Object.keys(batchErrors).length > 0;
+
   const handleSaveBatch = async () => {
-    if (!batchForm.product_id) {
-      toast({ title: "Error", description: "Selecciona un producto", variant: "destructive" });
+    if (hasBatchErrors) {
+      toast({ title: "Revisa los datos", description: "Hay campos con errores", variant: "destructive" });
       return;
     }
 
