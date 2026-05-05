@@ -604,6 +604,33 @@ export default function Operarios() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!tempPwdResult} onOpenChange={(open) => { if (!open) setTempPwdResult(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clave temporal generada</DialogTitle>
+          </DialogHeader>
+          {tempPwdResult && (
+            <div className="space-y-4 mt-2">
+              <p className="text-sm text-muted-foreground">
+                Para <strong>{tempPwdResult.name}</strong>. Esta clave se muestra <strong>una sola vez</strong>. Cópiala y entrégala de forma segura. El usuario deberá cambiarla al iniciar sesión.
+              </p>
+              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted">
+                <code className="flex-1 font-mono text-base break-all">{tempPwdResult.password}</code>
+                <Button size="sm" variant="outline" onClick={copyPwd}>
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Expira: {new Date(tempPwdResult.expiresAt).toLocaleString()}
+              </p>
+              <Button className="w-full" onClick={() => setTempPwdResult(null)}>
+                Cerrar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
