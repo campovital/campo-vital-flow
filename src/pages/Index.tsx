@@ -11,7 +11,8 @@ import {
   Sun,
   CloudRain,
   TrendingUp,
-  Package
+  Package,
+  Target,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -38,6 +39,13 @@ export default function Index() {
       description: "Reportar plaga o enfermedad",
       icon: Bug,
       to: "/plagas",
+      color: "bg-warning text-warning-foreground",
+    },
+    {
+      title: "Control de Trampas",
+      description: "Registrar revisión y actividades",
+      icon: Target,
+      to: "/control-trampas",
       color: "bg-warning text-warning-foreground",
     },
     {

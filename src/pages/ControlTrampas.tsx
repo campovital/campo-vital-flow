@@ -6,9 +6,12 @@ import { TrapsRegisterActivity } from "@/components/traps/TrapsRegisterActivity"
 import { TrapsHistoryView } from "@/components/traps/TrapsHistoryView";
 import { TrapsManageView } from "@/components/traps/TrapsManageView";
 import { AlertTriangle, ClipboardList, History, Settings2 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 export default function ControlTrampas() {
   const [activeTab, setActiveTab] = useState("pendientes");
+  const { canManage } = useAuth();
 
   return (
     <AppLayout>
@@ -24,7 +27,7 @@ export default function ControlTrampas() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className={cn("grid w-full", canManage ? "grid-cols-4" : "grid-cols-3")}>
             <TabsTrigger value="pendientes" className="text-xs sm:text-sm gap-1">
               <AlertTriangle className="w-3.5 h-3.5 hidden sm:block" />
               Pendientes
@@ -37,10 +40,12 @@ export default function ControlTrampas() {
               <History className="w-3.5 h-3.5 hidden sm:block" />
               Historial
             </TabsTrigger>
-            <TabsTrigger value="gestionar" className="text-xs sm:text-sm gap-1">
-              <Settings2 className="w-3.5 h-3.5 hidden sm:block" />
-              Gestionar
-            </TabsTrigger>
+            {canManage && (
+              <TabsTrigger value="gestionar" className="text-xs sm:text-sm gap-1">
+                <Settings2 className="w-3.5 h-3.5 hidden sm:block" />
+                Gestionar
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="pendientes">
@@ -52,9 +57,11 @@ export default function ControlTrampas() {
           <TabsContent value="historial">
             <TrapsHistoryView />
           </TabsContent>
-          <TabsContent value="gestionar">
-            <TrapsManageView />
-          </TabsContent>
+          {canManage && (
+            <TabsContent value="gestionar">
+              <TrapsManageView />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </AppLayout>
