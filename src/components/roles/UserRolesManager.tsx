@@ -57,6 +57,46 @@ export function UserRolesManager() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [newRole, setNewRole] = useState<AppRole>("operario");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string } | null>(null);
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const generateTempPassword = async (profile: Profile) => {
+    setGeneratingFor(profile.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-generate-temp-password", {
+        body: { target_user_id: profile.id },
+      });
+      if (error) throw error;
+      if (!data?.temp_password) throw new Error("Sin respuesta del servidor");
+      setTempPwdResult({
+        name: profile.full_name,
+        password: data.temp_password,
+        expiresAt: data.expires_at,
+      });
+      setCopied(false);
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e?.message || "No se pudo generar la clave temporal",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingFor(null);
+    }
+  };
+
+  const copyPwd = async () => {
+    if (!tempPwdResult) return;
+    try {
+      await navigator.clipboard.writeText(tempPwdResult.password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "No se pudo copiar", variant: "destructive" });
+    }
+  };
+
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["profiles-for-roles"],
