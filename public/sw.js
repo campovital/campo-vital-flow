@@ -1,5 +1,5 @@
 // Service Worker - App Shell Cache Only (no API caching)
-const CACHE_VERSION = 'campovital-v3';
+const CACHE_VERSION = 'campovital-v4';
 
 // Only cache the app shell - static assets
 const APP_SHELL = [
@@ -32,6 +32,17 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Never cache Vite dev/preview modules. These chunks change frequently and
+  // stale cache entries can mix incompatible React runtime files.
+  if (
+    url.pathname.startsWith('/node_modules/.vite/') ||
+    url.pathname.startsWith('/src/') ||
+    url.pathname.includes('/@vite/') ||
+    url.pathname.includes('/@react-refresh')
+  ) {
+    return;
+  }
 
   // Never cache API/supabase requests
   if (
