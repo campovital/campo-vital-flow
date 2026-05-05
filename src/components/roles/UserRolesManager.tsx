@@ -220,16 +220,11 @@ export function UserRolesManager() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => generateTempPassword(profile)}
-                      disabled={generatingFor === profile.id}
-                      title="Generar clave temporal (se mostrará una sola vez)"
+                      onClick={() => setAccessSubject({ userId: profile.id, name: profile.full_name })}
+                      title="Gestionar acceso"
                     >
-                      {generatingFor === profile.id ? (
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      ) : (
-                        <KeyRound className="w-4 h-4 mr-1" />
-                      )}
-                      Clave temporal
+                      <Settings className="w-4 h-4 mr-1" />
+                      Gestionar acceso
                     </Button>
                     {availableRoles.length > 0 && (
                       <Dialog open={dialogOpen && selectedUserId === profile.id} onOpenChange={(open) => {
