@@ -1171,6 +1171,36 @@ export type Database = {
           },
         ]
       }
+      temporary_password_flags: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          must_change_password: boolean
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          must_change_password?: boolean
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          must_change_password?: boolean
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       trap_cycle_status: {
         Row: {
           days_remaining: number | null
