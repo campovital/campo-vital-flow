@@ -567,14 +567,32 @@ export default function Operarios() {
                         </TableCell>
                         {canManage && (
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(operator)}
-                            >
-                              <Edit className="w-4 h-4 mr-1" />
-                              Editar
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              {isAdmin && operator.user_id && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => generateTempPassword(operator)}
+                                  disabled={generatingFor === operator.id}
+                                  title="Generar clave temporal (se mostrará una sola vez)"
+                                >
+                                  {generatingFor === operator.id ? (
+                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <KeyRound className="w-4 h-4 mr-1" />
+                                  )}
+                                  Clave temporal
+                                </Button>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(operator)}
+                              >
+                                <Edit className="w-4 h-4 mr-1" />
+                                Editar
+                              </Button>
+                            </div>
                           </TableCell>
                         )}
                       </TableRow>
