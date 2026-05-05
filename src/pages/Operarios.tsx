@@ -608,21 +608,42 @@ export default function Operarios() {
                         {canManage && (
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              {isAdmin && operator.user_id && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => generateTempPassword(operator)}
-                                  disabled={generatingFor === operator.id}
-                                  title="Generar clave temporal (se mostrará una sola vez)"
-                                >
-                                  {generatingFor === operator.id ? (
-                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                  ) : (
-                                    <KeyRound className="w-4 h-4 mr-1" />
-                                  )}
-                                  Clave temporal
-                                </Button>
+                              {isAdmin && (
+                                operator.user_id ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => generateTempPassword(operator)}
+                                    disabled={generatingFor === operator.id}
+                                    title="Generar clave temporal (se mostrará una sola vez)"
+                                  >
+                                    {generatingFor === operator.id ? (
+                                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                    ) : (
+                                      <KeyRound className="w-4 h-4 mr-1" />
+                                    )}
+                                    Clave temporal
+                                  </Button>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="gap-1">
+                                      <ShieldAlert className="w-3 h-3" />
+                                      Sin cuenta
+                                    </Badge>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setCreateAccountFor(operator);
+                                        setAccountEmail("");
+                                      }}
+                                      title="Crear cuenta de acceso para este operario"
+                                    >
+                                      <UserPlus className="w-4 h-4 mr-1" />
+                                      Crear cuenta
+                                    </Button>
+                                  </div>
+                                )
                               )}
                               <Button
                                 variant="ghost"
