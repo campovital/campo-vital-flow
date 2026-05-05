@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Leaf, Mail, Lock, User, AlertCircle, WifiOff } from "lucide-react";
+import { Leaf, Mail, Lock, User, AlertCircle, WifiOff, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 import { useNetworkStatus } from "@/hooks/use-network-status";
