@@ -18,12 +18,16 @@ const PHYSICAL_STATUSES = [
   { value: "requiere_reposicion", label: "Requiere reposición" },
 ];
 
-export function TrapsRegisterActivity() {
+interface TrapsRegisterActivityProps {
+  initialTrapId?: string;
+}
+
+export function TrapsRegisterActivity({ initialTrapId }: TrapsRegisterActivityProps = {}) {
   const readOnly = useReadOnly();
   const { data: traps = [] } = useTraps();
   const registerEvent = useRegisterTrapEvent();
 
-  const [selectedTrapId, setSelectedTrapId] = useState("");
+  const [selectedTrapId, setSelectedTrapId] = useState(initialTrapId || "");
   const [selectedCycleId, setSelectedCycleId] = useState("");
   const [eventType, setEventType] = useState("");
   const [eventDate, setEventDate] = useState(format(new Date(), "yyyy-MM-dd"));

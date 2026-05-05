@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 export default function ControlTrampas() {
   const [activeTab, setActiveTab] = useState("pendientes");
+  const [preselectedTrapId, setPreselectedTrapId] = useState<string | undefined>();
   const { canManage } = useAuth();
 
   return (
@@ -49,10 +50,10 @@ export default function ControlTrampas() {
           </TabsList>
 
           <TabsContent value="pendientes">
-            <TrapsPendingView onRegister={(trapId) => { setActiveTab("registrar"); }} />
+            <TrapsPendingView onRegister={(trapId) => { setPreselectedTrapId(trapId); setActiveTab("registrar"); }} />
           </TabsContent>
           <TabsContent value="registrar">
-            <TrapsRegisterActivity />
+            <TrapsRegisterActivity initialTrapId={preselectedTrapId} />
           </TabsContent>
           <TabsContent value="historial">
             <TrapsHistoryView />

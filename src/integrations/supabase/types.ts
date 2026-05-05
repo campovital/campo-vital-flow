@@ -1636,6 +1636,7 @@ export type Database = {
         | "informes"
         | "configuracion"
         | "roles"
+        | "control_trampas"
       app_role: "admin" | "agronoma" | "operario" | "consulta"
       application_status: "ejecutada" | "no_ejecutada" | "ejecutada_con_novedad"
       pest_report_status: "pendiente" | "en_tratamiento" | "resuelto"
@@ -1799,6 +1800,7 @@ export const Constants = {
         "informes",
         "configuracion",
         "roles",
+        "control_trampas",
       ],
       app_role: ["admin", "agronoma", "operario", "consulta"],
       application_status: [

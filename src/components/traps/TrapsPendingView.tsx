@@ -7,7 +7,7 @@ import { useTraps, useTrapCycleStatuses, useTrapTypes } from "@/hooks/use-traps"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
-import { AlertTriangle, CheckCircle, Clock, Filter, Target } from "lucide-react";
+import { AlertTriangle, CheckCircle, ClipboardList, Clock, Filter, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -186,6 +186,18 @@ export function TrapsPendingView({ onRegister }: TrapsPendingViewProps) {
                       <p className="text-xs text-muted-foreground italic">Sin ciclos registrados aún</p>
                     )}
                   </div>
+
+                  {onRegister && (
+                    <Button
+                      size="sm"
+                      variant={worstStatus === "vencido" ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => onRegister(trap.id)}
+                    >
+                      <ClipboardList className="w-4 h-4 mr-2" />
+                      Registrar actividad
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
