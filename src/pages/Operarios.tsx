@@ -41,17 +41,11 @@ import {
   TrendingUp,
   Clock,
   Sprout,
-  KeyRound,
-  Copy,
-  Check,
   ShieldAlert,
+  ShieldCheck,
+  Settings,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ManageAccessDialog, ManageAccessSubject } from "@/components/access/ManageAccessDialog";
 import { subDays } from "date-fns";
 
 interface Operator {
