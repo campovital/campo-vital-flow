@@ -11,7 +11,8 @@ import {
   Sun,
   CloudRain,
   TrendingUp,
-  Package
+  Package,
+  Target,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
