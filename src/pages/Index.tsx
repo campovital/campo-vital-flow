@@ -42,6 +42,13 @@ export default function Index() {
       color: "bg-warning text-warning-foreground",
     },
     {
+      title: "Control de Trampas",
+      description: "Registrar revisión y actividades",
+      icon: Target,
+      to: "/control-trampas",
+      color: "bg-warning text-warning-foreground",
+    },
+    {
       title: "Ver Historial",
       description: "Calendario de actividades",
       icon: Calendar,
