@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { OfflineProvider } from "@/contexts/OfflineContext";
 import { OverdueAlertsProvider } from "@/components/sanitary/OverdueAlertsProvider";
+import { TempPasswordGuard } from "@/components/auth/TempPasswordGuard";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw } from "lucide-react";
