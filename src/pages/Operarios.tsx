@@ -41,7 +41,16 @@ import {
   TrendingUp,
   Clock,
   Sprout,
+  KeyRound,
+  Copy,
+  Check,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { subDays } from "date-fns";
 
 interface Operator {
