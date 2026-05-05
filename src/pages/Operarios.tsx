@@ -586,24 +586,10 @@ export default function Operarios() {
                                     Clave temporal
                                   </Button>
                                 ) : (
-                                  <div className="flex items-center gap-1">
-                                    <Badge variant="outline" className="gap-1">
-                                      <ShieldAlert className="w-3 h-3" />
-                                      Sin cuenta
-                                    </Badge>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setCreateAccountFor(operator);
-                                        setAccountEmail("");
-                                      }}
-                                      title="Crear cuenta de acceso para este operario"
-                                    >
-                                      <UserPlus className="w-4 h-4 mr-1" />
-                                      Crear cuenta
-                                    </Button>
-                                  </div>
+                                  <Badge variant="outline" className="gap-1" title="Este operario no tiene acceso al sistema">
+                                    <ShieldAlert className="w-3 h-3" />
+                                    Sin acceso
+                                  </Badge>
                                 )
                               )}
                               <Button
