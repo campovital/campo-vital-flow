@@ -41,17 +41,11 @@ import {
   TrendingUp,
   Clock,
   Sprout,
-  KeyRound,
-  Copy,
-  Check,
   ShieldAlert,
+  ShieldCheck,
+  Settings,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { ManageAccessDialog, ManageAccessSubject } from "@/components/access/ManageAccessDialog";
 import { subDays } from "date-fns";
 
 interface Operator {
@@ -84,52 +78,14 @@ export default function Operarios() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
-  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string } | null>(null);
-  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [accessSubject, setAccessSubject] = useState<ManageAccessSubject | null>(null);
 
-  const generateTempPassword = async (operator: Operator) => {
-    if (!operator.user_id) {
-      toast({
-        title: "Operario sin usuario",
-        description: "Este operario no tiene una cuenta de acceso vinculada.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setGeneratingFor(operator.id);
-    try {
-      const { data, error } = await supabase.functions.invoke("admin-generate-temp-password", {
-        body: { target_user_id: operator.user_id },
-      });
-      if (error) throw error;
-      if (!data?.temp_password) throw new Error("Sin respuesta del servidor");
-      setTempPwdResult({
-        name: operator.full_name,
-        password: data.temp_password,
-        expiresAt: data.expires_at,
-      });
-      setCopied(false);
-    } catch (e: any) {
-      toast({
-        title: "Error",
-        description: e?.message || "No se pudo generar la clave temporal",
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingFor(null);
-    }
-  };
-
-  const copyPwd = async () => {
-    if (!tempPwdResult) return;
-    try {
-      await navigator.clipboard.writeText(tempPwdResult.password);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({ title: "No se pudo copiar", variant: "destructive" });
-    }
+  const openAccess = (operator: Operator) => {
+    setAccessSubject({
+      operatorId: operator.id,
+      userId: operator.user_id,
+      name: operator.full_name,
+    });
   };
 
   const [form, setForm] = useState({
@@ -569,28 +525,27 @@ export default function Operarios() {
                         {canManage && (
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
+                              {operator.user_id ? (
+                                <Badge variant="default" className="gap-1">
+                                  <ShieldCheck className="w-3 h-3" />
+                                  Con acceso
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="gap-1">
+                                  <ShieldAlert className="w-3 h-3" />
+                                  Sin acceso
+                                </Badge>
+                              )}
                               {isAdmin && (
-                                operator.user_id ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => generateTempPassword(operator)}
-                                    disabled={generatingFor === operator.id}
-                                    title="Generar clave temporal (se mostrará una sola vez)"
-                                  >
-                                    {generatingFor === operator.id ? (
-                                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                    ) : (
-                                      <KeyRound className="w-4 h-4 mr-1" />
-                                    )}
-                                    Clave temporal
-                                  </Button>
-                                ) : (
-                                  <Badge variant="outline" className="gap-1" title="Este operario no tiene acceso al sistema">
-                                    <ShieldAlert className="w-3 h-3" />
-                                    Sin acceso
-                                  </Badge>
-                                )
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openAccess(operator)}
+                                  title="Gestionar acceso"
+                                >
+                                  <Settings className="w-4 h-4 mr-1" />
+                                  Gestionar acceso
+                                </Button>
                               )}
                               <Button
                                 variant="ghost"
@@ -613,32 +568,12 @@ export default function Operarios() {
         </Card>
       </div>
 
-      <Dialog open={!!tempPwdResult} onOpenChange={(open) => { if (!open) setTempPwdResult(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Clave temporal generada</DialogTitle>
-          </DialogHeader>
-          {tempPwdResult && (
-            <div className="space-y-4 mt-2">
-              <p className="text-sm text-muted-foreground">
-                Para <strong>{tempPwdResult.name}</strong>. Esta clave se muestra <strong>una sola vez</strong>. Cópiala y entrégala de forma segura. El usuario deberá cambiarla al iniciar sesión.
-              </p>
-              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted">
-                <code className="flex-1 font-mono text-base break-all">{tempPwdResult.password}</code>
-                <Button size="sm" variant="outline" onClick={copyPwd}>
-                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Expira: {new Date(tempPwdResult.expiresAt).toLocaleString()}
-              </p>
-              <Button className="w-full" onClick={() => setTempPwdResult(null)}>
-                Cerrar
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ManageAccessDialog
+        open={!!accessSubject}
+        onOpenChange={(o) => { if (!o) setAccessSubject(null); }}
+        subject={accessSubject}
+        onLinked={() => queryClient.invalidateQueries({ queryKey: ["operators"] })}
+      />
     </AppLayout>
   );
 }
