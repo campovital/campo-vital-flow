@@ -78,52 +78,14 @@ export default function Operarios() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
-  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string } | null>(null);
-  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [accessSubject, setAccessSubject] = useState<ManageAccessSubject | null>(null);
 
-  const generateTempPassword = async (operator: Operator) => {
-    if (!operator.user_id) {
-      toast({
-        title: "Operario sin usuario",
-        description: "Este operario no tiene una cuenta de acceso vinculada.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setGeneratingFor(operator.id);
-    try {
-      const { data, error } = await supabase.functions.invoke("admin-generate-temp-password", {
-        body: { target_user_id: operator.user_id },
-      });
-      if (error) throw error;
-      if (!data?.temp_password) throw new Error("Sin respuesta del servidor");
-      setTempPwdResult({
-        name: operator.full_name,
-        password: data.temp_password,
-        expiresAt: data.expires_at,
-      });
-      setCopied(false);
-    } catch (e: any) {
-      toast({
-        title: "Error",
-        description: e?.message || "No se pudo generar la clave temporal",
-        variant: "destructive",
-      });
-    } finally {
-      setGeneratingFor(null);
-    }
-  };
-
-  const copyPwd = async () => {
-    if (!tempPwdResult) return;
-    try {
-      await navigator.clipboard.writeText(tempPwdResult.password);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast({ title: "No se pudo copiar", variant: "destructive" });
-    }
+  const openAccess = (operator: Operator) => {
+    setAccessSubject({
+      operatorId: operator.id,
+      userId: operator.user_id,
+      name: operator.full_name,
+    });
   };
 
   const [form, setForm] = useState({
