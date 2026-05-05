@@ -44,7 +44,6 @@ import {
   KeyRound,
   Copy,
   Check,
-  UserPlus,
   ShieldAlert,
 } from "lucide-react";
 import {
