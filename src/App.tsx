@@ -88,6 +88,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <OverdueAlertsProvider>
+                <TempPasswordGuard />
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
