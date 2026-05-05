@@ -186,6 +186,18 @@ export function TrapsPendingView({ onRegister }: TrapsPendingViewProps) {
                       <p className="text-xs text-muted-foreground italic">Sin ciclos registrados aún</p>
                     )}
                   </div>
+
+                  {onRegister && (
+                    <Button
+                      size="sm"
+                      variant={worstStatus === "vencido" ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => onRegister(trap.id)}
+                    >
+                      <ClipboardList className="w-4 h-4 mr-2" />
+                      Registrar actividad
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
