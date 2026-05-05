@@ -676,6 +676,12 @@ export default function Operarios() {
               <p className="text-sm text-muted-foreground">
                 Para <strong>{tempPwdResult.name}</strong>. Esta clave se muestra <strong>una sola vez</strong>. Cópiala y entrégala de forma segura. El usuario deberá cambiarla al iniciar sesión.
               </p>
+              {tempPwdResult.email && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Email de acceso: </span>
+                  <code className="font-mono">{tempPwdResult.email}</code>
+                </div>
+              )}
               <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted">
                 <code className="flex-1 font-mono text-base break-all">{tempPwdResult.password}</code>
                 <Button size="sm" variant="outline" onClick={copyPwd}>
@@ -688,6 +694,41 @@ export default function Operarios() {
               <Button className="w-full" onClick={() => setTempPwdResult(null)}>
                 Cerrar
               </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!createAccountFor} onOpenChange={(open) => { if (!open) { setCreateAccountFor(null); setAccountEmail(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear cuenta de acceso</DialogTitle>
+          </DialogHeader>
+          {createAccountFor && (
+            <div className="space-y-4 mt-2">
+              <p className="text-sm text-muted-foreground">
+                Se creará una cuenta para <strong>{createAccountFor.full_name}</strong> con una clave temporal. El operario deberá cambiarla en su primer ingreso.
+              </p>
+              <div>
+                <Label htmlFor="account_email">Email de acceso *</Label>
+                <Input
+                  id="account_email"
+                  type="email"
+                  value={accountEmail}
+                  onChange={(e) => setAccountEmail(e.target.value)}
+                  placeholder="operario@ejemplo.com"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setCreateAccountFor(null); setAccountEmail(""); }} disabled={creatingAccount}>
+                  Cancelar
+                </Button>
+                <Button className="flex-1" onClick={createAccount} disabled={creatingAccount}>
+                  {creatingAccount && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Crear y generar clave
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
