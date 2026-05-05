@@ -14,6 +14,8 @@ import { useNetworkStatus } from "@/hooks/use-network-status";
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
   const { signIn, signUp, user, isOfflineMode } = useAuth();
   const { isOnline } = useNetworkStatus();
   const navigate = useNavigate();
