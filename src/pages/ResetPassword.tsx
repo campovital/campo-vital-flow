@@ -63,16 +63,29 @@ export default function ResetPassword() {
         throw error;
       }
 
+      // Mark temp password flag as used (if any)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from("temporary_password_flags")
+            .update({ must_change_password: false, used_at: new Date().toISOString() })
+            .eq("user_id", user.id);
+        }
+      } catch {
+        // ignore
+      }
+
       setSuccess(true);
       toast({
         title: "¡Contraseña actualizada!",
         description: "Tu contraseña ha sido cambiada exitosamente.",
       });
 
-      // Redirect to login after 2 seconds
+      const isForced = searchParams.get("forced") === "1";
       setTimeout(() => {
-        navigate("/auth", { replace: true });
-      }, 2000);
+        navigate(isForced ? "/" : "/auth", { replace: true });
+      }, 1500);
     } catch (err: any) {
       console.error("Error updating password:", err);
       setError(err.message || "Error al actualizar la contraseña");
