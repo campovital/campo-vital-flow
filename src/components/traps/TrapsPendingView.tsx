@@ -7,7 +7,7 @@ import { useTraps, useTrapCycleStatuses, useTrapTypes } from "@/hooks/use-traps"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EmptyStateCard } from "@/components/common/EmptyStateCard";
-import { AlertTriangle, CheckCircle, Clock, Filter, Target } from "lucide-react";
+import { AlertTriangle, CheckCircle, ClipboardList, Clock, Filter, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
