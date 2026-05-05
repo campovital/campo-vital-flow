@@ -44,6 +44,8 @@ import {
   KeyRound,
   Copy,
   Check,
+  UserPlus,
+  ShieldAlert,
 } from "lucide-react";
 import {
   Dialog,
@@ -83,9 +85,47 @@ export default function Operarios() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
-  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string } | null>(null);
+  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string; email?: string } | null>(null);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [createAccountFor, setCreateAccountFor] = useState<Operator | null>(null);
+  const [accountEmail, setAccountEmail] = useState("");
+  const [creatingAccount, setCreatingAccount] = useState(false);
+
+  const createAccount = async () => {
+    if (!createAccountFor) return;
+    const email = accountEmail.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: "Email inválido", description: "Ingresa un correo válido.", variant: "destructive" });
+      return;
+    }
+    setCreatingAccount(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-operator-account", {
+        body: { operator_id: createAccountFor.id, email },
+      });
+      if (error) throw error;
+      if (!data?.temp_password) throw new Error("Sin respuesta del servidor");
+      setTempPwdResult({
+        name: createAccountFor.full_name,
+        password: data.temp_password,
+        expiresAt: data.expires_at,
+        email: data.email,
+      });
+      setCopied(false);
+      setCreateAccountFor(null);
+      setAccountEmail("");
+      queryClient.invalidateQueries({ queryKey: ["operators"] });
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e?.message || "No se pudo crear la cuenta",
+        variant: "destructive",
+      });
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
 
   const generateTempPassword = async (operator: Operator) => {
     if (!operator.user_id) {
@@ -568,21 +608,42 @@ export default function Operarios() {
                         {canManage && (
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              {isAdmin && operator.user_id && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => generateTempPassword(operator)}
-                                  disabled={generatingFor === operator.id}
-                                  title="Generar clave temporal (se mostrará una sola vez)"
-                                >
-                                  {generatingFor === operator.id ? (
-                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                  ) : (
-                                    <KeyRound className="w-4 h-4 mr-1" />
-                                  )}
-                                  Clave temporal
-                                </Button>
+                              {isAdmin && (
+                                operator.user_id ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => generateTempPassword(operator)}
+                                    disabled={generatingFor === operator.id}
+                                    title="Generar clave temporal (se mostrará una sola vez)"
+                                  >
+                                    {generatingFor === operator.id ? (
+                                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                    ) : (
+                                      <KeyRound className="w-4 h-4 mr-1" />
+                                    )}
+                                    Clave temporal
+                                  </Button>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="gap-1">
+                                      <ShieldAlert className="w-3 h-3" />
+                                      Sin cuenta
+                                    </Badge>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setCreateAccountFor(operator);
+                                        setAccountEmail("");
+                                      }}
+                                      title="Crear cuenta de acceso para este operario"
+                                    >
+                                      <UserPlus className="w-4 h-4 mr-1" />
+                                      Crear cuenta
+                                    </Button>
+                                  </div>
+                                )
                               )}
                               <Button
                                 variant="ghost"
@@ -615,6 +676,12 @@ export default function Operarios() {
               <p className="text-sm text-muted-foreground">
                 Para <strong>{tempPwdResult.name}</strong>. Esta clave se muestra <strong>una sola vez</strong>. Cópiala y entrégala de forma segura. El usuario deberá cambiarla al iniciar sesión.
               </p>
+              {tempPwdResult.email && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Email de acceso: </span>
+                  <code className="font-mono">{tempPwdResult.email}</code>
+                </div>
+              )}
               <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted">
                 <code className="flex-1 font-mono text-base break-all">{tempPwdResult.password}</code>
                 <Button size="sm" variant="outline" onClick={copyPwd}>
@@ -627,6 +694,41 @@ export default function Operarios() {
               <Button className="w-full" onClick={() => setTempPwdResult(null)}>
                 Cerrar
               </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!createAccountFor} onOpenChange={(open) => { if (!open) { setCreateAccountFor(null); setAccountEmail(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear cuenta de acceso</DialogTitle>
+          </DialogHeader>
+          {createAccountFor && (
+            <div className="space-y-4 mt-2">
+              <p className="text-sm text-muted-foreground">
+                Se creará una cuenta para <strong>{createAccountFor.full_name}</strong> con una clave temporal. El operario deberá cambiarla en su primer ingreso.
+              </p>
+              <div>
+                <Label htmlFor="account_email">Email de acceso *</Label>
+                <Input
+                  id="account_email"
+                  type="email"
+                  value={accountEmail}
+                  onChange={(e) => setAccountEmail(e.target.value)}
+                  placeholder="operario@ejemplo.com"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => { setCreateAccountFor(null); setAccountEmail(""); }} disabled={creatingAccount}>
+                  Cancelar
+                </Button>
+                <Button className="flex-1" onClick={createAccount} disabled={creatingAccount}>
+                  {creatingAccount && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Crear y generar clave
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
