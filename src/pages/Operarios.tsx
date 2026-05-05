@@ -84,47 +84,9 @@ export default function Operarios() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
-  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string; email?: string } | null>(null);
+  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string } | null>(null);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [createAccountFor, setCreateAccountFor] = useState<Operator | null>(null);
-  const [accountEmail, setAccountEmail] = useState("");
-  const [creatingAccount, setCreatingAccount] = useState(false);
-
-  const createAccount = async () => {
-    if (!createAccountFor) return;
-    const email = accountEmail.trim().toLowerCase();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast({ title: "Email inválido", description: "Ingresa un correo válido.", variant: "destructive" });
-      return;
-    }
-    setCreatingAccount(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("admin-create-operator-account", {
-        body: { operator_id: createAccountFor.id, email },
-      });
-      if (error) throw error;
-      if (!data?.temp_password) throw new Error("Sin respuesta del servidor");
-      setTempPwdResult({
-        name: createAccountFor.full_name,
-        password: data.temp_password,
-        expiresAt: data.expires_at,
-        email: data.email,
-      });
-      setCopied(false);
-      setCreateAccountFor(null);
-      setAccountEmail("");
-      queryClient.invalidateQueries({ queryKey: ["operators"] });
-    } catch (e: any) {
-      toast({
-        title: "Error",
-        description: e?.message || "No se pudo crear la cuenta",
-        variant: "destructive",
-      });
-    } finally {
-      setCreatingAccount(false);
-    }
-  };
 
   const generateTempPassword = async (operator: Operator) => {
     if (!operator.user_id) {
