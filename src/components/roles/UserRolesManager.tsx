@@ -20,7 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, Trash2, Loader2 } from "lucide-react";
+import { Search, UserPlus, Trash2, Loader2, KeyRound, Copy, Check } from "lucide-react";
 
 type AppRole = "admin" | "agronoma" | "operario" | "consulta";
 
@@ -57,6 +57,46 @@ export function UserRolesManager() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [newRole, setNewRole] = useState<AppRole>("operario");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [tempPwdResult, setTempPwdResult] = useState<{ name: string; password: string; expiresAt: string } | null>(null);
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const generateTempPassword = async (profile: Profile) => {
+    setGeneratingFor(profile.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-generate-temp-password", {
+        body: { target_user_id: profile.id },
+      });
+      if (error) throw error;
+      if (!data?.temp_password) throw new Error("Sin respuesta del servidor");
+      setTempPwdResult({
+        name: profile.full_name,
+        password: data.temp_password,
+        expiresAt: data.expires_at,
+      });
+      setCopied(false);
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e?.message || "No se pudo generar la clave temporal",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingFor(null);
+    }
+  };
+
+  const copyPwd = async () => {
+    if (!tempPwdResult) return;
+    try {
+      await navigator.clipboard.writeText(tempPwdResult.password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "No se pudo copiar", variant: "destructive" });
+    }
+  };
+
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["profiles-for-roles"],
@@ -214,70 +254,113 @@ export function UserRolesManager() {
                     </div>
                   </div>
                   
-                  {availableRoles.length > 0 && (
-                    <Dialog open={dialogOpen && selectedUserId === profile.id} onOpenChange={(open) => {
-                      setDialogOpen(open);
-                      if (!open) setSelectedUserId(null);
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUserId(profile.id);
-                            setNewRole(availableRoles[0]);
-                            setDialogOpen(true);
-                          }}
-                        >
-                          <UserPlus className="w-4 h-4 mr-1" />
-                          Agregar rol
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Agregar rol a {profile.full_name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 mt-4">
-                          <Select
-                            value={newRole}
-                            onValueChange={(value) => setNewRole(value as AppRole)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar rol" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableRoles.map((role) => (
-                                <SelectItem key={role} value={role}>
-                                  {ROLE_LABELS[role]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => generateTempPassword(profile)}
+                      disabled={generatingFor === profile.id}
+                      title="Generar clave temporal (se mostrará una sola vez)"
+                    >
+                      {generatingFor === profile.id ? (
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      ) : (
+                        <KeyRound className="w-4 h-4 mr-1" />
+                      )}
+                      Clave temporal
+                    </Button>
+                    {availableRoles.length > 0 && (
+                      <Dialog open={dialogOpen && selectedUserId === profile.id} onOpenChange={(open) => {
+                        setDialogOpen(open);
+                        if (!open) setSelectedUserId(null);
+                      }}>
+                        <DialogTrigger asChild>
                           <Button
-                            className="w-full"
-                            onClick={() =>
-                              addRoleMutation.mutate({
-                                userId: profile.id,
-                                role: newRole,
-                              })
-                            }
-                            disabled={addRoleMutation.isPending}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUserId(profile.id);
+                              setNewRole(availableRoles[0]);
+                              setDialogOpen(true);
+                            }}
                           >
-                            {addRoleMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : null}
-                            Asignar Rol
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Agregar rol
                           </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  )}
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Agregar rol a {profile.full_name}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 mt-4">
+                            <Select
+                              value={newRole}
+                              onValueChange={(value) => setNewRole(value as AppRole)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar rol" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableRoles.map((role) => (
+                                  <SelectItem key={role} value={role}>
+                                    {ROLE_LABELS[role]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              className="w-full"
+                              onClick={() =>
+                                addRoleMutation.mutate({
+                                  userId: profile.id,
+                                  role: newRole,
+                                })
+                              }
+                              disabled={addRoleMutation.isPending}
+                            >
+                              {addRoleMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              ) : null}
+                              Asignar Rol
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
       </CardContent>
+
+      <Dialog open={!!tempPwdResult} onOpenChange={(open) => { if (!open) setTempPwdResult(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clave temporal generada</DialogTitle>
+          </DialogHeader>
+          {tempPwdResult && (
+            <div className="space-y-4 mt-2">
+              <p className="text-sm text-muted-foreground">
+                Para <strong>{tempPwdResult.name}</strong>. Esta clave se muestra <strong>una sola vez</strong>. Cópiala y entrégala de forma segura. El usuario deberá cambiarla al iniciar sesión.
+              </p>
+              <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted">
+                <code className="flex-1 font-mono text-base break-all">{tempPwdResult.password}</code>
+                <Button size="sm" variant="outline" onClick={copyPwd}>
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Expira: {new Date(tempPwdResult.expiresAt).toLocaleString()}
+              </p>
+              <Button className="w-full" onClick={() => setTempPwdResult(null)}>
+                Cerrar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
