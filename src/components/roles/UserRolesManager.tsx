@@ -20,7 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Search, UserPlus, Trash2, Loader2 } from "lucide-react";
+import { Search, UserPlus, Trash2, Loader2, KeyRound, Copy, Check } from "lucide-react";
 
 type AppRole = "admin" | "agronoma" | "operario" | "consulta";
 
