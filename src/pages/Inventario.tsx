@@ -572,7 +572,7 @@ export default function Inventario() {
                   <CardTitle>Lotes de Inventario</CardTitle>
                   <CardDescription>{batches.length} lote(s)</CardDescription>
                 </div>
-                {canManage && (
+                {canCreateInv && (
                   <Button onClick={() => handleOpenBatchDialog()}>
                     <Plus className="w-4 h-4 mr-1" />
                     Nuevo Lote
