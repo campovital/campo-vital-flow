@@ -598,7 +598,7 @@ export default function Inventario() {
                         <TableHead>Costo Unit.</TableHead>
                         <TableHead>Proveedor</TableHead>
                         <TableHead>Vence</TableHead>
-                        {canManage && <TableHead className="w-24">Acciones</TableHead>}
+                        {(canEditInv || canDeleteInv) && <TableHead className="w-24">Acciones</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -610,15 +610,19 @@ export default function Inventario() {
                           <TableCell>{formatCurrency(batch.unit_cost)}</TableCell>
                           <TableCell>{batch.supplier || "-"}</TableCell>
                           <TableCell>{batch.expiry_date || "-"}</TableCell>
-                          {canManage && (
+                          {(canEditInv || canDeleteInv) && (
                             <TableCell>
                               <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenBatchDialog(batch)}>
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteBatch(batch)}>
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
+                                {canEditInv && (
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenBatchDialog(batch)}>
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {canDeleteInv && (
+                                  <Button variant="ghost" size="icon" onClick={() => handleDeleteBatch(batch)}>
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           )}
