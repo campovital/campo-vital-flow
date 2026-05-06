@@ -533,17 +533,21 @@ export default function Inventario() {
                                       </div>
 
                                       {/* Acciones rápidas */}
-                                      {canManage && (
+                                      {(canEditInv || canCreateInv) && (
                                         <div className="flex flex-wrap gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                                          <Button size="sm" variant="outline" onClick={() => handleOpenProductDialog(product)}>
-                                            <Pencil className="w-3.5 h-3.5 mr-1" /> Editar producto
-                                          </Button>
-                                          <Button size="sm" variant="outline" onClick={() => {
-                                            handleOpenBatchDialog();
-                                            setBatchForm((f) => ({ ...f, product_id: product.id }));
-                                          }}>
-                                            <Plus className="w-3.5 h-3.5 mr-1" /> Nuevo lote
-                                          </Button>
+                                          {canEditInv && (
+                                            <Button size="sm" variant="outline" onClick={() => handleOpenProductDialog(product)}>
+                                              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar producto
+                                            </Button>
+                                          )}
+                                          {canCreateInv && (
+                                            <Button size="sm" variant="outline" onClick={() => {
+                                              handleOpenBatchDialog();
+                                              setBatchForm((f) => ({ ...f, product_id: product.id }));
+                                            }}>
+                                              <Plus className="w-3.5 h-3.5 mr-1" /> Nuevo lote
+                                            </Button>
+                                          )}
                                         </div>
                                       )}
                                     </div>
