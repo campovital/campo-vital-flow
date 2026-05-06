@@ -503,7 +503,7 @@ export default function Inventario() {
                                               <div key={b.id} className="flex items-center justify-between gap-2 text-xs border-t pt-1.5">
                                                 <span className="font-medium truncate">{b.batch_number || "Sin n°"}</span>
                                                 <span className="text-muted-foreground flex-1 text-right truncate">{Number(b.quantity || 0)} {product.unit || ""}{b.expiry_date ? ` · vence ${b.expiry_date}` : ""}</span>
-                                                {canManage && (
+                                                {canEditInv && (
                                                   <Button
                                                     size="sm"
                                                     variant="ghost"
