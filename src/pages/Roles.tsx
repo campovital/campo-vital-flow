@@ -33,6 +33,7 @@ const MODULES: { value: AppModule; label: string }[] = [
   { value: "costos", label: "Costos" },
   { value: "informes", label: "Informes" },
   { value: "configuracion", label: "Configuración" },
+  { value: "inventario", label: "Inventario" },
   { value: "roles", label: "Roles y Permisos" },
 ];
 
