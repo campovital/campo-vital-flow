@@ -449,15 +449,19 @@ export default function Inventario() {
                                   {product.is_active ? "Activo" : "Inactivo"}
                                 </Badge>
                               </TableCell>
-                              {canManage && (
+                              {(canEditInv || canDeleteInv) && (
                                 <TableCell onClick={(e) => e.stopPropagation()}>
                                   <div className="flex gap-1 justify-end">
-                                    <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
-                                      <Pencil className="w-4 h-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
-                                      <Trash2 className="w-4 h-4 text-destructive" />
-                                    </Button>
+                                    {canEditInv && (
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
+                                        <Pencil className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                    {canDeleteInv && (
+                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                      </Button>
+                                    )}
                                   </div>
                                 </TableCell>
                               )}
