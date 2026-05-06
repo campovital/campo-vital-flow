@@ -14,7 +14,7 @@ import { UserRolesManager } from "@/components/roles/UserRolesManager";
 import { UserFarmsManager } from "@/components/roles/UserFarmsManager";
 
 type AppRole = "admin" | "agronoma" | "operario" | "consulta";
-type AppModule = "aplicar_mezcla" | "reporte_sanitario" | "seguimiento_sanitario" | "cosecha" | "tareas" | "costos" | "informes" | "configuracion" | "roles";
+type AppModule = "aplicar_mezcla" | "reporte_sanitario" | "seguimiento_sanitario" | "cosecha" | "tareas" | "costos" | "informes" | "configuracion" | "roles" | "inventario";
 type AppAction = "view" | "create" | "edit" | "delete" | "approve" | "export";
 
 const ROLES: { value: AppRole; label: string; description: string }[] = [
