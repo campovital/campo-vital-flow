@@ -105,7 +105,7 @@ const App = () => (
                   <Route path="/costos" element={<ProtectedRoute module="costos"><Costos /></ProtectedRoute>} />
                   <Route path="/protocolos" element={<ProtectedRoute requireManage><Protocolos /></ProtectedRoute>} />
                   <Route path="/protocolos/programador" element={<ProtectedRoute requireManage><ProgramadorProtocolos /></ProtectedRoute>} />
-                  <Route path="/inventario" element={<ProtectedRoute module="costos"><Inventario /></ProtectedRoute>} />
+                  <Route path="/inventario" element={<ProtectedRoute module="inventario"><Inventario /></ProtectedRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute requireManage><Dashboard /></ProtectedRoute>} />
                   <Route path="/operarios" element={<ProtectedRoute requireManage><Operarios /></ProtectedRoute>} />
                   <Route path="/configuracion" element={<ProtectedRoute module="configuracion"><Configuracion /></ProtectedRoute>} />

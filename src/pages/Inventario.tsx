@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Plus, Pencil, Trash2, Package, Loader2, Boxes, ChevronDown, ChevronRight } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
@@ -56,6 +57,10 @@ const UNIT_OPTIONS = ["L", "kg", "ml", "g", "unidad"];
 export default function Inventario() {
   const { toast } = useToast();
   const { canManage } = useAuth();
+  const { canCreate, canEdit, canDelete } = usePermissions();
+  const canCreateInv = canManage || canCreate("inventario");
+  const canEditInv = canManage || canEdit("inventario");
+  const canDeleteInv = canManage || canDelete("inventario");
   const [products, setProducts] = useState<InventoryProduct[]>([]);
   const [batches, setBatches] = useState<InventoryBatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -394,7 +399,7 @@ export default function Inventario() {
                   <CardTitle>Productos</CardTitle>
                   <CardDescription>{products.length} producto(s)</CardDescription>
                 </div>
-                {canManage && (
+                {canCreateInv && (
                   <Button onClick={() => handleOpenProductDialog()}>
                     <Plus className="w-4 h-4 mr-1" />
                     Nuevo Producto
@@ -417,7 +422,7 @@ export default function Inventario() {
                         <TableHead>Nombre</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Estado</TableHead>
-                        {canManage && <TableHead className="w-24 text-right">Acciones</TableHead>}
+                        {(canEditInv || canDeleteInv) && <TableHead className="w-24 text-right">Acciones</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -444,15 +449,19 @@ export default function Inventario() {
                                   {product.is_active ? "Activo" : "Inactivo"}
                                 </Badge>
                               </TableCell>
-                              {canManage && (
+                              {(canEditInv || canDeleteInv) && (
                                 <TableCell onClick={(e) => e.stopPropagation()}>
                                   <div className="flex gap-1 justify-end">
-                                    <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
-                                      <Pencil className="w-4 h-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
-                                      <Trash2 className="w-4 h-4 text-destructive" />
-                                    </Button>
+                                    {canEditInv && (
+                                      <Button variant="ghost" size="icon" onClick={() => handleOpenProductDialog(product)}>
+                                        <Pencil className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                    {canDeleteInv && (
+                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(product)}>
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                      </Button>
+                                    )}
                                   </div>
                                 </TableCell>
                               )}
@@ -465,7 +474,7 @@ export default function Inventario() {
                               const recentBatches = productBatches.slice(0, 3);
                               return (
                                 <TableRow key={`${product.id}-detail`} className="bg-muted/30 hover:bg-muted/30">
-                                  <TableCell colSpan={canManage ? 4 : 3} className="p-4">
+                                  <TableCell colSpan={(canEditInv || canDeleteInv) ? 4 : 3} className="p-4">
                                     <div className="space-y-4">
                                       {/* Highlighted core fields */}
                                       <div className="grid grid-cols-2 gap-3">
@@ -494,7 +503,7 @@ export default function Inventario() {
                                               <div key={b.id} className="flex items-center justify-between gap-2 text-xs border-t pt-1.5">
                                                 <span className="font-medium truncate">{b.batch_number || "Sin n°"}</span>
                                                 <span className="text-muted-foreground flex-1 text-right truncate">{Number(b.quantity || 0)} {product.unit || ""}{b.expiry_date ? ` · vence ${b.expiry_date}` : ""}</span>
-                                                {canManage && (
+                                                {canEditInv && (
                                                   <Button
                                                     size="sm"
                                                     variant="ghost"
@@ -524,17 +533,21 @@ export default function Inventario() {
                                       </div>
 
                                       {/* Acciones rápidas */}
-                                      {canManage && (
+                                      {(canEditInv || canCreateInv) && (
                                         <div className="flex flex-wrap gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                                          <Button size="sm" variant="outline" onClick={() => handleOpenProductDialog(product)}>
-                                            <Pencil className="w-3.5 h-3.5 mr-1" /> Editar producto
-                                          </Button>
-                                          <Button size="sm" variant="outline" onClick={() => {
-                                            handleOpenBatchDialog();
-                                            setBatchForm((f) => ({ ...f, product_id: product.id }));
-                                          }}>
-                                            <Plus className="w-3.5 h-3.5 mr-1" /> Nuevo lote
-                                          </Button>
+                                          {canEditInv && (
+                                            <Button size="sm" variant="outline" onClick={() => handleOpenProductDialog(product)}>
+                                              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar producto
+                                            </Button>
+                                          )}
+                                          {canCreateInv && (
+                                            <Button size="sm" variant="outline" onClick={() => {
+                                              handleOpenBatchDialog();
+                                              setBatchForm((f) => ({ ...f, product_id: product.id }));
+                                            }}>
+                                              <Plus className="w-3.5 h-3.5 mr-1" /> Nuevo lote
+                                            </Button>
+                                          )}
                                         </div>
                                       )}
                                     </div>
@@ -559,7 +572,7 @@ export default function Inventario() {
                   <CardTitle>Lotes de Inventario</CardTitle>
                   <CardDescription>{batches.length} lote(s)</CardDescription>
                 </div>
-                {canManage && (
+                {canCreateInv && (
                   <Button onClick={() => handleOpenBatchDialog()}>
                     <Plus className="w-4 h-4 mr-1" />
                     Nuevo Lote
@@ -585,7 +598,7 @@ export default function Inventario() {
                         <TableHead>Costo Unit.</TableHead>
                         <TableHead>Proveedor</TableHead>
                         <TableHead>Vence</TableHead>
-                        {canManage && <TableHead className="w-24">Acciones</TableHead>}
+                        {(canEditInv || canDeleteInv) && <TableHead className="w-24">Acciones</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -597,15 +610,19 @@ export default function Inventario() {
                           <TableCell>{formatCurrency(batch.unit_cost)}</TableCell>
                           <TableCell>{batch.supplier || "-"}</TableCell>
                           <TableCell>{batch.expiry_date || "-"}</TableCell>
-                          {canManage && (
+                          {(canEditInv || canDeleteInv) && (
                             <TableCell>
                               <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" onClick={() => handleOpenBatchDialog(batch)}>
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteBatch(batch)}>
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
+                                {canEditInv && (
+                                  <Button variant="ghost" size="icon" onClick={() => handleOpenBatchDialog(batch)}>
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                {canDeleteInv && (
+                                  <Button variant="ghost" size="icon" onClick={() => handleDeleteBatch(batch)}>
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           )}

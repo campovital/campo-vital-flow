@@ -11,7 +11,8 @@ export type AppModule =
   | "costos"
   | "informes"
   | "configuracion"
-  | "roles";
+  | "roles"
+  | "inventario";
 
 export type AppAction = "view" | "create" | "edit" | "delete" | "approve" | "export";
 
