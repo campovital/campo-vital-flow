@@ -474,7 +474,7 @@ export default function Inventario() {
                               const recentBatches = productBatches.slice(0, 3);
                               return (
                                 <TableRow key={`${product.id}-detail`} className="bg-muted/30 hover:bg-muted/30">
-                                  <TableCell colSpan={canManage ? 4 : 3} className="p-4">
+                                  <TableCell colSpan={(canEditInv || canDeleteInv) ? 4 : 3} className="p-4">
                                     <div className="space-y-4">
                                       {/* Highlighted core fields */}
                                       <div className="grid grid-cols-2 gap-3">
