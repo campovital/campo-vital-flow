@@ -422,7 +422,7 @@ export default function Inventario() {
                         <TableHead>Nombre</TableHead>
                         <TableHead>Categoría</TableHead>
                         <TableHead>Estado</TableHead>
-                        {canManage && <TableHead className="w-24 text-right">Acciones</TableHead>}
+                        {(canEditInv || canDeleteInv) && <TableHead className="w-24 text-right">Acciones</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
