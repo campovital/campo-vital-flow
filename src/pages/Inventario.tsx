@@ -399,7 +399,7 @@ export default function Inventario() {
                   <CardTitle>Productos</CardTitle>
                   <CardDescription>{products.length} producto(s)</CardDescription>
                 </div>
-                {canManage && (
+                {canCreateInv && (
                   <Button onClick={() => handleOpenProductDialog()}>
                     <Plus className="w-4 h-4 mr-1" />
                     Nuevo Producto
