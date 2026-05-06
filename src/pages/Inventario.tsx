@@ -57,6 +57,10 @@ const UNIT_OPTIONS = ["L", "kg", "ml", "g", "unidad"];
 export default function Inventario() {
   const { toast } = useToast();
   const { canManage } = useAuth();
+  const { canCreate, canEdit, canDelete } = usePermissions();
+  const canCreateInv = canManage || canCreate("inventario");
+  const canEditInv = canManage || canEdit("inventario");
+  const canDeleteInv = canManage || canDelete("inventario");
   const [products, setProducts] = useState<InventoryProduct[]>([]);
   const [batches, setBatches] = useState<InventoryBatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
